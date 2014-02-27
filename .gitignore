@@ -16,3 +16,9 @@
 *.exe
 *.out
 *.app
+
+# Os files
+.DS_Store
+Thumbs.db
+thumbs.db
+
