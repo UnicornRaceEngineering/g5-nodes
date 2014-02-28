@@ -1,6 +1,7 @@
 # Object files
 *.o
 *.ko
+*.lst
 
 # Libraries
 *.lib
@@ -16,6 +17,8 @@
 *.exe
 *.out
 *.app
+*.elf
+*elf.map
 
 # Os files
 .DS_Store
