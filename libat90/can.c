@@ -35,10 +35,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 #include "can.h"
 
-static void (*canit_callback[9])(uint8_t mob) = {NULL};
-static void (*ovrit_callback)(void) = NULL;
+static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
+static ovrit_callback_t ovrit_callback = NULL;
 
-void set_canit_callback(enum can_int_t interrupt, void (*callback)(uint8_t mob)) {
+void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 	canit_callback[interrupt] = callback;
 }
 

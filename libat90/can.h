@@ -48,9 +48,21 @@ uint8_t can_init(uint8_t mode);  //#include "can_std/can_lib.h" // Inserted so w
 #define UINT32_MAX	((uint32_t)(~0))
 #endif
 
+/**
+ * Can interrupt callback function pointer.
+ * @param  mob The mob that caused the interrupt
+ */
+typedef void (*canit_callback_t)(uint8_t mob);
+
+/**
+ * Interrupt callback function pointer for can overflow interrupt.
+ */
+typedef void (*ovrit_callback_t)(void);
+
 //_____ D E F I N I T I O N S __________________________________________________
 //#define MASK_FULL_FILTERING	( (uint16_t){UINT16_MAX}	) //!< Only listen for the specified ID @todo are we sure this should not be uint32_t instead?
 //#define MASK_NO_FILTERING	( (uint16_t){0} 			) //!< Listen for all ID's (Eg. a spy node)
+#define NB_CANIT_CB	(9) //!< Number of canit callbacks.
 
 #define NB_MOB			( 15		) //!< Number of MOB's
 #define NB_DATA_MAX		( 8			) //!< The can can max transmit a payload of 8 uint8_t
@@ -263,7 +275,7 @@ typedef struct can_msg_t {
 
 //_____ D E C L A R A T I O N S ________________________________________________
 
-void set_canit_callback(enum can_int_t interrupt, void (*callback)(uint8_t mob));
+void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback);
 int can_setup(can_msg_t *msg);
 int can_receive(can_msg_t *msg);
 int can_send(can_msg_t *msg);
