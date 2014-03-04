@@ -19,6 +19,8 @@
 *.app
 *.elf
 *elf.map
+*.hex
+*.ee.hex
 
 # Os files
 .DS_Store
