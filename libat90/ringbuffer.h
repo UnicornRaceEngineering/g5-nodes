@@ -129,8 +129,7 @@ typedef struct ringbuffer_t{
 
 /**
  * @brief
- * Initializes the ring buffer to it's
- * initial values
+ * Initializes the ring buffer to it's initial values and zero the buffer.
  * @param buffer The buffer to initialize
  */
 static inline void rb_init(ringbuffer_t* const buffer){
@@ -143,11 +142,9 @@ static inline void rb_init(ringbuffer_t* const buffer){
 /**
  * @brief
  * Inserts a byte to the ring buffer.
- * If RB_OVERWRITE_ON_PUSH is defined rb_push
- * will overwrite the last value in the buffer.
- * If not defined it will return 1 if buffer is full
- * and not commit the write
- *
+ * If RB_OVERWRITE_ON_PUSH is defined rb_push will overwrite the last value in
+ * the buffer. If not defined it will return 1 if buffer is full and not commit
+ * the write.
  * @param  buffer The ring buffer
  * @param  data   The data point that is added to buffer
  * @return        1 on overflow error and 0 on success
@@ -175,7 +172,6 @@ static inline int rb_push(ringbuffer_t *buffer, RB_DATA_t data) {
 /**
  * @breief
  * Get a byte from ring buffer.
- *
  * @param  buffer The ring buffer
  * @param  data   pointer where returned byte is stored
  * @return        1 if no data is available and 0 on success
@@ -196,11 +192,9 @@ static inline int rb_pop(ringbuffer_t *buffer, RB_DATA_t *data) {
 
 /**
  * @brief
- * Get the next byte in the ring buffer without
- * removing it from the buffer. This will work
- * the same as rb_pop except successive calls
- * to rb_peek will return the same byte.
- *
+ * Get the next byte in the ring buffer without removing it from the buffer.
+ * This will work the same as rb_pop except, successive calls to rb_peek will
+ * return the same byte.
  * @param  buffer The ring buffer
  * @param  data   pointer where returned byte is stored
  * @return        1 if no data is available and 0 on success

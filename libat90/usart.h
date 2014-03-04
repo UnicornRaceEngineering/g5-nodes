@@ -27,16 +27,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @brief
  * Provides usart input / output functions.
  *
- * By default functions for using both usart0
- * and usart1 is available with buffered input
- * and output. Each usart can be disabled by
- * defining NO_USART[n]_SUPPORT where
- * n is either 0 or one 1. Futhermore either
- * buffered input or buffered output can be
- * disabled for each usart by defining
- * NO_USART[n]_BUFFERED_INPUT or
- * NO_USART[n]_BUFFERED_OUTPUT. These must be
+ * By default functions for using both usart0 and usart1 is available with
+ * buffered input and output. Each usart can be disabled by defining
+ * NO_USART[n]_SUPPORT where n is either 0 or one 1. Futhermore either buffered
+ * input or buffered output can be disabled for each usart by defining
+ * NO_USART[n]_BUFFERED_INPUT or NO_USART[n]_BUFFERED_OUTPUT. These must be
  * defined at compile time
+ *
+ * @bug
+ * There seems to be an issue when using buffered output that causes the board
+ * to reset. Lookup issue #2
  */
 
 

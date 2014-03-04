@@ -27,21 +27,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @brief
  * Provides usart input / output functions.
  *
- * By default functions for using both usart0
- * and usart1 is available with buffered input
- * and output. Each usart can be disabled by
- * defining NO_USART[n]_SUPPORT where
- * n is either 0 or one 1. Futhermore either
- * buffered input or buffered output can be
- * disabled for each usart by defining
- * NO_USART[n]_BUFFERED_INPUT or
- * NO_USART[n]_BUFFERED_OUTPUT. These must be
+ * By default functions for using both usart0 and usart1 is available with
+ * buffered input and output. Each usart can be disabled by defining
+ * NO_USART[n]_SUPPORT where n is either 0 or one 1. Futhermore either buffered
+ * input or buffered output can be disabled for each usart by defining
+ * NO_USART[n]_BUFFERED_INPUT or NO_USART[n]_BUFFERED_OUTPUT. These must be
  * defined at compile time
  *
  * @bug
- * There seems to be an issue when using buffered
- * output that causes the board to reset.
- * Lookup issue #2
+ * There seems to be an issue when using buffered output that causes the board
+ * to reset. Lookup issue #2
  */
 
 #include <stdint.h>
@@ -84,8 +79,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 /**
- * Convert a given baud-rate
- * to UBRR prescalar.
+ * Convert a given baud-rate to UBRR prescalar.
  * @param  baudrate Target baud-rate
  * @param  mode     UART operation mode
  * @return          UBRR prescalar
@@ -113,13 +107,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 #ifndef NO_USART0_SUPPORT
 
 	/**
-	 * Set up the USART with defaults values
-	 * Enables RX and TX
-	 * 1 stop bit with 8bit char size
-	 * in async normal mode.
-	 * if a zero value baudrate is give
-	 * it will default to 115200
-	 *
+	 * @brief Set up the USART with defaults values.
+	 * Enables RX and TX stop bit with 8bit char size n async normal mode. if a
+	 * zero value baudrate is give it will default to 115200.
 	 * @param baudrate the desired baudrate
 	 */
 	void usart0_init(uint32_t baudrate) {
@@ -168,7 +158,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 
 	#ifndef NO_USART0_BUFFERED_INPUT
 	/**
-	 * Check the input buffer for new data
+	 * Check the input buffer for new data.
 	 * @return  true if it as data. Else false
 	 */
 	bool usart0_hasData(void){
@@ -177,11 +167,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	#endif
 
 	/**
-	 * get a byte from USART. This
-	 * call is alway blocking. if input buffer
-	 * is enabled use usart[N]_hasData() to check
-	 * if data is available
-	 *
+	 * Get a byte from USART. This call is alway blocking. if input buffer is
+	 * enabled use usart[N]_hasData() to check if data is available.
 	 * @return  received byte
 	 */
 	uint8_t usart0_getc(void) {
@@ -196,11 +183,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Put a byte on USART. unless
-	 * USART0_NON_UNIX_LIKE_LINE_ENDINGS is
-	 * defined this will put a '\r' before every '\n'
-	 * to mimic unix like line endings
-	 *
+	 * Put a byte on USART. unless USART0_NON_UNIX_LIKE_LINE_ENDINGS is defined.
+	 * This will put a '\r' before every '\n' to mimic unix like line endings.
 	 * @param  c Byte to transmit
 	 * @return   positive if success
 	 */
@@ -224,9 +208,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes a null terminated c-string
-	 * to the USART
-	 *
+	 * Writes a null terminated c-string to the USART.
 	 * @param  str String that is written
 	 * @return     Number of bytes written
 	 */
@@ -242,8 +224,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes an array of bytes with
-	 * the length n
+	 * Writes an array of bytes with the length n.
 	 * @param  n      Number of bytes to write
 	 * @param  array  Array of bytes to be written
 	 * @return        Number of bytes written
@@ -260,11 +241,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes a formatted c string.
-	 * Works like printf is expected to work
-	 * except it uses a static buffer of size
-	 * UART[n]_PRNT_BUFF_SIZE to store the intermediate
-	 * string in.
+	 * Writes a formatted c string. Works like printf is expected to work except
+	 * it uses a static buffer of size UART[n]_PRNT_BUFF_SIZE to store the
+	 * intermediate string in.
 	 */
 	int usart0_printf(const char *str, ...){
 		if(str == NULL) return -1;
@@ -315,13 +294,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 #ifndef NO_USART1_SUPPORT
 
 	/**
-	 * Set up the USART with defaults values
-	 * Enables RX and TX
-	 * 1 stop bit with 8bit char size
-	 * in async normal mode.
-	 * if a zero value baudrate is give
-	 * it will default to 115200
-	 *
+	 * Set up the USART with defaults values.
+	 * Enables RX and TX 1 stop bit with 8bit char size in async normal mode. if
+	 * a zero value baudrate is give it will default to 115200.
 	 * @param baudrate the desired baudrate
 	 */
 	void usart1_init(uint32_t baudrate) {
@@ -371,7 +346,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 
 	#ifndef NO_USART1_BUFFERED_INPUT
 	/**
-	 * Check the input buffer for new data
+	 * Check the input buffer for new data.
 	 * @return  true if it as data. Else false
 	 */
 	bool usart1_hasData(void){
@@ -380,11 +355,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	#endif
 
 	/**
-	 * get a byte from USART. This
-	 * call is alway blocking. if input buffer
-	 * is enabled use usart[N]_hasData() to check
-	 * if data is available
-	 *
+	 * Get a byte from USART. This call is alway blocking. if input buffer is
+	 * enabled use usart[N]_hasData() to check if data is available.
 	 * @return  received byte
 	 */
 	uint8_t usart1_getc(void) {
@@ -399,11 +371,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Put a byte on USART. unless
-	 * USART1_NON_UNIX_LIKE_LINE_ENDINGS is
-	 * defined this will put a '\r' before every '\n'
-	 * to mimic unix like line endings
-	 *
+	 * Put a byte on USART. unless USART1_NON_UNIX_LIKE_LINE_ENDINGS is defined
+	 * this will put a '\r' before every '\n' to mimic unix like line endings.
 	 * @param  c Byte to transmit
 	 * @return   positive if success
 	 */
@@ -427,9 +396,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes a null terminated c-string
-	 * to the USART
-	 *
+	 * Writes a null terminated c-string to the USART.
 	 * @param  str String that is written
 	 * @return     Number of bytes written
 	 */
@@ -445,8 +412,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes an array of bytes with
-	 * the length n
+	 * Writes an array of bytes with the length n.
 	 * @param  n      Number of bytes to write
 	 * @param  array  Array of bytes to be written
 	 * @return        Number of bytes written
@@ -463,11 +429,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	}
 
 	/**
-	 * Writes a formatted c string.
-	 * Works like printf is expected to work
-	 * except it uses a static buffer of size
-	 * UART[n]_PRNT_BUFF_SIZE to store the intermediate
-	 * string in.
+	 * Writes a formatted c string. Works like printf is expected to work except
+	 * it uses a static buffer of size UART[n]_PRNT_BUFF_SIZE to store the
+	 * intermediate string in.
 	 */
 	int usart1_printf(const char *str, ...){
 		if(str == NULL) return -1;
