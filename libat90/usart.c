@@ -388,7 +388,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 		// Wait for free space in buffer
 		while (rb_isFull(&usart1_outBuff));
 		rb_push(&usart1_outBuff, c);
-		USART1_ENABLE_UDRE_INTERRUPT_FLAG();
+		USART1_RAISE_UDRE_INTERRUPT_FLAG();
 	#endif
 
 		return c;
