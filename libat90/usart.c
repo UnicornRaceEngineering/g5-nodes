@@ -52,13 +52,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef NO_USART0_SUPPORT
 	#ifndef NO_USART0_BUFFERED_INPUT
- 		#warning Untested may cause same problem as buffered output
 		#include "ringbuffer.h"
 		static ringbuffer_t usart0_inBuff = {{0}}; //!< @todo should this be volatile?
 	#endif
 
 	#ifndef NO_USART0_BUFFERED_OUTPUT
-		#warning This seems to crash the board. See issue #2
 		#include "ringbuffer.h"
 		static ringbuffer_t usart0_outBuff = {{0}}; //!< @todo should this be volatile?
 	#endif
@@ -66,13 +64,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef NO_USART1_SUPPORT
 	#ifndef NO_USART1_BUFFERED_INPUT
-		#warning Untested may cause same problem as buffered output
 		#include "ringbuffer.h"
 		static ringbuffer_t usart1_inBuff = {{0}}; //!< @todo should this be volatile?
 	#endif
 
 	#ifndef NO_USART1_BUFFERED_OUTPUT
-		#warning This seems to crash the board. See issue #2
 		#include "ringbuffer.h"
 		static ringbuffer_t usart1_outBuff = {{0}}; //!< @todo should this be volatile?
 	#endif
@@ -114,7 +110,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	 */
 	void usart0_init(uint32_t baudrate) {
 		if (baudrate == 0) {
-			baudrate = 115200;
+			baudrate = 115200; // default baudrate
 		}
 
 	#ifndef NO_USART0_BUFFERED_INPUT
@@ -125,6 +121,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	#ifndef NO_USART0_BUFFERED_OUTPUT
 		rb_init(&usart0_outBuff);
 		USART0_ENABLE_TX_INTERRUPT();
+		USART0_ENABLE_UDRE_INTERRUPT();
 	#endif
 
 		//Enable TXen og RXen
@@ -200,8 +197,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 		UDR0 = c;
 	#else
 		// Wait for free space in buffer
-		while (rb_push(&usart0_outBuff, c) != 0);
-		USART0_ENABLE_DATA_REG_EMPTY_INTERRUPT();
+		while (rb_isFull(&usart0_outBuff));
+		rb_push(&usart0_outBuff, c);
+		USART0_RAISE_UDRE_INTERRUPT_FLAG();
 	#endif
 
 		return c;
@@ -282,8 +280,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 		if(rb_pop(&usart0_outBuff, &data) == 0) {
 			UDR0 = data;
 		} else {
-			// output buffer is empty so disable UDRE interrupt
-			USART0_DISABLE_DATA_REG_EMPTY_INTERRUPT();
+			// output buffer is empty so disable UDRE interrupt flag
+			USART0_LOWER_UDRE_INTERRUPT_FLAG();
 		}
 	}
 	#endif
@@ -312,7 +310,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 	#ifndef NO_USART1_BUFFERED_OUTPUT
 		rb_init(&usart1_outBuff);
 		USART1_ENABLE_TX_INTERRUPT();
-		//USART1_DISABLE_DATA_REG_EMPTY_INTERRUPT();
+		USART1_ENABLE_UDRE_INTERRUPT();
 	#endif
 
 		//Enable TXen og RXen
@@ -388,8 +386,9 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 		UDR1 = c;
 	#else
 		// Wait for free space in buffer
-		while (rb_push(&usart1_outBuff, c) != 0);
-		USART1_ENABLE_DATA_REG_EMPTY_INTERRUPT();
+		while (rb_isFull(&usart1_outBuff));
+		rb_push(&usart1_outBuff, c);
+		USART1_ENABLE_UDRE_INTERRUPT_FLAG();
 	#endif
 
 		return c;
@@ -470,8 +469,8 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operati
 		if(rb_pop(&usart1_outBuff, &data) == 0) {
 			UDR1 = data;
 		} else {
-			// output buffer is empty so disable UDRE interrupt
-			USART1_DISABLE_DATA_REG_EMPTY_INTERRUPT();
+			// output buffer is empty so disable UDRE interrupt flag
+			USART1_LOWER_UDRE_INTERRUPT_FLAG();
 		}
 	}
 	#endif

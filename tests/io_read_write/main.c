@@ -58,7 +58,7 @@ int main(void) {
 	int i = 0;
 	while(1){
 		// Main work loop
-		_delay_ms(250*4); // 1 second
+		_delay_ms(250); // 1 second
 
 		DIGITAL_TOGGLE(PORTF, i); // This expands to 6 instruktions
 
@@ -67,7 +67,8 @@ int main(void) {
 			int pinVal = DIGITAL_READ(PORTF, pin);
 			usart1_printf("pin %d is logical %d\n", pin, pinVal);
 		}
-		usart1_putc('\n');
+		usart1_printf("\n");
+		//usart1_putc('\n');
 
 		if(++i == NUM_PINS){
 			i = 0;
