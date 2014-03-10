@@ -31,7 +31,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
-//#include "can_std/can_lib.h"
 #include "bitwise.h"
 #include "can.h"
 
@@ -42,10 +41,9 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 	canit_callback[interrupt] = callback;
 }
 
-int can_setup(can_msg_t *msg){
+int can_setup(can_msg_t *msg) {
 	CAN_SET_MOB(msg->mob); // Move CANPAGE point the the given mob
-
-	switch(msg->mode){
+	switch(msg->mode) {
 		case MOB_DISABLED:
 			MOB_ABORT();
 			break;
@@ -65,10 +63,10 @@ int can_setup(can_msg_t *msg){
 		case MOB_FRAME_BUFF_RECEIVE:
 			break;
 		default:
-			return 1;  // Error
+			return 1;
 			break;
 	}
-	return 0; // Success;
+	return 0;
 }
 
 /**
@@ -78,13 +76,12 @@ int can_setup(can_msg_t *msg){
 *	sending and receiving to not mess up message
 *	handling.
 */
-
 int can_receive(can_msg_t *msg){
 
 	//!< @todo The CANSTMOB is checked already in ISR. Does it make sense to clear interrupt status?
 	if ( !((CANSTMOB == MOB_RX_COMPLETED_DLCW) || (CANSTMOB == MOB_RX_COMPLETED)) ) {
 		MOB_CLEAR_INT_STATUS();
-		return 2; // Error
+		return 2;
 	}
 
 	/**
@@ -98,21 +95,16 @@ int can_receive(can_msg_t *msg){
 	MOB_RX_DATA(msg->data, msg->dlc);	// Fill in the msg data
 	MOB_CLEAR_INT_STATUS(); 	// and reset MOb status
 	MOB_EN_RX(); 				// re-enable reception. We keep listning for this msg
-
-	return 0; // success
+	return 0;
 }
 
-int can_send(can_msg_t *msg){
+int can_send(can_msg_t *msg) {
 	CAN_SET_MOB(msg->mob);
-
 	MOB_SET_STD_ID(msg->id);
 	MOB_SET_DLC(msg->dlc); // Set the expected payload length
 	MOB_TX_DATA(msg->data, msg->dlc);
 	Can_config_tx();
-	//MOB_CONFIG_TX();
 	CAN_ENABLE_MOB_INTERRUPT(msg->mob);
-
-
 	return CANSTMOB;
 }
 
