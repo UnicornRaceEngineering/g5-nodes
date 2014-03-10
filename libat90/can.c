@@ -80,19 +80,6 @@ int can_setup(can_msg_t *msg){
 */
 
 int can_receive(can_msg_t *msg){
-	/**
-	* @todo
-	*	This if statement can be omitted.
-	*	It checks whether there has been
-	*	a interrupt on the mob,
-	*	which is checked first thing in the ISR.
-	*/
-	if ( !MOB_HAS_PENDING_INT(msg->mob) ){
-		return 1; // Error no pending interrupt
-	}
-
-	//!< @todo This is also done in ISR already.
-	CAN_SET_MOB(msg->mob);
 
 	//!< @todo The CANSTMOB is checked already in ISR. Does it make sense to clear interrupt status?
 	if ( !((CANSTMOB == MOB_RX_COMPLETED_DLCW) || (CANSTMOB == MOB_RX_COMPLETED)) ) {
@@ -107,16 +94,8 @@ int can_receive(can_msg_t *msg){
 	*	But what about when it is different from
 	*	what we expect?
 	*/
-	// Fill the msg with received data
-	//MOB_SET_STD_ID(msg->id); 			// Fill in the msg id
 	msg->dlc = MOB_GET_DLC(); 			// Fill in the msg dlc
 	MOB_RX_DATA(msg->data, msg->dlc);	// Fill in the msg data
-
-	/**
-	* @todo
-	*	I don't remember how exactly this works
-	*	which means we need better documentation where these are defined.
-	*/
 	MOB_CLEAR_INT_STATUS(); 	// and reset MOb status
 	MOB_EN_RX(); 				// re-enable reception. We keep listning for this msg
 
