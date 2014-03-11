@@ -60,6 +60,11 @@ typedef void (*canit_callback_t)(uint8_t mob);
 typedef void (*ovrit_callback_t)(void);
 
 //_____ D E F I N I T I O N S __________________________________________________
+#define CAN_RESET()       ( CANGCON  =  (1<<SWRES) )
+#define CAN_ENABLE()      ( CANGCON |=  (1<<ENASTB))
+#define CAN_DISABLE()     ( CANGCON &= ~(1<<ENASTB))
+#define CAN_FULL_ABORT()  { CANGCON |=  (1<<ABRQ); CANGCON &= ~(1<<ABRQ); }
+
 //#define MASK_FULL_FILTERING	( (uint16_t){UINT16_MAX}	) //!< Only listen for the specified ID @todo are we sure this should not be uint32_t instead?
 //#define MASK_NO_FILTERING	( (uint16_t){0} 			) //!< Listen for all ID's (Eg. a spy node)
 #define NB_CANIT_CB	(9) //!< Number of canit callbacks.
@@ -263,5 +268,6 @@ uint8_t can_init(uint8_t mode);
 int can_setup(can_msg_t *msg);
 int can_receive(can_msg_t *msg);
 int can_send(can_msg_t *msg);
+void can_clear_all_mob(void);
 
 #endif /* CAN_H */

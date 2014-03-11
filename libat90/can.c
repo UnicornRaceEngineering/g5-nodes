@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
+//#include "can_std/can_drv.h"
 #include "bitwise.h"
 #include "can.h"
 
@@ -64,9 +65,9 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 
 uint8_t can_init(uint8_t mode)
 {
-	if ((Can_bit_timing(mode))==0) return (0);  // c.f. macro in "can_drv.h"
+	//if ((Can_bit_timing(mode))==0) return (0);  // c.f. macro in "can_drv.h"
 	can_clear_all_mob();                        // c.f. function in "can_drv.c"
-	Can_enable();                               // c.f. macro in "can_drv.h" 
+	CAN_ENABLE();                               // c.f. macro in "can_drv.h" 
 	return (1);
 }
 
@@ -112,6 +113,39 @@ int can_send(can_msg_t *msg) {
 	MOB_EN_TX();
 	CAN_ENABLE_MOB_INTERRUPT(msg->mob);
 	return CANSTMOB;
+}
+
+//------------------------------------------------------------------------------
+//  @fn can_clear_all_mob
+//!
+//! This function clears the Mailbox content.
+//! It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
+//! MOb[0] upto MOb[LAST_MOB_NB].
+//!
+//! @warning: This version doesn't clears the data FIFO
+//!
+//! @param none
+//!
+//! @return none
+//------------------------------------------------------------------------------
+void can_clear_all_mob(void)
+{
+	uint8_t mob_number;
+	/*
+	uint8_t  data_index;
+	*/
+
+	for (mob_number = 0; mob_number < NB_MOB; mob_number++)
+	{
+		CANPAGE = (mob_number << 4);    //! Page index
+		MOB_CLEAR_STATUS();                //! All MOb Registers=0
+		/*
+		for (data_index = 0; data_index < NB_DATA_MAX; data_index++)
+		{
+		    CANMSG = 0;                 //! MOb data FIFO
+		}
+		*/
+	}
 }
 
 /*
