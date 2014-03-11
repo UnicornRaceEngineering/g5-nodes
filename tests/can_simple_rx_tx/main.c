@@ -26,7 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <can.h>
 #include <usart.h>
-
+#include <bitwise.h>
 
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
@@ -67,6 +67,7 @@ int main(void) {
 		// Main work loop
 		_delay_ms(250);
 
+#if 1
 		// send a message with id 4 on MOB 10
 		can_msg_t tx_msg = {
 			.mob = 10,
@@ -82,6 +83,7 @@ int main(void) {
 		// As tx_msg.data is a byte array we cant treat it as a string
 		usart1_putn(sizeof(tx_msg.data)/sizeof(tx_msg.data[0]), tx_msg.data);
 		usart1_putc('\n');
+#endif
 	}
 
     return 0;
@@ -94,10 +96,38 @@ static void rx_complete(uint8_t mob) {
 	};
 	can_receive(&msg); // Fetch the message and fill out the msg struct
 
+#if 1
 	// Print out the received data. Please dont print inside can callbacks
 	// in real code as these are run inside the can ISR
 	usart1_printf("CAN Rx\t id: %d on mob %d :: ", msg.id, msg.mob);
 	usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
+#endif
+
+#if 0
+	// Print data from GPSNode. You might want to insert a delay in the GPS node
+	// or we might not pick up the second msg with the longitude data as we are
+	// busy printing the latitude data.
+	if (msg.data[0] == 1) {
+		char lat_dir = msg.data[1];
+		int lat_deg = MERGE_BYTE(msg.data[2], msg.data[3]);
+		int lat_min = msg.data[4];
+		int lat_sec = msg.data[5];
+		int valid = msg.data[6];
+		usart1_printf("Validity: %d\n", valid);
+		usart1_printf("lat: %c %d %d' %d\"\n", lat_dir, lat_deg, lat_min, lat_sec);
+	} else if(msg.data[0] == 2) {
+		char lon_dir = msg.data[1];
+		int lon_deg = MERGE_BYTE(msg.data[2], msg.data[3]);
+		int lon_min = msg.data[4];
+		int lon_sec = msg.data[5];
+		int speed =  MERGE_BYTE(msg.data[6], msg.data[7]);
+		usart1_printf("lon: %c %d %d' %d\"\n", lon_dir, lon_deg, lon_min, lon_sec);
+		usart1_printf("Speed = %d\n", speed);
+	} else {
+		usart1_printf("ERROR: data[0] = %d\n", msg.data[0]);
+	}
+	usart1_printf("double: %d float: %d\n", sizeof(double), sizeof(float));
+#endif
 }
 
 static void tx_complete(uint8_t mob) {
