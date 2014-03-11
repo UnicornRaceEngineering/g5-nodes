@@ -248,14 +248,6 @@ typedef struct can_msg_t {
 #define MOB_EN_FRM_BUFF_RX()	( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK) 					) //!< Enable MOB Frame Buffer Reception
 //!< @} ----------
 
-
-#define MOB_CONFIG_TX()					{	MOB_ABORT(); \
-											BITMASK_SET(CANCDMOB, MOB_Tx_ENA);	}
-#define MOB_CONFIG_RX()					{	MOB_ABORT(); \
-											BITMASK_SET(CANCDMOB, MOB_Rx_ENA);	}
-#define MOB_CONFIG_RX_BUFFER()			(	BITMASK_SET(CANCDMOB, MOB_Rx_BENA)	)
-//----------
-
 // ------------ Old wrappers
 #define CAN_INIT()		( can_init(0) )
 #define CAN_INIT_ALL()	{ CAN_INIT(); CAN_SEI(); CAN_SET_RX_INT(); CAN_SET_TX_INT();}
