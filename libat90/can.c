@@ -44,53 +44,30 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 int can_setup(can_msg_t *msg) {
 	CAN_SET_MOB(msg->mob); // Move CANPAGE point the the given mob
 	switch(msg->mode) {
-		case MOB_DISABLED:
-			MOB_ABORT();
-			break;
-		case MOB_TRANSMIT:
-
-			break;
-		case MOB_RECIEVE:
-			MOB_SET_STD_ID(msg->id);
-			MOB_SET_STD_FILTER_FULL();
-			//MOB_CONFIG_RX(); // OSBS!! we are configuring specifically for mode MOB_RECIEVE
-			Can_config_rx();
-			//CAN_ENABLE_MOB_INTERRUPT(msg->mob);
-			Can_set_mob_int(msg->mob);
-			break;
-		case MOB_AUTOMATIC_REPLY:
-			break;
-		case MOB_FRAME_BUFF_RECEIVE:
-			break;
-		default:
-			return 1;
-			break;
+	case MOB_DISABLED:
+		MOB_ABORT();
+		break;
+	case MOB_TRANSMIT:
+		break;
+	case MOB_RECIEVE:
+		MOB_SET_STD_ID(msg->id);
+		MOB_SET_STD_FILTER_FULL();
+		MOB_SET_DLC(msg->dlc); // Set the expected payload length
+		MOB_EN_RX();
+		CAN_ENABLE_MOB_INTERRUPT(msg->mob);
+		break;
+	case MOB_AUTOMATIC_REPLY:
+		break;
+	case MOB_FRAME_BUFF_RECEIVE:
+		break;
+	default:
+		return 1;
+		break;
 	}
 	return 0;
 }
 
-/**
-* @todo
-*	We should consider whether it's necessary
-*	to should disable can interrupts during
-*	sending and receiving to not mess up message
-*	handling.
-*/
-int can_receive(can_msg_t *msg){
-
-	//!< @todo The CANSTMOB is checked already in ISR. Does it make sense to clear interrupt status?
-	if ( !((CANSTMOB == MOB_RX_COMPLETED_DLCW) || (CANSTMOB == MOB_RX_COMPLETED)) ) {
-		MOB_CLEAR_INT_STATUS();
-		return 2;
-	}
-
-	/**
-	* @todo
-	*	This works well enough when we know length
-	*	of the message.
-	*	But what about when it is different from
-	*	what we expect?
-	*/
+int can_receive(can_msg_t *msg) {
 	msg->dlc = MOB_GET_DLC(); 			// Fill in the msg dlc
 	MOB_RX_DATA(msg->data, msg->dlc);	// Fill in the msg data
 	MOB_CLEAR_INT_STATUS(); 	// and reset MOb status
@@ -103,7 +80,7 @@ int can_send(can_msg_t *msg) {
 	MOB_SET_STD_ID(msg->id);
 	MOB_SET_DLC(msg->dlc); // Set the expected payload length
 	MOB_TX_DATA(msg->data, msg->dlc);
-	Can_config_tx();
+	MOB_EN_TX();
 	CAN_ENABLE_MOB_INTERRUPT(msg->mob);
 	return CANSTMOB;
 }
