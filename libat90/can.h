@@ -253,15 +253,6 @@ typedef struct can_msg_t {
 #define CAN_INIT_ALL()	{ CAN_INIT(); CAN_SEI(); CAN_SET_RX_INT(); CAN_SET_TX_INT();}
 #define CAN_INIT_RX()	{ CAN_INIT(); CAN_SEI(); CAN_SET_RX_INT(); 					}
 #define CAN_INIT_TX()	{ CAN_INIT(); CAN_SEI(); CAN_SET_TX_INT(); 					}
-
-#define Can_config_tx()        { MOB_ABORT(); CANCDMOB |= (1 << CONMOB0); }
-#define Can_config_rx()        { MOB_ABORT(); CANCDMOB |= (2 << CONMOB0); }
-#define Can_config_rx_buffer() {              CANCDMOB |= (3 << CONMOB0); }
-
-#define Can_set_mob_int(mob)	{ CANIE2 |= ((1<<mob) & 0xff); \
-				  CANIE1 |= (((1<<mob)>>8) & 0x7f); }
-#define Can_unset_mob_int(mob)	{ CANIE2 &= !((1<<mob) & 0xff); \
-				  CANIE1 &= !(((1<<mob)>>8) & 0x7f); }
 // ------------- End old wrappers
 
 
