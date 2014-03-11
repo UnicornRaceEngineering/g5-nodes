@@ -259,6 +259,7 @@ typedef struct can_msg_t {
 //_____ D E C L A R A T I O N S ________________________________________________
 
 void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback);
+uint8_t can_init(uint8_t mode);
 int can_setup(can_msg_t *msg);
 int can_receive(can_msg_t *msg);
 int can_send(can_msg_t *msg);

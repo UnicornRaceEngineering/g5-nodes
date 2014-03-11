@@ -41,6 +41,35 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 	canit_callback[interrupt] = callback;
 }
 
+/**
+* @fn can_init
+*
+* @brief
+*	CAN macro initialization. Reset the CAN peripheral, initialize the bit
+*	timing, initialize all the registers mapped in SRAM to put MObs in
+*	inactive state and enable the CAN macro.
+*
+* @warning The CAN macro will be enable after seen on CAN bus a receceive
+*	level as long as of an inter frame (hardware feature).
+*
+* @param  Mode (for "can_fixed_baudrate" param not used)
+*	==0: start CAN bit timing evaluation from faster baudrate
+*	==1: start CAN bit timing evaluation with CANBTx registers
+* contents
+*
+* @return Baudrate Status
+*	==0: research of bit timing configuration failed
+*	==1: baudrate performed 
+*/
+
+uint8_t can_init(uint8_t mode)
+{
+	if ((Can_bit_timing(mode))==0) return (0);  // c.f. macro in "can_drv.h"
+	can_clear_all_mob();                        // c.f. function in "can_drv.c"
+	Can_enable();                               // c.f. macro in "can_drv.h" 
+	return (1);
+}
+
 int can_setup(can_msg_t *msg) {
 	CAN_SET_MOB(msg->mob); // Move CANPAGE point the the given mob
 	switch(msg->mode) {
