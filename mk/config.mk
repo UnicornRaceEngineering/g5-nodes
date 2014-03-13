@@ -11,7 +11,10 @@ MCU=at90can128
 # avrdude requires 'm8')
 PROGRAMMER_MCU=c128
 
-DEFINES=-DF_CPU=11059200  -DCAN_BAUDRATE=250
+F_CPU=11059200
+CAN_BAUDRATE=250
+
+DEFINES=-DF_CPU=$(F_CPU) -DCAN_BAUDRATE=$(CAN_BAUDRATE)
 
 # Source files
 # List C/C++/Assembly source files:
