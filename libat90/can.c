@@ -24,14 +24,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
 * @file can.c
 * @brief
-*	Used for setting up the CAN subsystem
-*	and sending or receiving via the CAN
+*   Used for setting up the CAN subsystem
+*   and sending or receiving via the CAN
 */
 
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
-//#include "can_std/can_drv.h"
 #include "bitwise.h"
 #include "can.h"
 
@@ -46,29 +45,38 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 * @fn can_init
 *
 * @brief
-*	CAN macro initialization. Reset the CAN peripheral, initialize the bit
-*	timing, initialize all the registers mapped in SRAM to put MObs in
-*	inactive state and enable the CAN macro.
+*   CAN macro initialization. Reset the CAN peripheral, initialize the bit
+*   timing, initialize all the registers mapped in SRAM to put MObs in
+*   inactive state and enable the CAN macro.
 *
 * @warning The CAN macro will be enable after seen on CAN bus a receceive
-*	level as long as of an inter frame (hardware feature).
+*   level as long as of an inter frame (hardware feature).
 *
 * @param  Mode (for "can_fixed_baudrate" param not used)
-*	==0: start CAN bit timing evaluation from faster baudrate
-*	==1: start CAN bit timing evaluation with CANBTx registers
+*   ==0: start CAN bit timing evaluation from faster baudrate
+*   ==1: start CAN bit timing evaluation with CANBTx registers
 * contents
 *
 * @return Baudrate Status
-*	==0: research of bit timing configuration failed
-*	==1: baudrate performed 
+*   ==0: research of bit timing configuration failed
+*   ==1: baudrate performed
 */
 
-uint8_t can_init(uint8_t mode)
-{
-	//if ((Can_bit_timing(mode))==0) return (0);  // c.f. macro in "can_drv.h"
-	can_clear_all_mob();                        // c.f. function in "can_drv.c"
-	CAN_ENABLE();                               // c.f. macro in "can_drv.h" 
-	return (1);
+uint8_t can_init(void) {
+	uint8_t mob_number;
+
+	CAN_RESET();
+	CAN_CONF_CANBT();
+
+	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
+	// MOb[0] upto MOb[LAST_MOB_NB].
+	for (mob_number = 0; mob_number < NB_MOB; mob_number++) {
+		CANPAGE = (mob_number << 4);	// Page index
+		MOB_CLEAR_STATUS();				// All MOb Registers=0
+	}
+
+	CAN_ENABLE();
+	return (0);
 }
 
 int can_setup(can_msg_t *msg) {
@@ -98,10 +106,10 @@ int can_setup(can_msg_t *msg) {
 }
 
 int can_receive(can_msg_t *msg) {
-	msg->dlc = MOB_GET_DLC(); 			// Fill in the msg dlc
-	MOB_RX_DATA(msg->data, msg->dlc);	// Fill in the msg data
-	MOB_CLEAR_INT_STATUS(); 	// and reset MOb status
-	MOB_EN_RX(); 				// re-enable reception. We keep listning for this msg
+	msg->dlc = MOB_GET_DLC();           // Fill in the msg dlc
+	MOB_RX_DATA(msg->data, msg->dlc);   // Fill in the msg data
+	MOB_CLEAR_INT_STATUS();     // and reset MOb status
+	MOB_EN_RX();                // re-enable reception. We keep listning for this msg
 	return 0;
 }
 
@@ -115,50 +123,17 @@ int can_send(can_msg_t *msg) {
 	return CANSTMOB;
 }
 
-//------------------------------------------------------------------------------
-//  @fn can_clear_all_mob
-//!
-//! This function clears the Mailbox content.
-//! It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
-//! MOb[0] upto MOb[LAST_MOB_NB].
-//!
-//! @warning: This version doesn't clears the data FIFO
-//!
-//! @param none
-//!
-//! @return none
-//------------------------------------------------------------------------------
-void can_clear_all_mob(void)
-{
-	uint8_t mob_number;
-	/*
-	uint8_t  data_index;
-	*/
-
-	for (mob_number = 0; mob_number < NB_MOB; mob_number++)
-	{
-		CANPAGE = (mob_number << 4);    //! Page index
-		MOB_CLEAR_STATUS();                //! All MOb Registers=0
-		/*
-		for (data_index = 0; data_index < NB_DATA_MAX; data_index++)
-		{
-		    CANMSG = 0;                 //! MOb data FIFO
-		}
-		*/
-	}
-}
-
 /*
  * The Can_clear_mob() function clears the following registers:
- * CANSTMOB 			-- Contains interrupt status
- * CANCDMOB 			-- Defines MOB mode and msg length
- * CANIDT1 ... CANIDT4	-- CAN Identifier Tag Registers
- * CANIDM1 ... CANIDT4	-- CAN Identifier Mask Registers
+ * CANSTMOB             -- Contains interrupt status
+ * CANCDMOB             -- Defines MOB mode and msg length
+ * CANIDT1 ... CANIDT4  -- CAN Identifier Tag Registers
+ * CANIDM1 ... CANIDT4  -- CAN Identifier Mask Registers
  */
-	//Can_clear_rtr();							/* no remote transmission request */
-	//Can_set_rtrmsk();							/* Remote Transmission Request - comparison true forced */
-	//Can_set_idemsk();							/* Identifier Extension - comparison true forced */
-	//clear_mob_status(mob);					/* Described above */
+	//Can_clear_rtr();                          /* no remote transmission request */
+	//Can_set_rtrmsk();                         /* Remote Transmission Request - comparison true forced */
+	//Can_set_idemsk();                         /* Identifier Extension - comparison true forced */
+	//clear_mob_status(mob);                    /* Described above */
 
 ISR (CANIT_vect) {
 	uint8_t mob;
