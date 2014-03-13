@@ -22,9 +22,8 @@ DEFINES=-DF_CPU=$(F_CPU) -DCAN_BAUDRATE=$(CAN_BAUDRATE)
 # Use .cc, .cpp or .C suffix for C++ files, use .S
 # (NOT .s !!!) for assembly source code files.
 LIB_AT90_DIR=$(TOP)/libat90
-LIB_AT90=$(wildcard $(LIB_AT90_DIR)/*.c) \
-	$(LIB_AT90_DIR)/can_std/can_drv.c \
-	$(LIB_AT90_DIR)/can_std/can_lib.c
+LIB_AT90=$(wildcard $(LIB_AT90_DIR)/*.c)
+	#$(LIB_AT90_DIR)/can_std/can_drv.c
 
 PRJSRC=$(SRC) $(LIB_AT90)
 
