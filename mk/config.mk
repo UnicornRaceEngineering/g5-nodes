@@ -11,10 +11,14 @@ MCU=at90can128
 # avrdude requires 'm8')
 PROGRAMMER_MCU=c128
 
+DATE=$(shell TZ=UTC date)
+
 F_CPU=11059200
 CAN_BAUDRATE=250
 
 DEFINES=-DF_CPU=$(F_CPU) -DCAN_BAUDRATE=$(CAN_BAUDRATE)
+
+BUILD_INFO=$(PROJECTNAME) Build $(DATE) With the following settings:\n$(DEFINES)
 
 # Source files
 # List C/C++/Assembly source files:
