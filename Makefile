@@ -1,8 +1,8 @@
 SHELL=/bin/sh
 MAKE=make
 
-NODES=TemplateNode
-SUBDIRS=$(NODES) tests
+NODES=TemplateNode GPSNode
+SUBDIRS=$(NODES) examples
 
 all:
 	@for i in $(SUBDIRS); do \

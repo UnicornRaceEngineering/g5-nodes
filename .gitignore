@@ -27,3 +27,6 @@
 Thumbs.db
 thumbs.db
 
+# Sublime Text
+*.sublime-project
+*.sublime-workspace

@@ -24,14 +24,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
 * @file can.c
 * @brief
-*	Used for setting up the CAN subsystem
-*	and sending or receiving via the CAN
+*   Used for setting up the CAN subsystem
+*   and sending or receiving via the CAN
 */
 
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
-//#include "can_std/can_lib.h"
 #include "bitwise.h"
 #include "can.h"
 
@@ -42,112 +41,99 @@ void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
 	canit_callback[interrupt] = callback;
 }
 
-int can_setup(can_msg_t *msg){
-	CAN_SET_MOB(msg->mob); // Move CANPAGE point the the given mob
-
-	switch(msg->mode){
-		case MOB_DISABLED:
-			MOB_ABORT();
-			break;
-		case MOB_TRANSMIT:
-
-			break;
-		case MOB_RECIEVE:
-			MOB_SET_STD_ID(msg->id);
-			MOB_SET_STD_FILTER_FULL();
-			//MOB_CONFIG_RX(); // OSBS!! we are configuring specifically for mode MOB_RECIEVE
-			Can_config_rx();
-			//CAN_ENABLE_MOB_INTERRUPT(msg->mob);
-			Can_set_mob_int(msg->mob);
-			break;
-		case MOB_AUTOMATIC_REPLY:
-			break;
-		case MOB_FRAME_BUFF_RECEIVE:
-			break;
-		default:
-			return 1;  // Error
-			break;
-	}
-	return 0; // Success;
-}
-
 /**
-* @todo
-*	We should consider whether it's necessary
-*	to should disable can interrupts during
-*	sending and receiving to not mess up message
-*	handling.
+* @fn can_init
+*
+* @brief
+*   CAN macro initialization. Reset the CAN peripheral, initialize the bit
+*   timing, initialize all the registers mapped in SRAM to put MObs in
+*   inactive state and enable the CAN macro.
+*
+* @warning The CAN macro will be enable after seen on CAN bus a receceive
+*   level as long as of an inter frame (hardware feature).
+*
+* @param  Mode (for "can_fixed_baudrate" param not used)
+*   ==0: start CAN bit timing evaluation from faster baudrate
+*   ==1: start CAN bit timing evaluation with CANBTx registers
+* contents
+*
+* @return Baudrate Status
+*   ==0: research of bit timing configuration failed
+*   ==1: baudrate performed
 */
 
-int can_receive(can_msg_t *msg){
-	/**
-	* @todo
-	*	This if statement can be omitted.
-	*	It checks whether there has been
-	*	a interrupt on the mob,
-	*	which is checked first thing in the ISR.
-	*/
-	if ( !MOB_HAS_PENDING_INT(msg->mob) ){
-		return 1; // Error no pending interrupt
+uint8_t can_init(void) {
+	uint8_t mob_number;
+
+	CAN_RESET();
+	CAN_CONF_CANBT();
+
+	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
+	// MOb[0] upto MOb[LAST_MOB_NB].
+	for (mob_number = 0; mob_number < NB_MOB; mob_number++) {
+		CANPAGE = (mob_number << 4);	// Page index
+		MOB_CLEAR_STATUS();				// All MOb Registers=0
 	}
 
-	//!< @todo This is also done in ISR already.
-	CAN_SET_MOB(msg->mob);
-
-	//!< @todo The CANSTMOB is checked already in ISR. Does it make sense to clear interrupt status?
-	if ( !((CANSTMOB == MOB_RX_COMPLETED_DLCW) || (CANSTMOB == MOB_RX_COMPLETED)) ) {
-		MOB_CLEAR_INT_STATUS();
-		return 2; // Error
-	}
-
-	/**
-	* @todo
-	*	This works well enough when we know length
-	*	of the message.
-	*	But what about when it is different from
-	*	what we expect?
-	*/
-	// Fill the msg with received data
-	//MOB_SET_STD_ID(msg->id); 			// Fill in the msg id
-	msg->dlc = MOB_GET_DLC(); 			// Fill in the msg dlc
-	MOB_RX_DATA(msg->data, msg->dlc);	// Fill in the msg data
-
-	/**
-	* @todo
-	*	I don't remember how exactly this works
-	*	which means we need better documentation where these are defined.
-	*/
-	MOB_CLEAR_INT_STATUS(); 	// and reset MOb status
-	MOB_EN_RX(); 				// re-enable reception. We keep listning for this msg
-
-	return 0; // success
+	CAN_ENABLE();
+	return (0);
 }
 
-int can_send(can_msg_t *msg){
-	CAN_SET_MOB(msg->mob);
+int can_setup(can_msg_t *msg) {
+	CAN_SET_MOB(msg->mob); // Move CANPAGE point the the given mob
+	switch(msg->mode) {
+	case MOB_DISABLED:
+		MOB_ABORT();
+		break;
+	case MOB_TRANSMIT:
+		break;
+	case MOB_RECIEVE:
+		MOB_SET_STD_ID(msg->id);
+		MOB_SET_STD_FILTER_FULL();
+		MOB_SET_DLC(msg->dlc); // Set the expected payload length
+		MOB_EN_RX();
+		CAN_ENABLE_MOB_INTERRUPT(msg->mob);
+		break;
+	case MOB_AUTOMATIC_REPLY:
+		break;
+	case MOB_FRAME_BUFF_RECEIVE:
+		break;
+	default:
+		return 1;
+		break;
+	}
+	return 0;
+}
 
+int can_receive(can_msg_t *msg) {
+	msg->dlc = MOB_GET_DLC();           // Fill in the msg dlc
+	MOB_RX_DATA(msg->data, msg->dlc);   // Fill in the msg data
+	MOB_CLEAR_INT_STATUS();     // and reset MOb status
+	MOB_EN_RX();                // re-enable reception. We keep listning for this msg
+	return 0;
+}
+
+int can_send(can_msg_t *msg) {
+	CAN_SET_MOB(msg->mob);
 	MOB_SET_STD_ID(msg->id);
 	MOB_SET_DLC(msg->dlc); // Set the expected payload length
 	MOB_TX_DATA(msg->data, msg->dlc);
-	Can_config_tx();
-	//MOB_CONFIG_TX();
+	MOB_EN_TX();
 	CAN_ENABLE_MOB_INTERRUPT(msg->mob);
-
-
 	return CANSTMOB;
 }
 
 /*
  * The Can_clear_mob() function clears the following registers:
- * CANSTMOB 			-- Contains interrupt status
- * CANCDMOB 			-- Defines MOB mode and msg length
- * CANIDT1 ... CANIDT4	-- CAN Identifier Tag Registers
- * CANIDM1 ... CANIDT4	-- CAN Identifier Mask Registers
+ * CANSTMOB             -- Contains interrupt status
+ * CANCDMOB             -- Defines MOB mode and msg length
+ * CANIDT1 ... CANIDT4  -- CAN Identifier Tag Registers
+ * CANIDM1 ... CANIDT4  -- CAN Identifier Mask Registers
  */
-	//Can_clear_rtr();							/* no remote transmission request */
-	//Can_set_rtrmsk();							/* Remote Transmission Request - comparison true forced */
-	//Can_set_idemsk();							/* Identifier Extension - comparison true forced */
-	//clear_mob_status(mob);					/* Described above */
+	//Can_clear_rtr();                          /* no remote transmission request */
+	//Can_set_rtrmsk();                         /* Remote Transmission Request - comparison true forced */
+	//Can_set_idemsk();                         /* Identifier Extension - comparison true forced */
+	//clear_mob_status(mob);                    /* Described above */
 
 ISR (CANIT_vect) {
 	uint8_t mob;

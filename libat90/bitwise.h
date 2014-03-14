@@ -75,4 +75,26 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define HIGH_BYTE(w) 		( (uint8_t) ((w) >> 8)			) //!< Extracts the high-order (leftmost) byte of a word (or the second lowest byte of a larger data type).
 #define MERGE_BYTE(h, l) 	( (uint16_t)(((h) << 8) | (l)) 	) //!< Merges two 8 bit bytes into one 16 bit byte where h is the High byte and l is the Low byte
 
+/**
+* @fn 
+*	MACRO-FUNCTION Direct_jump_to_zero
+* @brief
+*	Jump at the addresse 0x0000 (not a reset !)
+* @warning: not a reset!
+* @param none
+* @return none
+*/
+#define Direct_jump_to_zero()   { asm ("jmp 0"::); }
+
+/*
+* @fn MACRO-FUNCTION Hard_reset
+* @brief
+*	RESET device with Watchdog Timer.
+* @warning: Watchdog Timer used
+*	Check BOOTRST fuse setting
+* @param none
+* @return none
+*/
+#define Hard_reset()    { WDTCR |= 1<<WDE;  while(1); }
+
 #endif /* BITWISE_H */

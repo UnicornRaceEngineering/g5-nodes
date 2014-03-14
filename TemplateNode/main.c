@@ -45,7 +45,12 @@ int main(void)
 
 	//Initialise the Gear node
 	usart1_init(115200);
-	CAN_INIT_ALL();								//Can setup
+
+	can_init();
+
+	CAN_SEI();
+	CAN_EN_RX_INT();
+	CAN_EN_TX_INT();
 
 	sei();										//Enable interrupt
 
@@ -119,14 +124,14 @@ static void rx_complete(uint8_t mob) {
 	};
 	can_receive(&msg);
 	usart1_printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
-	usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
-	/* The below should be used for binary data
-	int i;
+	usart1_putn(msg.dlc, msg.data);
+	// The below should be used for binary data
+	/* int i;
 	for (i = 0; i < msg.dlc; ++i){
 		uart1_printf("%d ", msg.data[i]);
 		//uart1_printf("0x%02X ", msg.data[i]);
 	} */
-	usart1_putc('\n');
+	usart1_printf("\n\n");
 }
 
 static void tx_complete(uint8_t mob) {
