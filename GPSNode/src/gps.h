@@ -61,7 +61,7 @@ typedef struct gps_coordinate_t {
 	char direction; //!< 'N'/'S' or 'E'/'W'
 	int16_t degrees;
 	uint8_t minutes;
-	uint8_t seconds;
+	double seconds;
 } gps_coordinate_t;
 
 typedef struct gps_fix_t {

@@ -128,8 +128,7 @@ static int from_rmc(sentence_t *s, gps_fix_t *fix) {
 	fix->latitude.degrees = str2uint(&(s->s[lat_pos]), 2);
 	fix->latitude.minutes = str2uint(&(s->s[lat_pos+2]), 2);
 	if (s->s[lat_pos+4] != '.') return 1;
-	fix->latitude.seconds = (uint8_t)round(
-		((double)str2uint(&(s->s[lat_pos+5]), 2) / 100.0) * 60.0);
+	fix->latitude.seconds = (str2uint(&(s->s[lat_pos+5]), 4) / 10000.0) * 60.0;
 	if (s->s[lat_pos+9] != ',') return 1;
 	fix->latitude.direction = s->s[lat_pos+10];
 
@@ -137,8 +136,7 @@ static int from_rmc(sentence_t *s, gps_fix_t *fix) {
 	fix->longitude.degrees = str2uint(&(s->s[lon_pos]), 3);
 	fix->longitude.minutes = str2uint(&(s->s[lon_pos+3]), 2);
 	if (s->s[lon_pos+5] != '.') return 1;
-	fix->longitude.seconds = (uint8_t)round(
-		((double)str2uint(&(s->s[lon_pos+6]), 2) / 100.0) * 60.0);
+	fix->longitude.seconds = (str2uint(&(s->s[lon_pos+6]), 4) / 10000.0) * 60.0;
 	if (s->s[lon_pos+10] != ',') return 1;
 	fix->longitude.direction = s->s[lon_pos+11];
 
