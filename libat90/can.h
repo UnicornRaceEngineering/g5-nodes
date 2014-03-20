@@ -24,10 +24,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
 * @file can.h
 * @brief
-*	Used for setting up the CAN subsystem
-*	and sending or receiving via the CAN.
-*	This header file also contains many
-*	driver functions in the form of macros
+* Used for setting up the CAN subsystem and sending or receiving via the CAN.
+* This header file also contains many driver functions in the form of macros.
 */
 
 #ifndef CAN_H
@@ -206,19 +204,19 @@ enum can_int_t {
 
 	/**
 	* @brief
-	*	The form error results from one or more violations of the fixed
-	*	form in the following bit fields:
-	*	+ CRC delimiter
-	*	+ Acknowledgment delimiter
-	*	+ EOF
+	* The form error results from one or more violations of the fixed form in
+	* the following bit fields:
+	*  + CRC delimiter
+	*  + Acknowledgment delimiter
+	*  + EOF
 	*/
 	CANIT_FORM_ERROR =			4,
 
 	/**
 	* @brief
-	*	The receiver performs a CRC check on every de-stuffed received message
-	*	from the start of frame up to the data field.
-	*	If this checking does not match with the de-stuffed CRC field, a CRC error is set.
+	* The receiver performs a CRC check on every de-stuffed received message
+	* from the start of frame up to the data field. If this checking does not
+	* match with the de-stuffed CRC field, a CRC error is set.
 	*/
 	CANIT_CRC_ERROR =			5,
 	CANIT_STUFF_ERROR =			6, //!< Detection of more than five consecutive bits with same value.
@@ -233,27 +231,27 @@ enum mob_mode_t {
 
 	/**
 	* @brief
-	*	A reply (data frame) to a remote frame can be automatically
-	*	sent after reception of the expected remote frame.
+	* A reply (data frame) to a remote frame can be automatically sent after
+	* reception of the expected remote frame.
 	*/
 	MOB_AUTOMATIC_REPLY,
 
 	/**
 	* @brief
-	*	This mode is useful to receive multi frames. The priority between MObs offers a management for
-	*	these incoming frames. One set MObs (including non-consecutive MObs) is created when the
-	*	MObs are set in this mode. Due to the mode setting, only one set is possible. A frame buffer
-	*	completed flag (or interrupt) - BXOK - will rise only when all the MObs of the set will have
-	*	received their dedicated CAN frame.
+	* This mode is useful to receive multi frames. The priority between MObs
+	* offers a management for these incoming frames. One set MObs (including
+	* non-consecutive MObs) is created when the MObs are set in this mode. Due
+	* to the mode setting, only one set is possible. A frame buffer completed
+	* flag (or interrupt) - BXOK - will rise only when all the MObs of the set
+	* will have received their dedicated CAN frame.
 	*/
 	MOB_FRAME_BUFF_RECEIVE
 };
 
 /**
 * @brief
-*	Different states that CANSTMOB can take.
-*	This is very useful for fx. making a conditional
-*	switch on the given status of the MOB
+* Different states that CANSTMOB can take. This is very useful for fx. making a
+* conditional switch on the given status of the MOB.
 */
 enum mob_status_t {
 	MOB_NOT_COMPLETED 		= ( 0x00 ),													//!< 0x00
@@ -280,57 +278,66 @@ typedef struct can_msg_t {
 
 
 //_____ M A C R O S ____________________________________________________________
-//!< @name MOB Transmit and Receive
-//!< Transmit or receive data on the current MOB
-//!< @{
+
+/**
+ * @name MOB Transmit and Receive
+ * Transmit or receive data on the current MOB
+ * @{
+ */
 #define MOB_TX_DATA(data, len)			{ uint8_t i; \
 											for (i = 0; i < len; i++) \
 												{ CANMSG = data[i]; } } //!< Put data onto the can
 #define MOB_RX_DATA(data, len)			{ uint8_t i; \
 											for (i = 0; i < len; i++) \
 												{ data[i] = CANMSG;} } //!< Get data from the can
-//!< @} ----------
+/** @} */
 
-
-//!< @name CAN status Interrupt register
-//!< @{
+/**
+ * @name CAN status Interrupt register
+ * @{
+ */
 #define CANSIT_16					( CANSIT2 + (CANSIT1 << 8)		) //!< The CANSIT holds information about what mob has fired an interrupt. This combines it into a single 16 bit value.
 #define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT_16, (mob))	) //!< Check if the given mob has a pending interrupt.
-//!< @} ----------
+/** @} */
 
 
 #define CAN_SET_MOB(mob)			( CANPAGE = ((mob) << 4)		) //!< Set the can the the specified MOB
 
-//@name MOB interrupt
-//!< Enable or disable interrupts on the specified MOB
-//!< @{
+/**
+ * @name MOB interrupt
+ * Enable or disable interrupts on the specified MOB
+ * @{
+ */
 #define CAN_ENABLE_MOB_INTERRUPT(mob)	{	CANIE2 |= ((1 << mob) & 0xff); \
 											CANIE1 |= (((1 << mob) >> 8) & 0x7f); }
 
 #define CAN_DISABLE_MOB_INTERRUPT(mob)	{	CANIE2 &= !((1 << mob) & 0xff); \
 											CANIE1 &= !(((1 << mob) >> 8) & 0x7f);}
-//!< @} ----------
+/** @} */
 
-
-//!< @name Can interrupt
-//!< enable the can interrupt
-//!< @{
+/**
+ * @name Can interrupt
+ * enable the can interrupt
+ * @{
+ */
 #define CAN_SEI()			( BIT_SET(CANGIE, ENIT) ) //!< Enable global CAN interrupts
 #define CAN_EN_TX_INT()		( BIT_SET(CANGIE, ENTX) ) //!< Enable CAN Tx interrupts
 #define CAN_EN_RX_INT()		( BIT_SET(CANGIE, ENRX) ) //!< Enable CAN Rx interrupts
-//!< @} ----------
+/** @} */
 
-
-//!< @name Data Length Code
-//!< Getter and setter for the length of data that the given MOB holds
-//!< @{
+/**
+ * @name Data Length Code
+ * Getter and setter for the length of data that the given MOB holds
+ * @{
+ */
 #define MOB_GET_DLC()		( BITMASK_CHECK(CANCDMOB, DLC_MSK) >> DLC0	) //!< Calculates the DLC that is set for the current MOB. @return The DLC sat for the current MOB
 #define MOB_SET_DLC(dlc)	( BITMASK_SET(CANCDMOB, dlc)				) //!< Set the DLC for the current MOB
-//!< @} ----------
+/** @} */
 
-
-//!< @name MOB ID
-//!< @{
+/**
+ * @name MOB ID
+ * @{
+ */
 #define MOB_SET_STD_ID_10_4(id) 		(	((*((uint8_t *)(&(id)) + 1)) << 5) + \
 											((*(uint8_t *)(&(id))) >> 3)			)
 
@@ -348,27 +355,31 @@ typedef struct can_msg_t {
 
 #define MOB_SET_STD_FILTER_NONE()		{	uint32_t __filterMask_ = 0; \
 											MOB_SET_STD_MASK_FILTER(__filterMask_); }
-//!< @} ----------
+/** @} */
 
-
-//!< @name MOB status
-//!< @{
+/**
+ * @name MOB status
+ * @{
+ */
 #define MOB_CLEAR_STATUS()				{   uint8_t  volatile *__i_; \
 											for (__i_ =& CANSTMOB; __i_ < &CANSTML; __i_++) \
 												{ *__i_= 0x00; }					}
 #define MOB_CLEAR_INT_STATUS()			( CANSTMOB = 0x00	) //!< Clears the interrupt status for the current MOB
-//!< @} ----------
+/** @} */
 
-//!< @name Configuration of Message Object
-//!< These bits set the communication to be performed (no initial value after RESET).
-//!< These bits are *NOT* cleared once communication is performed.
-//!< The user must re-write the configuration to enable new communication.
-//!< @{
+/**
+ * @name Configuration of Message Object
+ * These bits set the communication to be performed (no initial value after
+ * RESET).
+ * @note These bits are *NOT* cleared once communication is performed. The user
+ * must re-write the configuration to enable new communication.
+ * @{
+ */
 #define MOB_ABORT()				( BITMASK_CLEAR(CANCDMOB, MOB_CONMOB_MSK)					) //!< Disable MOB
 #define MOB_EN_TX()				{ BIT_CLEAR(CANCDMOB, CONMOB1); BIT_SET(CANCDMOB, CONMOB0);	} //!< Enable MOB Transmission
 #define MOB_EN_RX()				{ BIT_SET(CANCDMOB, CONMOB1); BIT_CLEAR(CANCDMOB, CONMOB0);	} //!< Enable MOB Reception
 #define MOB_EN_FRM_BUFF_RX()	( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK)						) //!< Enable MOB Frame Buffer Reception
-//!< @} ----------
+/** @} */
 
 //Please insert comment !
 #define CAN_INIT_ALL()	{CAN_SEI(); CAN_EN_RX_INT(); CAN_EN_TX_INT();	}
