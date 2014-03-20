@@ -44,9 +44,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h> // size_t
 #include <stdarg.h> // va args
 #include <stdio.h> // vsprintf
-#include <util/delay.h>
-#include <avr/cpufunc.h>
-#include <util/atomic.h>
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
