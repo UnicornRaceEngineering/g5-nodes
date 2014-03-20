@@ -63,7 +63,8 @@ enum io_pinmode_t {
 //!< @{
 #define DIGITAL_READ(port, pin)			( BIT_CHECK((PIN_PORT(port)), (pin)) != 0 ? HIGH : LOW 			) //!< Same as digitalRead
 #define DIGITAL_WRITE(port, pin, value)	( BITMASK_SET_OR_CLEAR((port), (1 << (pin)), (value)) 			) //!< Same as digitalWrite. Use only if value is run time dependent
-#define DIGITAL_TOGGLE(port, pin)		( DIGITAL_WRITE((port), (pin), !DIGITAL_READ((port), (pin))) 	) //!< Toggles a pin
+#define DIGITAL_TOGGLE(port, pin)		( BIT_FLIP((port), (pin)) 										) //!< Toggle a pin
+#define DIGITAL_INVERT(port, pin)		( DIGITAL_WRITE((port), (pin), !DIGITAL_READ((port), (pin))) 	) //!< Inverts the value on a given pin. Essentially the same as @ref DIGITAL_TOGGLE()
 //!< @}
 
 //!< @name IO_SET

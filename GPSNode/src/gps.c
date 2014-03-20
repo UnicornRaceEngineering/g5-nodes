@@ -58,7 +58,7 @@ gps_getc_t gps_getc = NULL;
  * @param  len Length of the string to be checked.
  * @return     The checksum of the string.
  */
-static unsigned int checksum(char *s, int len) {
+static unsigned int checksum(const char *s, int len) {
 	unsigned int c = 0;
 	while (len--) {
 		c ^= *s++;
@@ -129,7 +129,7 @@ static int from_rmc(sentence_t *s, gps_fix_t *fix) {
 	fix->latitude.minutes = str2uint(&(s->s[lat_pos+2]), 2);
 	if (s->s[lat_pos+4] != '.') return 1;
 	fix->latitude.seconds = (uint8_t)round(
-		((double)str2uint(&(s->s[lat_pos+2+2+1]), 2) / 100) * 60.0);
+		((double)str2uint(&(s->s[lat_pos+5]), 2) / 100.0) * 60.0);
 	if (s->s[lat_pos+9] != ',') return 1;
 	fix->latitude.direction = s->s[lat_pos+10];
 
@@ -138,7 +138,7 @@ static int from_rmc(sentence_t *s, gps_fix_t *fix) {
 	fix->longitude.minutes = str2uint(&(s->s[lon_pos+3]), 2);
 	if (s->s[lon_pos+5] != '.') return 1;
 	fix->longitude.seconds = (uint8_t)round(
-		((double)str2uint(&(s->s[lon_pos+3+2+1]), 2) / 100) * 60.0);
+		((double)str2uint(&(s->s[lon_pos+6]), 2) / 100.0) * 60.0);
 	if (s->s[lon_pos+10] != ',') return 1;
 	fix->longitude.direction = s->s[lon_pos+11];
 
@@ -196,7 +196,7 @@ static bool valid_sentence(sentence_t *s) {
 
 /**
  * Set the function that is used to get a character from the GPS module
- * @param getc [description]
+ * @param getc The gps getc function pointer.
  */
 void gps_set_getc(gps_getc_t getc) {
 	gps_getc = getc;

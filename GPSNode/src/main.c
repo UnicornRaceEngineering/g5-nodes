@@ -43,15 +43,16 @@ static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
-int main(void)
-{
+int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
 
 	gps_set_getc(usart1_getc);
 	usart1_init(GPS_BAUDRATE);
-	CAN_INIT_ALL();
+	CAN_SEI();
+	CAN_EN_RX_INT();
+	CAN_EN_TX_INT();
 
 	sei();	//Enable interrupt
 
