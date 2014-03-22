@@ -95,7 +95,8 @@ enum uart_charSelect_t {
 	}
 
 	void usart0_init(uint32_t baudrate);
-	void usart0_setBaudrate(const uint32_t baudrate, enum uart_operationModes_t mode);
+	void usart0_setBaudrate(const uint32_t baudrate,
+							enum uart_operationModes_t mode);
 #ifndef NO_USART1_BUFFERED_INPUT
 	bool usart0_hasData(void);
 #endif
@@ -109,7 +110,7 @@ enum uart_charSelect_t {
 
 #ifndef NO_USART1_SUPPORT
 
-	#define UART1_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
+	#define USART1_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
 
 	#define USART1_ENABLE_RX()	BIT_SET(UCSR1B, RXEN1)
 	#define USART1_ENABLE_TX()	BIT_SET(UCSR1B, TXEN1)
@@ -138,7 +139,8 @@ enum uart_charSelect_t {
 	}
 
 	void usart1_init(uint32_t baudrate);
-	void usart1_setBaudrate(const uint32_t baudrate, enum uart_operationModes_t mode);
+	void usart1_setBaudrate(const uint32_t baudrate,
+							enum uart_operationModes_t mode);
 #ifndef NO_USART1_BUFFERED_INPUT
 	bool usart1_hasData(void);
 #endif
