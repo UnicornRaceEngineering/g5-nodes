@@ -80,16 +80,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param  mode     UART operation mode
  * @return          UBRR prescalar
  */
-static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum uart_operationModes_t mode){
+static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operationModes_t mode){
 	uint16_t ubrr_val;
 	switch (mode){
-		case UART_MODE_ASYNC_NORMAL:
+		case USART_MODE_ASYNC_NORMAL:
 			ubrr_val = ((F_CPU / (baudrate * 16UL))) - 1;
 			break;
-		case UART_MODE_ASYNC_DOUBLE:
+		case USART_MODE_ASYNC_DOUBLE:
 			ubrr_val = ((F_CPU / (baudrate * 8UL))) - 1;
 			break;
-		case UART_MODE_SYNC_MASTER:
+		case USART_MODE_SYNC_MASTER:
 			ubrr_val = ((F_CPU / (baudrate * 2UL))) - 1;
 			break;
 		default:
@@ -129,15 +129,15 @@ void usart0_init(uint32_t baudrate) {
 	rb_init((ringbuffer_t*)&usart0_outBuff);
 #endif
 
-	//Enable TXen og RXen
+	//Enable TXen and RXen
 	USART0_ENABLE_RX();
 	USART0_ENABLE_TX();
 
 	USART0_SET_1_STOP_BIT();
-	USART0_SET_CHAR_SIZE(UART_CHAR_8BIT);
+	USART0_SET_CHAR_SIZE(USART_CHAR_8BIT);
 
 	// Baud rate
-	usart0_setBaudrate(baudrate, UART_MODE_ASYNC_NORMAL);
+	usart0_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 }
 
 /**
@@ -146,11 +146,11 @@ void usart0_init(uint32_t baudrate) {
  * @param mode     USART operation mode
  */
 void usart0_setBaudrate(const uint32_t baudrate,
-						enum uart_operationModes_t mode){
+						enum usart_operationModes_t mode){
 	switch (mode) {
-		case UART_MODE_ASYNC_NORMAL: USART0_SET_MODE_ASYNC(); break;
-		case UART_MODE_ASYNC_DOUBLE: USART0_SET_MODE_ASYNC(); break;
-		case UART_MODE_SYNC_MASTER: USART0_SET_MODE_SYNC(); break;
+		case USART_MODE_ASYNC_NORMAL: USART0_SET_MODE_ASYNC(); break;
+		case USART_MODE_ASYNC_DOUBLE: USART0_SET_MODE_ASYNC(); break;
+		case USART_MODE_SYNC_MASTER: USART0_SET_MODE_SYNC(); break;
 	}
 
 	const uint16_t prescale = uart_baud2ubrr(baudrate, mode);
@@ -327,15 +327,15 @@ void usart1_init(uint32_t baudrate) {
 	rb_init((ringbuffer_t*)&usart1_outBuff);
 #endif
 
-	//Enable TXen og RXen
+	//Enable TXen and RXen
 	USART1_ENABLE_RX();
 	USART1_ENABLE_TX();
 
 	USART1_SET_1_STOP_BIT();
-	USART1_SET_CHAR_SIZE(UART_CHAR_8BIT);
+	USART1_SET_CHAR_SIZE(USART_CHAR_8BIT);
 
 	// Baud rate
-	usart1_setBaudrate(baudrate, UART_MODE_ASYNC_NORMAL);
+	usart1_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 }
 
 /**
@@ -344,11 +344,11 @@ void usart1_init(uint32_t baudrate) {
  * @param mode     USART operation mode
  */
 void usart1_setBaudrate(const uint32_t baudrate,
-						enum uart_operationModes_t mode){
+						enum usart_operationModes_t mode){
 	switch (mode) {
-		case UART_MODE_ASYNC_NORMAL: USART1_SET_MODE_ASYNC(); break;
-		case UART_MODE_ASYNC_DOUBLE: USART1_SET_MODE_ASYNC(); break;
-		case UART_MODE_SYNC_MASTER: USART1_SET_MODE_SYNC(); break;
+		case USART_MODE_ASYNC_NORMAL: USART1_SET_MODE_ASYNC(); break;
+		case USART_MODE_ASYNC_DOUBLE: USART1_SET_MODE_ASYNC(); break;
+		case USART_MODE_SYNC_MASTER: USART1_SET_MODE_SYNC(); break;
 	}
 
 	const uint16_t prescale = uart_baud2ubrr(baudrate, mode);

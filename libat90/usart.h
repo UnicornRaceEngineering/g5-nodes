@@ -50,23 +50,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <bitwise.h>
 
-enum uart_operationModes_t {
-	UART_MODE_ASYNC_NORMAL,
-	UART_MODE_ASYNC_DOUBLE,
-	UART_MODE_SYNC_MASTER
+enum usart_operationModes_t {
+	USART_MODE_ASYNC_NORMAL,
+	USART_MODE_ASYNC_DOUBLE,
+	USART_MODE_SYNC_MASTER
 };
 
-enum uart_charSelect_t {
-	UART_CHAR_5BIT = 0x00,
-	UART_CHAR_6BIT = 0x01,
-	UART_CHAR_7BIT = 0x02,
-	UART_CHAR_8BIT = 0x03,
-	UART_CHAR_9BIT = 0x07
+enum usart_charSelect_t {
+	USART_CHAR_5BIT = 0x00,
+	USART_CHAR_6BIT = 0x01,
+	USART_CHAR_7BIT = 0x02,
+	USART_CHAR_8BIT = 0x03,
+	USART_CHAR_9BIT = 0x07
 };
 
 #ifndef NO_USART0_SUPPORT
 
-	#define UART0_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
+	#define USART0_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
 
 	#define USART0_ENABLE_RX()	BIT_SET(UCSR0B, RXEN)
 	#define USART0_ENABLE_TX()	BIT_SET(UCSR0B, TXEN)
@@ -96,7 +96,7 @@ enum uart_charSelect_t {
 
 	void usart0_init(uint32_t baudrate);
 	void usart0_setBaudrate(const uint32_t baudrate,
-							enum uart_operationModes_t mode);
+							enum usart_operationModes_t mode);
 #ifndef NO_USART1_BUFFERED_INPUT
 	bool usart0_hasData(void);
 #endif
@@ -140,7 +140,7 @@ enum uart_charSelect_t {
 
 	void usart1_init(uint32_t baudrate);
 	void usart1_setBaudrate(const uint32_t baudrate,
-							enum uart_operationModes_t mode);
+							enum usart_operationModes_t mode);
 #ifndef NO_USART1_BUFFERED_INPUT
 	bool usart1_hasData(void);
 #endif
