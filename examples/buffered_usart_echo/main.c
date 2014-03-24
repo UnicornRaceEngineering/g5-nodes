@@ -25,7 +25,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h> // sei()
 #include <usart.h>
 
-char buf[256] = {'\0'};
+#define BUFF_SIZE	(256)
+
+char buf[BUFF_SIZE] = {'\0'};
 size_t bufIndex = 0;
 
 int main(void) {
@@ -39,11 +41,11 @@ int main(void) {
 		// Main work loop
 		if (usart1_hasData()) {
 			char c = usart1_getc();
-			buf[bufIndex] = c;
-			if (c == '\n') {
-				buf[bufIndex+1] = '\0';
-				usart1_printf("s", buf); // Echo the string back
+			buf[bufIndex++] = c;
+			if (c == '\n' || bufIndex >= BUFF_SIZE) {
+				buf[bufIndex] = '\0';
 				bufIndex = 0;
+				usart1_printf("%s", buf); // Echo the string back
 			}
 		}
 	}
