@@ -104,7 +104,7 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operat
 
 /**
  * @name USART0
- * Functions for sending and receiving on USAR0
+ * Functions for sending and receiving on USART0
  * @{
  */
 #ifndef NO_USART0_SUPPORT
@@ -302,7 +302,7 @@ ISR(USART0_UDRE_vect){
 
 /**
  * @name USART1
- * Functions for sending and receiving on USAR1
+ * Functions for sending and receiving on USART1
  * @{
  */
 #ifndef NO_USART1_SUPPORT

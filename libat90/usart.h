@@ -64,6 +64,11 @@ enum usart_charSelect_t {
 	USART_CHAR_9BIT = 0x07
 };
 
+/**
+ * @name USART0
+ * Functions for sending and receiving on USART0
+ * @{
+ */
 #ifndef NO_USART0_SUPPORT
 
 	#define USART0_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
@@ -107,7 +112,14 @@ enum usart_charSelect_t {
 	int usart0_printf(const char *str, ...);
 
 #endif
+/** @} */
 
+
+/**
+ * @name USART1
+ * Functions for sending and receiving on USART1
+ * @{
+ */
 #ifndef NO_USART1_SUPPORT
 
 	#define USART1_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
@@ -151,5 +163,6 @@ enum usart_charSelect_t {
 	int usart1_printf(const char *str, ...);
 
 #endif
+/** @} */
 
 #endif /* USART_H */
