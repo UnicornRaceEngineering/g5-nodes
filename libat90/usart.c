@@ -82,7 +82,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operationModes_t mode){
 	uint16_t ubrr_val;
-	switch (mode){
+	switch (mode) {
 		case USART_MODE_ASYNC_NORMAL:
 			ubrr_val = ((F_CPU / (baudrate * 16UL))) - 1;
 			break;
@@ -176,11 +176,11 @@ bool usart0_hasData(void){
  */
 uint8_t usart0_getc(void) {
 #ifdef NO_USART0_BUFFERED_INPUT
-	while(USART0_RX_IS_BUSY());
+	while (USART0_RX_IS_BUSY());
 	return UDR0;
 #else
 	uint8_t data;
-	while(rb_pop((ringbuffer_t*)&usart0_inBuff, &data) != 0);
+	while (rb_pop((ringbuffer_t*)&usart0_inBuff, &data) != 0);
 	return data;
 #endif
 }
@@ -193,7 +193,7 @@ uint8_t usart0_getc(void) {
  */
 int usart0_putc(const uint8_t c) {
 #ifndef USART0_NON_UNIX_LIKE_LINE_ENDINGS
-	if(c == '\n'){
+	if (c == '\n') {
 		usart0_putc('\r');
 	}
 #endif
@@ -251,7 +251,7 @@ int usart0_putn(size_t n, const uint8_t *array) {
  * string in.
  */
 int usart0_printf(const char *str, ...){
-	if(str == NULL) return -1;
+	if (str == NULL) return -1;
 
 	// Warning this might overflow on long str
 	char buffer[USART0_PRNT_BUFF_SIZE] = {'\0'};
@@ -265,7 +265,7 @@ int usart0_printf(const char *str, ...){
 	}
 	va_end(args);
 
-	if((rc_tx = usart0_puts(buffer)) != rc_vsprintf ||
+	if ((rc_tx = usart0_puts(buffer)) != rc_vsprintf ||
 			rc_tx > USART0_PRNT_BUFF_SIZE) {
 		// We haven't send the same amount as sprintf wrote the the buffer
 		return -rc_tx;
@@ -285,7 +285,7 @@ ISR(USART0_RX_vect){
 #ifndef NO_USART0_BUFFERED_OUTPUT
 ISR(USART0_UDRE_vect){
 	uint8_t data;
-	if(rb_pop((ringbuffer_t*)&usart0_outBuff, &data) == 0) {
+	if (rb_pop((ringbuffer_t*)&usart0_outBuff, &data) == 0) {
 		UDR0 = data;
 	} else {
 		// output buffer is empty so disable UDRE interrupt flag
@@ -374,11 +374,11 @@ bool usart1_hasData(void){
  */
 uint8_t usart1_getc(void) {
 #ifdef NO_USART1_BUFFERED_INPUT
-	while(USART1_RX_IS_BUSY());
+	while (USART1_RX_IS_BUSY());
 	return UDR1;
 #else
 	uint8_t data;
-	while(rb_pop((ringbuffer_t*)&usart1_inBuff, &data) != 0);
+	while (rb_pop((ringbuffer_t*)&usart1_inBuff, &data) != 0);
 	return data;
 #endif
 }
@@ -391,7 +391,7 @@ uint8_t usart1_getc(void) {
  */
 int usart1_putc(const uint8_t c) {
 #ifndef USART1_NON_UNIX_LIKE_LINE_ENDINGS
-	if(c == '\n'){
+	if (c == '\n') {
 		usart1_putc('\r');
 	}
 #endif
@@ -419,7 +419,7 @@ int usart1_puts(const char *str) {
 	if (str == NULL) return -1;
 	int i = 0;
 
-	while(str[i] != '\0'){
+	while (str[i] != '\0'){
 		usart1_putc(str[i++]);
 	}
 
@@ -449,7 +449,7 @@ int usart1_putn(size_t n, const uint8_t *array) {
  * string in.
  */
 int usart1_printf(const char *str, ...){
-	if(str == NULL) return -1;
+	if (str == NULL) return -1;
 
 	// Warning this might overflow on long str
 	char buffer[USART1_PRNT_BUFF_SIZE] = {'\0'};
@@ -463,7 +463,7 @@ int usart1_printf(const char *str, ...){
 	}
 	va_end(args);
 
-	if((rc_tx = usart1_puts(buffer)) != rc_vsprintf ||
+	if ((rc_tx = usart1_puts(buffer)) != rc_vsprintf ||
 			rc_tx > USART1_PRNT_BUFF_SIZE) {
 		// We haven't send the same amount as sprintf wrote the the buffer
 		return -rc_tx;
@@ -483,7 +483,7 @@ ISR(USART1_RX_vect){
 #ifndef NO_USART1_BUFFERED_OUTPUT
 ISR(USART1_UDRE_vect){
 	uint8_t data;
-	if(rb_pop((ringbuffer_t*)&usart1_outBuff, &data) == 0) {
+	if (rb_pop((ringbuffer_t*)&usart1_outBuff, &data) == 0) {
 		UDR1 = data;
 	} else {
 		// output buffer is empty so disable UDRE interrupt flag
