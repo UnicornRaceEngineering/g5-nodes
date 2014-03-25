@@ -33,10 +33,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * input or buffered output can be disabled for each USART by defining
  * NO_USART[n]_BUFFERED_INPUT or NO_USART[n]_BUFFERED_OUTPUT. These must be
  * defined at compile time
- *
- * @bug
- * There seems to be an issue when using buffered output that causes the board
- * to reset. Lookup issue #2
  */
 
 #include <stdint.h>

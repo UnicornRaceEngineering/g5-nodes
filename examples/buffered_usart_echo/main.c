@@ -42,10 +42,11 @@ int main(void) {
 		if (usart1_hasData()) {
 			char c = usart1_getc();
 			buf[bufIndex++] = c;
-			if (c == '\n' || bufIndex >= BUFF_SIZE) {
+			usart1_putc(c);
+			if (c == '\n' || c == '\r' || bufIndex >= BUFF_SIZE) {
 				buf[bufIndex] = '\0';
 				bufIndex = 0;
-				usart1_printf("%s", buf); // Echo the string back
+				usart1_putc('\n');
 			}
 		}
 	}
