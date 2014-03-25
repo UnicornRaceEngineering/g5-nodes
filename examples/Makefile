@@ -1,7 +1,7 @@
 SHELL=/bin/sh
 MAKE=make
 
-SUBDIRS=can_simple_rx_tx io_read_write
+SUBDIRS=can_simple_rx_tx io_read_write buffered_usart_echo
 
 all:
 	@for i in $(SUBDIRS); do \
