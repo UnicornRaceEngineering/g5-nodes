@@ -52,32 +52,32 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define RB_BUFFER_MASK	(RB_BUFFER_SIZE-1)
 
-#if RB_BUFFER_SIZE < (1<<8)
+#if RB_BUFFER_SIZE < (1 << 8)
  	typedef uint8_t rb_index_t;
-#elif RB_BUFFER_SIZE < (1<<16)
+#elif RB_BUFFER_SIZE < (1 << 16)
  	typedef uint16_t rb_index_t;
-#elif RB_BUFFER_SIZE < (1<<32)
+#elif RB_BUFFER_SIZE < (1 << 32)
  	typedef uint32_t rb_index_t;
 #else
  	#error RB_BUFFER_SIZE is too big
 #endif
 
 // Determine if the buffer size is a power of 2
-#if RB_BUFFER_SIZE  == (1<<2)  || \
-	RB_BUFFER_SIZE  == (1<<3)  || \
-	RB_BUFFER_SIZE  == (1<<4)  || \
-	RB_BUFFER_SIZE  == (1<<5)  || \
-	RB_BUFFER_SIZE  == (1<<6)  || \
-	RB_BUFFER_SIZE  == (1<<7)  || \
-	RB_BUFFER_SIZE  == (1<<8)  || \
-	RB_BUFFER_SIZE  == (1<<9)  || \
-	RB_BUFFER_SIZE  == (1<<10) || \
-	RB_BUFFER_SIZE  == (1<<11) || \
-	RB_BUFFER_SIZE  == (1<<12) || \
-	RB_BUFFER_SIZE  == (1<<13) || \
-	RB_BUFFER_SIZE  == (1<<14) || \
-	RB_BUFFER_SIZE  == (1<<15) || \
-	RB_BUFFER_SIZE  == (1<<16)
+#if RB_BUFFER_SIZE  == (1 << 2)  || \
+	RB_BUFFER_SIZE  == (1 << 3)  || \
+	RB_BUFFER_SIZE  == (1 << 4)  || \
+	RB_BUFFER_SIZE  == (1 << 5)  || \
+	RB_BUFFER_SIZE  == (1 << 6)  || \
+	RB_BUFFER_SIZE  == (1 << 7)  || \
+	RB_BUFFER_SIZE  == (1 << 8)  || \
+	RB_BUFFER_SIZE  == (1 << 9)  || \
+	RB_BUFFER_SIZE  == (1 << 10) || \
+	RB_BUFFER_SIZE  == (1 << 11) || \
+	RB_BUFFER_SIZE  == (1 << 12) || \
+	RB_BUFFER_SIZE  == (1 << 13) || \
+	RB_BUFFER_SIZE  == (1 << 14) || \
+	RB_BUFFER_SIZE  == (1 << 15) || \
+	RB_BUFFER_SIZE  == (1 << 16)
 
 	#define RB_BUFFER_SIZE_IS_POW2
 #endif
@@ -103,10 +103,22 @@ typedef struct ringbuffer_t{
 	#define rb_nextEnd(B)		((((B)->end+1) % RB_BUFFER_SIZE))
 #endif
 
-#define rb_isEmpty(B)			((B)->end == (B)->start) //!< Returns a boolean whether ring buffer is empty
-#define rb_isFull(B)			(rb_nextEnd((B)) == (B)->start) //!< Returns a boolean whether ring buffer is full
 
-#define rb_reset(B)				{(B)->end = (B)->start = 0;}
+/**
+ * Check if the ring buffer is empty.
+ * @param  B pointer to the ringbuffer_t
+ * @return   Boolean true if empty
+ */
+#define rb_isEmpty(B)			((B)->end == (B)->start)
+
+
+/**
+ * Check if the ring buffer is full.
+ * @param  B pointer to the ringbuffer_t
+ * @return   Boolean true if full
+ */
+#define rb_isFull(B)			(rb_nextEnd((B)) == (B)->start)
+
 
 /**
  * @brief
@@ -114,7 +126,7 @@ typedef struct ringbuffer_t{
  * @param buffer The buffer to initialize
  */
 static inline void rb_init(ringbuffer_t* const buffer){
-	rb_reset(buffer);
+	buffer->end = buffer->start = 0;
 	memset(buffer->buffer, 0, sizeof(buffer->buffer));
 }
 
