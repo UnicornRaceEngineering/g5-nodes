@@ -63,35 +63,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 // Determine if the buffer size is a power of 2
-#if RB_BUFFER_SIZE  == (1<<2)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<3)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<4)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<5)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<6)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<7)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<8)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<9)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<10)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<11)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<12)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<13)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<14)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<15)
-	#define RB_BUFFER_SIZE_IS_POW2
-#elif RB_BUFFER_SIZE  == (1<<16)
+#if RB_BUFFER_SIZE  == (1<<2)  || \
+	RB_BUFFER_SIZE  == (1<<3)  || \
+	RB_BUFFER_SIZE  == (1<<4)  || \
+	RB_BUFFER_SIZE  == (1<<5)  || \
+	RB_BUFFER_SIZE  == (1<<6)  || \
+	RB_BUFFER_SIZE  == (1<<7)  || \
+	RB_BUFFER_SIZE  == (1<<8)  || \
+	RB_BUFFER_SIZE  == (1<<9)  || \
+	RB_BUFFER_SIZE  == (1<<10) || \
+	RB_BUFFER_SIZE  == (1<<11) || \
+	RB_BUFFER_SIZE  == (1<<12) || \
+	RB_BUFFER_SIZE  == (1<<13) || \
+	RB_BUFFER_SIZE  == (1<<14) || \
+	RB_BUFFER_SIZE  == (1<<15) || \
+	RB_BUFFER_SIZE  == (1<<16)
+
 	#define RB_BUFFER_SIZE_IS_POW2
 #endif
 
