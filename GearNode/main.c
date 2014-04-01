@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <stdbool.h>
 
 #include <can.h>
 #include <usart.h>
@@ -38,6 +39,18 @@ static void can_default(uint8_t mob);
 
 #define IGNITION_CUT_ON()	( BIT_SET(PORTE, PIN4) )
 #define IGNITION_CUT_OFF()	( BIT_CLEAR(PORTE, PIN4) )
+
+#define SERVO_UP				(210)
+#define SERVO_DOWN 				(500)
+#define SERVO_MIDT				(332)
+#define SERVO_NEUTRAL_FROM_1	(264)
+#define SERVO_NEUTRAL_FROM_2	(400)
+
+enum {
+	GEAR_DOWN = -1,
+	GEAR_NEUTRAL = 0,
+	GEAR_UP = 1
+};
 
 static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
@@ -61,6 +74,52 @@ static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	BIT_SET(TCCR3B, CS30);
 	BIT_SET(TCCR3B, CS31);
 	BIT_CLEAR(TCCR3B, CS32);
+}
+
+void set_servo_duty_from_pos(unsigned int pos) {
+	int duty_cycle = (0.6278260870 * (float)pos) + 42.63130435;
+	OCR3CH = HIGH_BYTE(duty_cycle);
+	OCR3CL = LOW_BYTE(duty_cycle);
+}
+
+int shift_gear(int gear_dir) {
+	static int current_gear = 0;
+	bool err = 0;
+
+	IGNITION_CUT_ON();
+	_delay_ms(100);
+
+	switch (gear_dir) {
+		case GEAR_DOWN:
+			set_servo_duty_from_pos(SERVO_DOWN);
+			current_gear++;
+			break;
+
+		case GEAR_NEUTRAL:
+			if (current_gear >= 2) {
+				set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_2);
+			} else {
+				set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_1);
+			}
+
+			current_gear = 0;
+			break;
+
+		case GEAR_UP:
+			set_servo_duty_from_pos(SERVO_UP);
+			current_gear--;
+			break;
+
+		default: err = 1; break;
+	}
+	_delay_ms(500);
+
+	set_servo_duty_from_pos(SERVO_MIDT);
+	_delay_ms(500);
+
+	IGNITION_CUT_OFF();
+
+	return !err ? current_gear : -current_gear;
 }
 
 int main(void) {
