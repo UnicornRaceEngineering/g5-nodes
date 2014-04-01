@@ -143,8 +143,24 @@ int main(void) {
 
 	usart1_printf("\n\n\nSTARTING\n");
 
+	int gear = 0;
+
 	while(1){
-		// Main work loop
+		if (usart1_hasData()) {
+			char c = usart1_getc();
+			switch (c) {
+				case 'q':
+					gear = shift_gear(GEAR_DOWN);
+					break;
+				case 'w':
+					gear = shift_gear(GEAR_NEUTRAL);
+					break;
+				case 'e':
+					gear = shift_gear(GEAR_DOWN);
+					break;
+			}
+			usart1_printf("Gear: %d\n", gear);
+		}
 	}
 
     return 0;
