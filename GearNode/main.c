@@ -37,7 +37,7 @@ static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
 
-static void init_pwm16(void) {
+static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
 	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
 
@@ -51,9 +51,9 @@ static void init_pwm16(void) {
 	BIT_SET(TCCR3B, WGM32);
 	BIT_SET(TCCR3B, WGM33);
 
-	// Count to 2047
-	ICR3H = 0x07;
-	ICR3L = 0xFF;
+	// Count to the specified value
+	ICR3H = HIGH_BYTE(count_to);
+	ICR3L = LOW_BYTE(count_to);
 
 	// Set prescalar to 64
 	BIT_SET(TCCR3B, CS30);
@@ -75,7 +75,7 @@ int main(void) {
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
 
-	init_pwm16();
+	init_pwm16_OC3C_prescalar64(2047); // 0x07FF (11 bits)
 
 	sei();										//Enable interrupt
 
