@@ -29,14 +29,39 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <can.h>
 #include <usart.h>
+#include <io.h>
+#include <bitwise.h>
 
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
 
-int main(void)
-{
+static void init_pwm16(void) {
+	// OC3C, Output Compare Match C output (counter 3 output compare)
+	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
+
+	// Clear on Compare Match
+	BIT_SET(TCCR3A, COM3C1);
+	BIT_CLEAR(TCCR3A, COM3C0);
+
+	// Set Wave Generation Mode to Fast PWM counting to ICR
+	BIT_CLEAR(TCCR3A, WGM30);
+	BIT_SET(TCCR3A, WGM31);
+	BIT_SET(TCCR3B, WGM32);
+	BIT_SET(TCCR3B, WGM33);
+
+	// Count to 2047
+	ICR3H = 0x07;
+	ICR3L = 0xFF;
+
+	// Set prescalar to 64
+	BIT_SET(TCCR3B, CS30);
+	BIT_SET(TCCR3B, CS31);
+	BIT_CLEAR(TCCR3B, CS32);
+}
+
+int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
@@ -49,6 +74,8 @@ int main(void)
 	CAN_SEI();
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
+
+	init_pwm16();
 
 	sei();										//Enable interrupt
 
