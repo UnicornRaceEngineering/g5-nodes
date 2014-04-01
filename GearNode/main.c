@@ -36,6 +36,8 @@ static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
+#define IGNITION_CUT_ON()	( BIT_SET(PORTE, PIN4) )
+#define IGNITION_CUT_OFF()	( BIT_CLEAR(PORTE, PIN4) )
 
 static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
