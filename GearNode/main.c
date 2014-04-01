@@ -78,13 +78,13 @@ static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	BIT_CLEAR(TCCR3B, CS32);
 }
 
-void set_servo_duty_from_pos(unsigned int pos) {
-	int duty_cycle = (0.6278260870 * (float)pos) + 42.63130435;
+static void set_servo_duty_from_pos(unsigned int pos) {
+	const int duty_cycle = (0.6278260870 * (float)pos) + 42.63130435;
 	OCR3CH = HIGH_BYTE(duty_cycle);
 	OCR3CL = LOW_BYTE(duty_cycle);
 }
 
-int shift_gear(int gear_dir) {
+static int shift_gear(int gear_dir) {
 	static int current_gear = 0;
 	bool err = 0;
 
@@ -148,7 +148,11 @@ int main(void) {
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
 
-	init_pwm16_OC3C_prescalar64(2047); // 0x07FF (11 bits)
+	// (F_CPU / (Prescalar * ( 1+2047)) =
+	// (11059200 Hz / (64 * (1+2047))) 	=
+	// 84.375 Hz = 12 ms period
+	// Resolution = log(2047+1)/log(2) = 11 bits
+	init_pwm16_OC3C_prescalar64(2047);
 
 	// setup neutral gear sensor
 	SET_PIN_MODE(PORTE, PIN7, INPUT_PULLUP);
