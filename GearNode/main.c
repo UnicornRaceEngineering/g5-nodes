@@ -40,6 +40,8 @@ static void can_default(uint8_t mob);
 #define IGNITION_CUT_ON()	( BIT_SET(PORTE, PIN4) )
 #define IGNITION_CUT_OFF()	( BIT_CLEAR(PORTE, PIN4) )
 
+#define GEAR_IS_NEUTRAL()	( !DIGITAL_READ(PORTE, PIN7) )
+
 #define SERVO_UP				(210)
 #define SERVO_DOWN 				(500)
 #define SERVO_MIDT				(332)
@@ -86,15 +88,21 @@ int shift_gear(int gear_dir) {
 	static int current_gear = 0;
 	bool err = 0;
 
+	/**
+	 * @todo: Should this be in an interrupt?
+	 */
+	if (GEAR_IS_NEUTRAL()) current_gear = 0;
+
 	IGNITION_CUT_ON();
 	_delay_ms(100);
 
 	switch (gear_dir) {
 		case GEAR_DOWN:
-			set_servo_duty_from_pos(SERVO_DOWN);
-			current_gear++;
+			if (current_gear != 0) {
+				set_servo_duty_from_pos(SERVO_DOWN);
+				current_gear--;
+			}
 			break;
-
 		case GEAR_NEUTRAL:
 			if (current_gear >= 2) {
 				set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_2);
@@ -104,12 +112,16 @@ int shift_gear(int gear_dir) {
 
 			current_gear = 0;
 			break;
-
 		case GEAR_UP:
-			set_servo_duty_from_pos(SERVO_UP);
-			current_gear--;
+			if (current_gear != 0) {
+				set_servo_duty_from_pos(SERVO_UP);
+			} else {
+				// Special case. If we are in neutral we have to shift down to
+				// get to gear 1 as it is laid out as [1, 0, 2, 3, 4, 5, 6]
+				set_servo_duty_from_pos(SERVO_DOWN);
+			}
+			current_gear++;
 			break;
-
 		default: err = 1; break;
 	}
 	_delay_ms(500);
@@ -138,6 +150,9 @@ int main(void) {
 
 	init_pwm16_OC3C_prescalar64(2047); // 0x07FF (11 bits)
 
+	// setup neutral gear sensor
+	SET_PIN_MODE(PORTE, PIN7, INPUT_PULLUP);
+
 	sei();										//Enable interrupt
 
 
@@ -156,10 +171,10 @@ int main(void) {
 					gear = shift_gear(GEAR_NEUTRAL);
 					break;
 				case 'e':
-					gear = shift_gear(GEAR_DOWN);
+					gear = shift_gear(GEAR_UP);
 					break;
 			}
-			usart1_printf("Gear: %d\n", gear);
+			usart1_printf("Gear: %d Neutral: %d\n", gear, GEAR_IS_NEUTRAL());
 		}
 	}
 
