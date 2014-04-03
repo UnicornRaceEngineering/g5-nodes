@@ -52,7 +52,7 @@ static void can_default(uint8_t mob);
 #define TOP_TO_HZ(top)	(F_CPU / (PRESCALAR * (1+(top))))
 #define HZ_TO_MS(hz)	((1/(hz)) * 1000)
 
-#define MS_TO_TOP(ms)	((unsigned int) \
+#define MS_TO_TOP(ms)	((uint16_t) \
 	((((F_CPU/1000.0)/(double)PRESCALAR)*((double)ms))) - 1)
 
 #define SERVO_UP				(MS_TO_TOP(1))
@@ -78,7 +78,7 @@ static void init_neutral_gear_sensor(void) {
 	BIT_SET(EIMSK, INT7); // Enables external interrupt request
 }
 
-static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
+static void init_pwm16_OC3C_prescalar64(uint16_t count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
 	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
 
@@ -102,7 +102,7 @@ static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	BIT_CLEAR(TCCR3B, CS32);
 }
 
-static inline void set_servo_duty_from_pos(unsigned int pos) {
+static inline void set_servo_duty_from_pos(uint16_t pos) {
 	OCR3CH = HIGH_BYTE(pos);
 	OCR3CL = LOW_BYTE(pos);
 }
