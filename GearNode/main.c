@@ -37,16 +37,25 @@ static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
+#define PRESCALAR	(64)
+
 #define IGNITION_CUT_ON()	( BIT_SET(PORTE, PIN4) )
 #define IGNITION_CUT_OFF()	( BIT_CLEAR(PORTE, PIN4) )
 
 #define GEAR_IS_NEUTRAL()	( !DIGITAL_READ(PORTE, PIN7) )
 
-#define SERVO_UP				(210)
-#define SERVO_DOWN 				(500)
-#define SERVO_MIDT				(332)
-#define SERVO_NEUTRAL_FROM_1	(264)
-#define SERVO_NEUTRAL_FROM_2	(400)
+
+#define TOP_TO_HZ(top)	(F_CPU / (PRESCALAR * (1+(top))))
+#define HZ_TO_MS(hz)	((1/(hz)) * 1000)
+
+#define MS_TO_TOP(ms)	((unsigned int) \
+	((((F_CPU/1000.0)/(double)PRESCALAR)*((double)ms))) - 1)
+
+#define SERVO_UP				(MS_TO_TOP(1))
+#define SERVO_DOWN				(MS_TO_TOP(2))
+#define SERVO_MIDT				(MS_TO_TOP(1.5))
+#define SERVO_NEUTRAL_FROM_1	(MS_TO_TOP(1.25))
+#define SERVO_NEUTRAL_FROM_2	(MS_TO_TOP(1.75))
 
 enum {
 	GEAR_DOWN = -1,
@@ -78,10 +87,9 @@ static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	BIT_CLEAR(TCCR3B, CS32);
 }
 
-static void set_servo_duty_from_pos(unsigned int pos) {
-	const int duty_cycle = (0.6278260870 * (float)pos) + 42.63130435;
-	OCR3CH = HIGH_BYTE(duty_cycle);
-	OCR3CL = LOW_BYTE(duty_cycle);
+static inline void set_servo_duty_from_pos(unsigned int pos) {
+	OCR3CH = HIGH_BYTE(pos);
+	OCR3CL = LOW_BYTE(pos);
 }
 
 static int shift_gear(int gear_dir) {
@@ -150,7 +158,7 @@ int main(void) {
 
 	// (F_CPU / (Prescalar * ( 1+2047)) =
 	// (11059200 Hz / (64 * (1+2047))) 	=
-	// 84.375 Hz = 12 ms period
+	// 84.375 Hz = 11.852 ms period
 	// Resolution = log(2047+1)/log(2) = 11 bits
 	init_pwm16_OC3C_prescalar64(2047);
 
