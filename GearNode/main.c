@@ -69,6 +69,15 @@ enum {
 
 volatile int current_gear = 0;
 
+
+static void init_neutral_gear_sensor(void) {
+	// Interrupt on any logical change on port E pin 7
+	BIT_CLEAR(EICRA, ISC71);
+	BIT_SET(EICRA, ISC70);
+
+	BIT_SET(EIMSK, INT7); // Enables external interrupt request
+}
+
 static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
 	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
@@ -167,12 +176,15 @@ int main(void) {
 	// Resolution = log(2047+1)/log(2) = 11 bits
 	init_pwm16_OC3C_prescalar64(2047);
 
+	init_neutral_gear_sensor();
+
 	// setup neutral gear sensor
 	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
 
 	// Set ignition cut pin to output
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
 
+	IGNITION_CUT_OFF();
 	sei();										//Enable interrupt
 
 
@@ -199,6 +211,51 @@ int main(void) {
 	}
 
     return 0;
+}
+
+// Gear neutral interrupt
+ISR(INT7_vect) {
+	if (GEAR_IS_NEUTRAL()) {
+		if (current_gear != 0) {
+			// An error has occured in the gear estimate. So lets
+			// correct it.
+			current_gear = 0;
+		}
+	} else {
+		const uint16_t servo_pos = MERGE_BYTE(OCR3CH, OCR3CL);
+		switch (servo_pos) {
+			case SERVO_UP:
+				if (current_gear != 2) {
+					// An error has occured in the gear estimate. So lets
+					// correct it.
+					current_gear = 2;
+				}
+				break;
+			case SERVO_DOWN:
+				if (current_gear != 1) {
+					// An error has occured in the gear estimate. So lets
+					// correct it.
+					current_gear = 1;
+				}
+				break;
+			case SERVO_MIDT:
+				// An error has occured in the gear estimate. So lets
+				// correct it.
+				break;
+			case SERVO_NEUTRAL_FROM_1:
+				// An error has occured in the gear estimate. So lets
+				// correct it.
+				current_gear = 2;
+				break;
+			case SERVO_NEUTRAL_FROM_2:
+				// An error has occured in the gear estimate. So lets
+				// correct it.
+				current_gear = 1;
+				break;
+
+			default: break;
+		}
+	}
 }
 
 static void rx_complete(uint8_t mob) {
