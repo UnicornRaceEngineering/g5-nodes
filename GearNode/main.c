@@ -39,10 +39,14 @@ static void can_default(uint8_t mob);
 
 #define PRESCALAR	(64)
 
-#define IGNITION_CUT_ON()	( BIT_SET(PORTE, PIN4) )
-#define IGNITION_CUT_OFF()	( BIT_CLEAR(PORTE, PIN4) )
+#define IGN_PORT	(PORTE)
+#define IGN_PIN		(PIN4)
+#define IGNITION_CUT_ON()	( BIT_SET(IGN_PORT, IGN_PIN) )
+#define IGNITION_CUT_OFF()	( BIT_CLEAR(IGN_PORT, IGN_PIN) )
 
-#define GEAR_IS_NEUTRAL()	( !DIGITAL_READ(PORTE, PIN7) )
+#define NEUT_PORT	(PORTE)
+#define NEUT_PIN	(PIN7)
+#define GEAR_IS_NEUTRAL()	( !DIGITAL_READ(NEUT_PORT, NEUT_PIN) )
 
 
 #define TOP_TO_HZ(top)	(F_CPU / (PRESCALAR * (1+(top))))
@@ -62,6 +66,8 @@ enum {
 	GEAR_NEUTRAL = 0,
 	GEAR_UP = 1
 };
+
+volatile int current_gear = 0;
 
 static void init_pwm16_OC3C_prescalar64(unsigned int count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
@@ -93,7 +99,6 @@ static inline void set_servo_duty_from_pos(unsigned int pos) {
 }
 
 static int shift_gear(int gear_dir) {
-	static int current_gear = 0;
 	bool err = 0;
 
 	/**
@@ -163,7 +168,10 @@ int main(void) {
 	init_pwm16_OC3C_prescalar64(2047);
 
 	// setup neutral gear sensor
-	SET_PIN_MODE(PORTE, PIN7, INPUT_PULLUP);
+	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
+
+	// Set ignition cut pin to output
+	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
 
 	sei();										//Enable interrupt
 
