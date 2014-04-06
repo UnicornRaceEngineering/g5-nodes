@@ -53,7 +53,7 @@ static void can_default(uint8_t mob);
 #define HZ_TO_MS(hz)	((1/(hz)) * 1000)
 
 #define MS_TO_TOP(ms)	((uint16_t) \
-	((((F_CPU/1000.0)/(double)PRESCALAR)*((double)ms))) - 1)
+	((((F_CPU/1000.0)/(double)PRESCALAR)*((double)(ms)))) - 1)
 
 #define SERVO_UP				(MS_TO_TOP(1))
 #define SERVO_DOWN				(MS_TO_TOP(2))
@@ -71,6 +71,8 @@ volatile int current_gear = 0;
 
 
 static void init_neutral_gear_sensor(void) {
+	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
+
 	// Interrupt on any logical change on port E pin 7
 	BIT_CLEAR(EICRA, ISC71);
 	BIT_SET(EICRA, ISC70);
@@ -102,9 +104,9 @@ static void init_pwm16_OC3C_prescalar64(uint16_t count_to) {
 	BIT_CLEAR(TCCR3B, CS32);
 }
 
-static inline void set_servo_duty_from_pos(uint16_t pos) {
-	OCR3CH = HIGH_BYTE(pos);
-	OCR3CL = LOW_BYTE(pos);
+static inline void set_servo_duty_from_pos(uint16_t duty_top) {
+	OCR3CH = HIGH_BYTE(duty_top);
+	OCR3CL = LOW_BYTE(duty_top);
 }
 
 static int shift_gear(int gear_dir) {
@@ -177,9 +179,6 @@ int main(void) {
 	init_pwm16_OC3C_prescalar64(2047);
 
 	init_neutral_gear_sensor();
-
-	// setup neutral gear sensor
-	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
 
 	// Set ignition cut pin to output
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
