@@ -41,8 +41,11 @@ static void can_default(uint8_t mob);
 
 #define IGN_PORT	(PORTE)
 #define IGN_PIN		(PIN4)
-#define IGNITION_CUT_ON()	( BIT_SET(IGN_PORT, IGN_PIN) )
-#define IGNITION_CUT_OFF()	( BIT_CLEAR(IGN_PORT, IGN_PIN) )
+#define IGNITION_CUT_DELAY()	( _delay_ms(100) )
+#define IGNITION_CUT_ON()		( BIT_SET(IGN_PORT, IGN_PIN) )
+#define IGNITION_CUT_OFF()		( BIT_CLEAR(IGN_PORT, IGN_PIN) )
+
+#define SERVER_DELAY()			( _delay_ms(500) )
 
 #define NEUT_PORT	(PORTE)
 #define NEUT_PIN	(PIN7)
@@ -118,7 +121,7 @@ static int shift_gear(int gear_dir) {
 	if (GEAR_IS_NEUTRAL()) current_gear = 0;
 
 	IGNITION_CUT_ON();
-	_delay_ms(100);
+	IGNITION_CUT_DELAY();
 
 	switch (gear_dir) {
 		case GEAR_DOWN:
@@ -148,10 +151,10 @@ static int shift_gear(int gear_dir) {
 			break;
 		default: err = 1; break;
 	}
-	_delay_ms(500);
+	SERVER_DELAY();
 
 	set_servo_duty_from_pos(SERVO_MIDT);
-	_delay_ms(500);
+	SERVER_DELAY();
 
 	IGNITION_CUT_OFF();
 
