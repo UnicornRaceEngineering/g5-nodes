@@ -88,10 +88,4 @@ enum io_pinmode_t {
 	} \
 }
 
-enum io_digital_t digitalRead(volatile uint8_t *inputPinRegister, int pin);
-void digitalWrite(volatile uint8_t *port, int pin, enum io_digital_t value);
-
-int pinMode(volatile uint8_t *port, int pin, enum io_pinmode_t mode);
-
-
 #endif /* IO_H */
