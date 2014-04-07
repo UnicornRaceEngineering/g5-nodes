@@ -116,7 +116,7 @@ static int shift_gear(int gear_dir) {
 	bool err = 0;
 
 	/**
-	 * @todo: Should this be in an interrupt?
+	 * @todo: Should this still be done outside the interrupt?
 	 */
 	if (GEAR_IS_NEUTRAL()) current_gear = 0;
 
@@ -219,8 +219,7 @@ int main(void) {
 ISR(INT7_vect) {
 	if (GEAR_IS_NEUTRAL()) {
 		if (current_gear != 0) {
-			// An error has occured in the gear estimate. So lets
-			// correct it.
+			// An error has occured in the gear estimate. So lets correct it.
 			current_gear = 0;
 		}
 	} else {
@@ -241,21 +240,20 @@ ISR(INT7_vect) {
 				}
 				break;
 			case SERVO_MIDT:
-				// An error has occured in the gear estimate. So lets
-				// correct it.
+				// An error has occured in the gear estimate. So lets correct it
 				break;
 			case SERVO_NEUTRAL_FROM_1:
-				// An error has occured in the gear estimate. So lets
-				// correct it.
+				// An error has occured in the gear estimate. So lets correct it
 				current_gear = 2;
 				break;
 			case SERVO_NEUTRAL_FROM_2:
-				// An error has occured in the gear estimate. So lets
-				// correct it.
+				// An error has occured in the gear estimate. So lets correct it
 				current_gear = 1;
 				break;
 
-			default: break;
+			default:
+				// The gear is in an unknown position. This should never happen.
+				break;
 		}
 	}
 }
