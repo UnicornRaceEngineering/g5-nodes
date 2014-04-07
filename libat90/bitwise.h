@@ -71,30 +71,29 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IS_POW2(x) 				( (x) && !((x) & ((x) - 1))	) //!< Check if x is a power of 2
 #define HAS_OPPSITE_SIGN(x, y)	( (((x) ^ (y)) < 0) ) //!< check if x and y has opposite sign
 
+/**
+ * @name Byte splitting
+ * Provides splitting and merging byte and word operations.
+ * @{
+ */
 #define LOW_BYTE(w) 		( (uint8_t) ((w) & 0xFF)		) //!< Extracts the low-order (rightmost) byte of a variable.
 #define HIGH_BYTE(w) 		( (uint8_t) ((w) >> 8)			) //!< Extracts the high-order (leftmost) byte of a word (or the second lowest byte of a larger data type).
 #define MERGE_BYTE(h, l) 	( (uint16_t)(((h) << 8) | (l)) 	) //!< Merges two 8 bit bytes into one 16 bit byte where h is the High byte and l is the Low byte
 
+#define LOW_NIBBLE(b)		( (b) & 0xF 		)
+#define HIGH_NIBBLE(b)		( ((b) >> 4) & 0xF 	)
+#define MERGE_NIBBLES(h, l) ( ((h) << 4) | (l) 	)
+/** @} */
+
 /**
-* @fn 
-*	MACRO-FUNCTION Direct_jump_to_zero
-* @brief
-*	Jump at the addresse 0x0000 (not a reset !)
-* @warning: not a reset!
-* @param none
-* @return none
-*/
+ * Jump at the addresse 0x0000 (not a reset !)
+ * @warning not a reset!
+ */
 #define Direct_jump_to_zero()   { asm ("jmp 0"::); }
 
-/*
-* @fn MACRO-FUNCTION Hard_reset
-* @brief
-*	RESET device with Watchdog Timer.
-* @warning: Watchdog Timer used
-*	Check BOOTRST fuse setting
-* @param none
-* @return none
-*/
+/**
+ * RESET device with Watchdog Timer.
+ */
 #define Hard_reset()    { WDTCR |= 1<<WDE;  while(1); }
 
 #endif /* BITWISE_H */
