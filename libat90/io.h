@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
 * @file io.h
 * @brief
-*	Used for simple digital pin IO operations
+* Used for simple digital pin IO operations
 */
 
 #ifndef IO_H
@@ -39,8 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /**
 * @brief
-*	Represents the two possible
-*	digital values
+* Represents the two possible
+* digital values
 */
 enum io_digital_t {
 	LOW 	= 0,
@@ -49,8 +49,7 @@ enum io_digital_t {
 
 /**
 * @brief
-*	Different modes that the pins
-*	can be set to
+* Different modes that the pins can be set to.
 */
 enum io_pinmode_t {
 	INPUT, 			//!< Useful for reading a sensor but not powering an LED, You would most likely want the INPUT pin to reference GND
@@ -58,27 +57,34 @@ enum io_pinmode_t {
 	INPUT_PULLUP 	//!< Use the internal pull-up resistors. This effectively inverts its behavior, where HIGH means off and LOW means on
 };
 
-//!< @name digital read/write
-//!< Digitally read, write or toggle a specified IO pin
-//!< @{
+/**
+ * @name digital read/write
+ * Digitally read, write or toggle a specified IO pin
+ * @{
+ */
 #define DIGITAL_READ(port, pin)			( BIT_CHECK((PIN_PORT(port)), (pin)) != 0 ? HIGH : LOW 			) //!< Same as digitalRead
 #define DIGITAL_WRITE(port, pin, value)	( BITMASK_SET_OR_CLEAR((port), (1 << (pin)), (value)) 			) //!< Same as digitalWrite. Use only if value is run time dependent
 #define DIGITAL_TOGGLE(port, pin)		( BIT_FLIP((port), (pin)) 										) //!< Toggle a pin
 #define DIGITAL_INVERT(port, pin)		( DIGITAL_WRITE((port), (pin), !DIGITAL_READ((port), (pin))) 	) //!< Inverts the value on a given pin. Essentially the same as @ref DIGITAL_TOGGLE()
-//!< @}
-
-//!< @name IO_SET
-//!< These should be used over DIGITAL_WRITE() if
-//!< the state you want to set is known at compile time
-//!< @{
-#define IO_SET_HIGH(port, pin)	( BIT_SET((port), (pin)) 	) //!< Set the value on the specified pin to HIGH
-#define IO_SET_LOW(port, pin)	( BIT_CLEAR((port), (pin)) 	) //!< Set the value on the specified pin to LOW
-//!< @}
+/** @} */
 
 /**
-* @brief
-*	Same as pinMode
-*/
+ * @name IO_SET
+ * These should be used over DIGITAL_WRITE() if the state to set is known at
+ * compile time
+ * @{
+ */
+#define IO_SET_HIGH(port, pin)	( BIT_SET((port), (pin)) 	) //!< Set the value on the specified pin to HIGH
+#define IO_SET_LOW(port, pin)	( BIT_CLEAR((port), (pin)) 	) //!< Set the value on the specified pin to LOW
+/** @} */
+
+
+/**
+ * Set the pin mode on a specific pin.
+ * @param  port The port that the pin is located on
+ * @param  pin  The pin to set mode on
+ * @param  mode The io_pinmode_t to use
+ */
 #define SET_PIN_MODE(port, pin, mode){ \
 	if (mode == OUTPUT){ \
 		BIT_SET( DDR_PORT( (port) ), (pin) ); \
