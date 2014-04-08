@@ -192,24 +192,34 @@ int main(void) {
 
 	usart1_printf("\n\n\nSTARTING\n");
 
-	int gear = 0;
 
 	while(1){
+#if 0
 		if (usart1_hasData()) {
 			char c = usart1_getc();
 			switch (c) {
 				case 'q':
-					gear = shift_gear(GEAR_DOWN);
+					shift_gear(GEAR_DOWN);
 					break;
 				case 'w':
-					gear = shift_gear(GEAR_NEUTRAL);
+					shift_gear(GEAR_NEUTRAL);
 					break;
 				case 'e':
-					gear = shift_gear(GEAR_UP);
+					shift_gear(GEAR_UP);
 					break;
 			}
-			usart1_printf("Gear: %d Neutral: %d\n", gear, GEAR_IS_NEUTRAL());
+			usart1_printf("Gear: %d Neutral: %d\n", current_gear, GEAR_IS_NEUTRAL());
 		}
+#else
+		while (shift_gear(GEAR_UP) <= 6){
+			_delay_ms(250);
+			usart1_printf("Gear: %d", current_gear);
+		}
+		while (shift_gear(GEAR_DOWN) != 0) {
+			_delay_ms(250);
+			usart1_printf("Gear: %d", current_gear);
+		}
+#endif
 	}
 
     return 0;
