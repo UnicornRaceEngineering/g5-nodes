@@ -73,8 +73,7 @@ static unsigned int checksum(const char *s, int len) {
  * @return   The converted integral value as an unsigned 16 bit integer.
  */
 static uint16_t str2uint(const char *s, size_t n) {
-	int rc = 0;
-
+	uint16_t rc = 0;
 	uint16_t base = 1;
 	do {
 		rc += (s[--n] - '0') * base;
