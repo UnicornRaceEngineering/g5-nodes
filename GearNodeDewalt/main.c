@@ -166,7 +166,10 @@ static int shift_gear(int gear_dir) {
 			}
 			current_gear++;
 			break;
-		default: err = 1; break;
+		default: 
+			err = 1; 
+			break;
+	}
 
 //	switch (gear_dir) {
 //		case GEAR_DOWN:
