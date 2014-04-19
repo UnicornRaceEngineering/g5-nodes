@@ -202,7 +202,6 @@ static int shift_gear(int gear_dir) {
 //
 //set_servo_duty_from_pos(SERVO_MIDT);
 	GEAR_PWM_OFF();
-	GEAR_MOTOR_OFF(); 
 	GEAR_MOTOR_OFF_UP();	
 	GEAR_MOTOR_OFF_DOWN();
 	SERVER_DELAY();
