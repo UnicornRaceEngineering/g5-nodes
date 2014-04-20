@@ -124,7 +124,13 @@ static inline void set_servo_duty_from_pos(uint16_t duty_top) {
 	OCR3CL = LOW_BYTE(duty_top);
 }
 
+static void init_shift_gear(){
+	SET_PIN_MODE(PORTB, GEAR_MOTOR_UP, OUTPUT);
+	SET_PIN_MODE(PORTB, GEAR_MOTOR_DOWN, OUTPUT);
+}
+
 static int shift_gear(int gear_dir) {
+	
 	bool err = 0;
 
 	/**
@@ -233,6 +239,8 @@ int main(void) {
 
 	init_neutral_gear_sensor();
 
+	init_shift_gear();
+
 	// Set ignition cut pin to output
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
 
@@ -243,7 +251,7 @@ int main(void) {
 	usart1_printf("\n\n\nSTARTING\n");
 
 
-	while(1){
+	while(0){
 #if 1
 		if (usart1_hasData()) {
 			char c = usart1_getc();
