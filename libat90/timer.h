@@ -103,5 +103,7 @@ enum timer3_prescalar_t {
 
 void timer0_set_prescalar(uint8_t prescalar);
 void timer1_set_prescalar(uint8_t prescalar);
+void timer2_set_prescalar(uint8_t prescalar);
+void timer3_set_prescalar(uint8_t prescalar);
 
 #endif /* TIMER_H */
