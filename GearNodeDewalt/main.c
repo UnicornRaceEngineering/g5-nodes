@@ -53,14 +53,12 @@ static void can_default(uint8_t mob);
 
 #define MOTOR_PWM_PORT	(PORTB)
 #define MOTOR_PWM_PIN	(PIN5)
-#define GEAR_PWM_ON() 	(BIT_SET(MOTOR_PWM_PORT, MOTOR_PWM_PIN))
-#define GEAR_PWM_OFF() 	(BIT_CLEAR(MOTOR_PWM_PORT, MOTOR_PWM_PIN))
 
 #define MOTOR_PORT		(PORTA)
 #define MOTOR_UP_PIN	(PIN0)
 #define MOTOR_DOWN_PIN	(PIN1)
-#define GEAR_MOTOR_UP() 	(BIT_SET(MOTOR_PORT, MOTOR_UP_PIN))
-#define GEAR_MOTOR_DOWN() 	(BIT_SET(MOTOR_PORT, MOTOR_DOWN_PIN))
+#define GEAR_MOTOR_UP() 		(BIT_SET(MOTOR_PORT, MOTOR_UP_PIN))
+#define GEAR_MOTOR_DOWN() 		(BIT_SET(MOTOR_PORT, MOTOR_DOWN_PIN))
 #define GEAR_MOTOR_OFF_UP() 	(BIT_CLEAR(MOTOR_PORT, MOTOR_UP_PIN))
 #define GEAR_MOTOR_OFF_DOWN() 	(BIT_CLEAR(MOTOR_PORT, MOTOR_DOWN_PIN))
 
@@ -97,40 +95,41 @@ static void init_neutral_gear_sensor(void) {
 
 static void init_pwm16_OC3C_prescalar64(uint16_t count_to) {
 	// OC3C, Output Compare Match C output (counter 3 output compare)
-	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
+	//SET_PIN_MODE(PORTE, PIN5, OUTPUT);
+	SET_PIN_MODE(MOTOR_PWM_PORT, MOTOR_PWM_PIN, OUTPUT);
 
 	// Clear on Compare Match
-	BIT_SET(TCCR3A, COM3C1);
-	BIT_CLEAR(TCCR3A, COM3C0);
+	BIT_SET(TCCR1A, COM1C1);
+	BIT_CLEAR(TCCR1A, COM1C0);
 
 	// Set Wave Generation Mode to Fast PWM counting to ICR
-	BIT_CLEAR(TCCR3A, WGM30);
-	BIT_SET(TCCR3A, WGM31);
-	BIT_SET(TCCR3B, WGM32);
-	BIT_SET(TCCR3B, WGM33);
+	BIT_CLEAR(TCCR1A, WGM10);
+	BIT_SET(TCCR1A, WGM11);
+	BIT_SET(TCCR1B, WGM12);
+	BIT_SET(TCCR1B, WGM13);
 
 	// Count to the specified value
-	ICR3H = HIGH_BYTE(count_to);
-	ICR3L = LOW_BYTE(count_to);
+	ICR1H = HIGH_BYTE(count_to);
+	ICR1L = LOW_BYTE(count_to);
 
 	// Set prescalar to 64
-	BIT_SET(TCCR3B, CS30);
-	BIT_SET(TCCR3B, CS31);
-	BIT_CLEAR(TCCR3B, CS32);
+	BIT_SET(TCCR1B, CS10);
+	BIT_SET(TCCR1B, CS11);
+	BIT_CLEAR(TCCR1B, CS12);
 }
 
 static inline void set_servo_duty_from_pos(uint16_t duty_top) {
-	OCR3CH = HIGH_BYTE(duty_top);
-	OCR3CL = LOW_BYTE(duty_top);
+	OCR1CH = HIGH_BYTE(duty_top);
+	OCR1CL = LOW_BYTE(duty_top);
 }
 
-static void init_shift_gear(){
-	SET_PIN_MODE(PORTB, GEAR_MOTOR_UP, OUTPUT);
-	SET_PIN_MODE(PORTB, GEAR_MOTOR_DOWN, OUTPUT);
+static void init_shift_gear(void){
+	SET_PIN_MODE(MOTOR_PORT, MOTOR_UP_PIN, OUTPUT);
+	SET_PIN_MODE(MOTOR_PORT, MOTOR_DOWN_PIN, OUTPUT);
 }
 
 static int shift_gear(int gear_dir) {
-	
+
 	bool err = 0;
 
 	/**
@@ -140,10 +139,9 @@ static int shift_gear(int gear_dir) {
 
 	IGNITION_CUT_ON();
 	IGNITION_CUT_DELAY();
-	GEAR_PWM_ON();
 	switch (gear_dir) {
 		case GEAR_DOWN:
-			if (current_gear != 0) { // CHANGE THIS NB 1. GEAR 
+			if (current_gear != 0) { // CHANGE THIS NB 1. GEAR
 				GEAR_MOTOR_DOWN();
 				current_gear--;
 			}
@@ -151,11 +149,11 @@ static int shift_gear(int gear_dir) {
 		case GEAR_NEUTRAL:
 			if (current_gear >= 2) {
 				GEAR_MOTOR_UP(); // CHANGE THIS !!
-				//set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_2);
+				set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_2);
 			} else {
-				
-				GEAR_MOTOR_DOWN (); // CHANGE THIS !!
-				//set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_1);
+
+				GEAR_MOTOR_DOWN(); // CHANGE THIS !!
+				set_servo_duty_from_pos(SERVO_NEUTRAL_FROM_1);
 			}
 
 			current_gear = 0;
@@ -163,17 +161,17 @@ static int shift_gear(int gear_dir) {
 		case GEAR_UP:
 			if (current_gear != 0) {
 				GEAR_MOTOR_UP();
-				//set_servo_duty_from_pos(SERVO_UP);
+				set_servo_duty_from_pos(SERVO_UP);
 			} else {
 				// Special case. If we are in neutral we have to shift down to
 				// get to gear 1 as it is laid out as [1, 0, 2, 3, 4, 5, 6]
-				GEAR_MOTOR_DOWN ();
-				//set_servo_duty_from_pos(SERVO_DOWN);
+				GEAR_MOTOR_DOWN();
+				set_servo_duty_from_pos(SERVO_DOWN);
 			}
 			current_gear++;
 			break;
-		default: 
-			err = 1; 
+		default:
+			err = 1;
 			break;
 	}
 
@@ -207,8 +205,7 @@ static int shift_gear(int gear_dir) {
 //	}
 //
 //set_servo_duty_from_pos(SERVO_MIDT);
-	GEAR_PWM_OFF();
-	GEAR_MOTOR_OFF_UP();	
+	GEAR_MOTOR_OFF_UP();
 	GEAR_MOTOR_OFF_DOWN();
 	SERVER_DELAY();
 
@@ -251,7 +248,7 @@ int main(void) {
 	usart1_printf("\n\n\nSTARTING\n");
 
 
-	while(0){
+	while(1){
 #if 1
 		if (usart1_hasData()) {
 			char c = usart1_getc();
@@ -291,7 +288,7 @@ ISR(INT7_vect) {
 			current_gear = 0;
 		}
 	} else {
-		const uint16_t servo_pos = MERGE_BYTE(OCR3CH, OCR3CL);
+		const uint16_t servo_pos = MERGE_BYTE(OCR1CH, OCR1CL);
 		switch (servo_pos) {
 			case SERVO_UP:
 				if (current_gear != 2) {
