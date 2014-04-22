@@ -24,23 +24,29 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef TIMER_H
 #define TIMER_H
 
-enum timer_prescalar_t {
-	PRESCALAR_1,
-	PRESCALAR_8,
-	PRESCALAR_64,
-	PRESCALAR_256,
-	PRESCALAR_1024
+#include <avr/io.h>
+#include <stdint.h>
+
+/**
+ * CS02, CS01 and CS00 (Clock Select) sets the source used by the Timer/Counter
+ * If external pin modes are used for the Timer/Counter0, transitions on the T0
+ * pin will clock the counter even if the pin is configured as an output. This
+ * feature allows software control of the counting.
+ *
+ * For more infomation see the datasheet page 111
+ */
+enum timer0_prescalar_t {
+	TIMER0_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
+	TIMER0_PRESCALAR_1 			=		(0   |0   |CS00), //!< clkI/O/(No prescaling)
+	TIMER0_PRESCALAR_8 			=		(0   |CS01|0   ), //!< clkI/O/8 (From prescaler)
+	TIMER0_PRESCALAR_64 		=		(0   |CS01|CS00), //!< clkI/O/64 (From prescaler)
+	TIMER0_PRESCALAR_256 		=		(CS02|0   |0   ), //!< clkI/O/256 (From prescaler)
+	TIMER0_PRESCALAR_1024 		=		(CS02|0   |CS01), //!< clkI/O/1024 (From prescaler)
+
+	TIMER0_PRESCALAR_EXTERNAL_FALLING = (CS02|CS01|0   ), //!< External clock source on T0 pin. Clock on falling edge.
+	TIMER0_PRESCALAR_EXTERNAL_RISING  = (CS02|CS01|CS00)  //!< External clock source on T0 pin. Clock on rising edge.
 };
 
-enum timer_16bit_ConReg {
-	TIMER1,
-	TIMER3
-};
-
-int Waveform_Generation_Mode;
-
-
-void timer_setPrescaler(const enum timer_prescalar_t p);
-void timer_setMode(const enum timer_16bit_ConReg, const unsigned int Waveform_Generation_Mode);
+void timer0_set_prescalar(uint8_t prescalar);
 
 #endif /* TIMER_H */

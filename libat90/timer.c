@@ -22,54 +22,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <avr/io.h>
+#include <stdint.h>
 #include "timer.h"
 #include "bitwise.h"
 
-void timer_setPrescaler(const enum timer_prescalar_t p) {
-	switch(p) {
-		case PRESCALAR_1:
-			BIT_SET(TCCR0A, CS00);
-			BIT_CLEAR(TCCR0A, CS01);
-			BIT_CLEAR(TCCR0A, CS02);
-			break;
-		case PRESCALAR_8:
-			BIT_CLEAR(TCCR0A, CS00);
-			BIT_SET(TCCR0A, CS01);
-			BIT_CLEAR(TCCR0A, CS02);
-			break;
-		case PRESCALAR_64:
-			BIT_SET(TCCR0A, CS00);
-			BIT_SET(TCCR0A, CS01);
-			BIT_CLEAR(TCCR0A, CS02);
-			break;
-		case PRESCALAR_256:
-			BIT_CLEAR(TCCR0A, CS00);
-			BIT_CLEAR(TCCR0A, CS01);
-			BIT_SET(TCCR0A, CS02);
-			break;
-		case PRESCALAR_1024:
-			BIT_SET(TCCR0A, CS00);
-			BIT_CLEAR(TCCR0A, CS01);
-			BIT_SET(TCCR0A, CS02);
-			break;
-	}
-}
+/**
+ * Sets the prescalar for timer0
+ * @param  prescalar see timer0_prescalar_t for valid input
+ */
+void timer0_set_prescalar(uint8_t prescalar) {
+	const uint8_t mask = CS02|CS01|CS00;
+	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
 
-void timer_setMode(const enum timer_16bit_ConReg timer, const unsigned int Waveform_Generation_Mode) {
-	const unsigned int mask = 0x03;
-
-	switch (timer) {
-		case TIMER1:
-			BIT_CLEAR(TCCR1A, mask);
-			BIT_CLEAR(TCCR1B, mask);
-			BIT_SET(TCCR1A, BITMASK_CHECK(Waveform_Generation_Mode, mask));
-			BIT_SET(TCCR1B, BITMASK_CHECK((Waveform_Generation_Mode >> 2), mask));
-			break;
-		case TIMER3:
-			BIT_CLEAR(TCCR3A, mask);
-			BIT_CLEAR(TCCR3B, mask);
-			BIT_SET(TCCR3A, BITMASK_CHECK(Waveform_Generation_Mode, mask));
-			BIT_SET(TCCR3B, BITMASK_CHECK((Waveform_Generation_Mode >> 2), mask));
-			break;
-	}
+	BITMASK_CLEAR(TCCR0A, mask); // Clear the register before writing new values
+	BITMASK_SET(TCCR0A, prescalar);
 }
