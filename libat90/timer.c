@@ -51,6 +51,18 @@ void timer1_set_prescalar(uint8_t prescalar) {
 }
 
 /**
+ * Sets the prescalar for timer2
+ * @param prescalar See timer2_prescalar_t for valid input
+ */
+void timer2_set_prescalar(uint8_t prescalar) {
+	const uint8_t mask = CS22|CS21|CS20;
+	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
+
+	BITMASK_CLEAR(TCCR2A, mask); // Clear the register before writing new values
+	BITMASK_SET(TCCR2A, prescalar);
+}
+
+/**
  * Sets the prescalar for timer3
  * @param prescalar see timer3_prescalar_t for valid input
  */

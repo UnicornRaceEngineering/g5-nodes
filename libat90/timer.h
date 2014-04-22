@@ -68,6 +68,20 @@ enum timer1_prescalar_t {
 };
 
 /**
+ * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter
+ */
+enum timer2_prescalar_t {
+	TIMER2_PRESCALAR_NO_SOURCE 	= (0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
+	TIMER2_PRESCALAR_1 			= (0   |0   |CS20), //!< clkT2S/(No prescaling)
+	TIMER2_PRESCALAR_8 			= (0   |CS21|0   ), //!< clkT2S/8 (From prescaler)
+	TIMER2_PRESCALAR_32 		= (0   |CS21|CS20), //!< clkT2S/32 (From prescaler)
+	TIMER2_PRESCALAR_64 		= (CS22|0   |0   ), //!< clkT2S/64 (From prescaler)
+	TIMER2_PRESCALAR_128 		= (CS22|0   |CS20), //!< clkT2S/128 (From prescaler)
+	TIMER2_PRESCALAR_256 		= (CS22|CS21|0   ), //!< clkT2S/256 (From prescaler)
+	TIMER2_PRESCALAR_1024 		= (CS22|CS21|CS20)  //!< clkT2S/1024 (From prescaler)
+};
+
+/**
  * CS32, CS31 and CS30 (Clock Select) sets the source used by the Timer/Counter
  * If external pin modes are used for the Timer/Counter0, transitions on the T3
  * pin will clock the counter even if the pin is configured as an output. This
