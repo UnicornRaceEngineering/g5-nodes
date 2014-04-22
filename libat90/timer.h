@@ -47,6 +47,47 @@ enum timer0_prescalar_t {
 	TIMER0_PRESCALAR_EXTERNAL_RISING  = (CS02|CS01|CS00)  //!< External clock source on T0 pin. Clock on rising edge.
 };
 
+/**
+ * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter
+ * If external pin modes are used for the Timer/Counter0, transitions on the T1
+ * pin will clock the counter even if the pin is configured as an output. This
+ * feature allows software control of the counting.
+ *
+ * For more infomation see the datasheet page 139
+ */
+enum timer1_prescalar_t {
+	TIMER1_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
+	TIMER1_PRESCALAR_1 			=		(0   |0   |CS10), //!< clkI/O/(No prescaling)
+	TIMER1_PRESCALAR_8 			=		(0   |CS11|0   ), //!< clkI/O/8 (From prescaler)
+	TIMER1_PRESCALAR_64 		=		(0   |CS11|CS10), //!< clkI/O/64 (From prescaler)
+	TIMER1_PRESCALAR_256 		=		(CS12|0   |0   ), //!< clkI/O/256 (From prescaler)
+	TIMER1_PRESCALAR_1024 		=		(CS12|0   |CS11), //!< clkI/O/1024 (From prescaler)
+
+	TIMER1_PRESCALAR_EXTERNAL_FALLING = (CS12|CS11|0   ), //!< External clock source on T1 pin. Clock on falling edge.
+	TIMER1_PRESCALAR_EXTERNAL_RISING  = (CS12|CS11|CS10)  //!< External clock source on T1 pin. Clock on rising edge.
+};
+
+/**
+ * CS32, CS31 and CS30 (Clock Select) sets the source used by the Timer/Counter
+ * If external pin modes are used for the Timer/Counter0, transitions on the T3
+ * pin will clock the counter even if the pin is configured as an output. This
+ * feature allows software control of the counting.
+ *
+ * For more infomation see the datasheet page 139
+ */
+enum timer3_prescalar_t {
+	TIMER3_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
+	TIMER3_PRESCALAR_1 			=		(0   |0   |CS30), //!< clkI/O/(No prescaling)
+	TIMER3_PRESCALAR_8 			=		(0   |CS31|0   ), //!< clkI/O/8 (From prescaler)
+	TIMER3_PRESCALAR_64 		=		(0   |CS31|CS30), //!< clkI/O/64 (From prescaler)
+	TIMER3_PRESCALAR_256 		=		(CS32|0   |0   ), //!< clkI/O/256 (From prescaler)
+	TIMER3_PRESCALAR_1024 		=		(CS32|0   |CS31), //!< clkI/O/1024 (From prescaler)
+
+	TIMER3_PRESCALAR_EXTERNAL_FALLING = (CS32|CS31|0   ), //!< External clock source on T1 pin. Clock on falling edge.
+	TIMER3_PRESCALAR_EXTERNAL_RISING  = (CS32|CS31|CS30)  //!< External clock source on T1 pin. Clock on rising edge.
+};
+
 void timer0_set_prescalar(uint8_t prescalar);
+void timer1_set_prescalar(uint8_t prescalar);
 
 #endif /* TIMER_H */

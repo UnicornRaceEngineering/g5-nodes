@@ -37,3 +37,27 @@ void timer0_set_prescalar(uint8_t prescalar) {
 	BITMASK_CLEAR(TCCR0A, mask); // Clear the register before writing new values
 	BITMASK_SET(TCCR0A, prescalar);
 }
+
+/**
+ * Sets the prescalar for timer1
+ * @param prescalar see timer1_prescalar_t for valid input
+ */
+void timer1_set_prescalar(uint8_t prescalar) {
+	const uint8_t mask = CS12|CS11|CS10;
+	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
+
+	BITMASK_CLEAR(TCCR1B, mask); // Clear the register before writing new values
+	BITMASK_SET(TCCR1B, prescalar);
+}
+
+/**
+ * Sets the prescalar for timer3
+ * @param prescalar see timer3_prescalar_t for valid input
+ */
+void timer3_set_prescalar(uint8_t prescalar) {
+	const uint8_t mask = CS32|CS31|CS30;
+	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
+
+	BITMASK_CLEAR(TCCR3B, mask); // Clear the register before writing new values
+	BITMASK_SET(TCCR3B, prescalar);
+}
