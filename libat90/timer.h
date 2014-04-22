@@ -21,6 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @file timer.h
+ * @brief
+ * Provides a simplified interface to the various available timers.
+ */
+
 #ifndef TIMER_H
 #define TIMER_H
 
@@ -68,7 +74,9 @@ enum timer1_prescalar_t {
 };
 
 /**
- * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter
+ * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter.
+ *
+ * For more infomation see the datasheet page 159
  */
 enum timer2_prescalar_t {
 	TIMER2_PRESCALAR_NO_SOURCE 	= (0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
