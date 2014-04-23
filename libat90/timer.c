@@ -33,15 +33,28 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 
 /**
+ * Sets the prescalar on the given control register. This works by first
+ * filtering out invalid prescalar values. Then the register is cleared and then
+ * we can finally write the prescalar value to the register.
+ * @warn causes side effects on prescalar
+ * @param  ctrl_register The timer control register
+ * @param  prescalar     The prescalar that should be written to the register
+ * @param  mask          Mask of the bits in the register that should be
+ *                       modified.
+ */
+#define SET_PRESCALAR(ctrl_register, prescalar, mask) do { \
+	prescalar = BITMASK_CHECK((prescalar), (mask)); /* Filter valid input */ \
+	BITMASK_CLEAR((ctrl_register), (mask)); /* Clear register before writing */\
+	BITMASK_SET((ctrl_register), (prescalar)); \
+} while (0);
+
+/**
  * Sets the prescalar for timer0
  * @param  prescalar see timer0_prescalar_t for valid input
  */
 void timer0_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS02|CS01|CS00;
-	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
-
-	BITMASK_CLEAR(TCCR0A, mask); // Clear the register before writing new values
-	BITMASK_SET(TCCR0A, prescalar);
+	SET_PRESCALAR(TCCR0A, prescalar, mask);
 }
 
 /**
@@ -50,10 +63,7 @@ void timer0_set_prescalar(uint8_t prescalar) {
  */
 void timer1_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS12|CS11|CS10;
-	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
-
-	BITMASK_CLEAR(TCCR1B, mask); // Clear the register before writing new values
-	BITMASK_SET(TCCR1B, prescalar);
+	SET_PRESCALAR(TCCR1B, prescalar, mask);
 }
 
 /**
@@ -62,10 +72,7 @@ void timer1_set_prescalar(uint8_t prescalar) {
  */
 void timer2_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS22|CS21|CS20;
-	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
-
-	BITMASK_CLEAR(TCCR2A, mask); // Clear the register before writing new values
-	BITMASK_SET(TCCR2A, prescalar);
+	SET_PRESCALAR(TCCR2A, prescalar, mask);
 }
 
 /**
@@ -74,8 +81,5 @@ void timer2_set_prescalar(uint8_t prescalar) {
  */
 void timer3_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS32|CS31|CS30;
-	prescalar = BITMASK_CHECK(prescalar, mask); // Filter valid input
-
-	BITMASK_CLEAR(TCCR3B, mask); // Clear the register before writing new values
-	BITMASK_SET(TCCR3B, prescalar);
+	SET_PRESCALAR(TCCR3B, prescalar, mask);
 }
