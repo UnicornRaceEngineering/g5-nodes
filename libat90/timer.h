@@ -105,8 +105,8 @@ enum timer3_prescalar_t {
 	TIMER3_PRESCALAR_256 		=		(CS32|0   |0   ), //!< clkI/O/256 (From prescaler)
 	TIMER3_PRESCALAR_1024 		=		(CS32|0   |CS31), //!< clkI/O/1024 (From prescaler)
 
-	TIMER3_PRESCALAR_EXTERNAL_FALLING = (CS32|CS31|0   ), //!< External clock source on T1 pin. Clock on falling edge.
-	TIMER3_PRESCALAR_EXTERNAL_RISING  = (CS32|CS31|CS30)  //!< External clock source on T1 pin. Clock on rising edge.
+	TIMER3_PRESCALAR_EXTERNAL_FALLING = (CS32|CS31|0   ), //!< External clock source on T3 pin. Clock on falling edge.
+	TIMER3_PRESCALAR_EXTERNAL_RISING  = (CS32|CS31|CS30)  //!< External clock source on T3 pin. Clock on rising edge.
 };
 
 void timer0_set_prescalar(uint8_t prescalar);
