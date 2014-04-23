@@ -36,16 +36,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Sets the prescalar on the given control register. This works by first
  * filtering out invalid prescalar values. Then the register is cleared and then
  * we can finally write the prescalar value to the register.
- * @warn causes side effects on prescalar
  * @param  ctrl_register The timer control register
  * @param  prescalar     The prescalar that should be written to the register
  * @param  mask          Mask of the bits in the register that should be
  *                       modified.
  */
 #define SET_PRESCALAR(ctrl_register, prescalar, mask) do { \
-	prescalar = BITMASK_CHECK((prescalar), (mask)); /* Filter valid input */ \
+	const uint8_t normalized_prescalar = BITMASK_CHECK((prescalar), (mask)); \
 	BITMASK_CLEAR((ctrl_register), (mask)); /* Clear register before writing */\
-	BITMASK_SET((ctrl_register), (prescalar)); \
+	BITMASK_SET((ctrl_register), (normalized_prescalar)); \
 } while (0)
 
 /**
