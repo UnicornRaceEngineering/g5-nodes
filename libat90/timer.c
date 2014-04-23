@@ -46,7 +46,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	prescalar = BITMASK_CHECK((prescalar), (mask)); /* Filter valid input */ \
 	BITMASK_CLEAR((ctrl_register), (mask)); /* Clear register before writing */\
 	BITMASK_SET((ctrl_register), (prescalar)); \
-} while (0);
+} while (0)
 
 /**
  * Sets the prescalar for timer0
