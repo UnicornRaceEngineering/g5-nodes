@@ -33,18 +33,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 
 /**
- * Sets the prescalar on the given control register. This works by first
- * filtering out invalid prescalar values. Then the register is cleared and then
- * we can finally write the prescalar value to the register.
+ * Sets the bitset on the given control register. This works by first
+ * filtering out invalid bitset values according to the mask. The register is
+ * cleared and then we can finally write the bitset value to the register.
  * @param  ctrl_register The timer control register
- * @param  prescalar     The prescalar that should be written to the register
+ * @param  bitset        The bitset that should be written to the register
  * @param  mask          Mask of the bits in the register that should be
  *                       modified.
  */
-#define SET_PRESCALAR(ctrl_register, prescalar, mask) do { \
-	const uint8_t normalized_prescalar = BITMASK_CHECK((prescalar), (mask)); \
+#define SET_REGISTER_BITS(ctrl_register, bitset, mask) do { \
+	const uint8_t normalized_bitset = BITMASK_CHECK((bitset), (mask)); \
 	BITMASK_CLEAR((ctrl_register), (mask)); /* Clear register before writing */\
-	BITMASK_SET((ctrl_register), (normalized_prescalar)); \
+	BITMASK_SET((ctrl_register), (normalized_bitset)); \
 } while (0)
 
 /**
@@ -53,7 +53,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 void timer0_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS02|CS01|CS00;
-	SET_PRESCALAR(TCCR0A, prescalar, mask);
+	SET_REGISTER_BITS(TCCR0A, prescalar, mask);
 }
 
 /**
@@ -62,7 +62,7 @@ void timer0_set_prescalar(uint8_t prescalar) {
  */
 void timer1_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS12|CS11|CS10;
-	SET_PRESCALAR(TCCR1B, prescalar, mask);
+	SET_REGISTER_BITS(TCCR1B, prescalar, mask);
 }
 
 /**
@@ -71,7 +71,7 @@ void timer1_set_prescalar(uint8_t prescalar) {
  */
 void timer2_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS22|CS21|CS20;
-	SET_PRESCALAR(TCCR2A, prescalar, mask);
+	SET_REGISTER_BITS(TCCR2A, prescalar, mask);
 }
 
 /**
@@ -80,5 +80,5 @@ void timer2_set_prescalar(uint8_t prescalar) {
  */
 void timer3_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS32|CS31|CS30;
-	SET_PRESCALAR(TCCR3B, prescalar, mask);
+	SET_REGISTER_BITS(TCCR3B, prescalar, mask);
 }
