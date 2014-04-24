@@ -110,6 +110,7 @@ enum timer0_waveform_generation_mode_t {
  * will run into trouble. Instead we shift them and store them in a 16 bit value
  * where we have shifted WGM13 and WGM12 into the high bit so we later can
  * reverse the process and enter apply it.
+ * See data-sheet page 138 table 13-4
  */
 enum timer1_waveform_generation_mode_t {
 	TIMER1_WGM_NORMAL 							= (0<<8    |0<<8    |0    |0    ), //!< TOP=0xFFFF, Update of OCR1nx at: Immediate, TOVn Flag Set on: MAX
@@ -144,6 +145,36 @@ enum timer2_waveform_generation_mode_t {
 	TIMER2_WGM_PWM_PHASE_CORRECT 	= (0    |WGM20), //!< TOP=0xFF,  Update of OCR2A at: TOP, 		TOV0 Flag Set on: BOTTON
 	TIMER2_WGM_CTC					= (WGM21|0    ), //!< TOP=OCR2A, Update of OCR2A at: Immediate, TOV0 Flag Set on: MAX
 	TIMER2_WGM_FAST_PWM				= (WGM21|WGM20)  //!< TOP=0xFF,  Update of OCR2A at: TOP, 		TOV0 Flag Set on: MAX
+};
+
+/**
+ * See timer1_waveform_generation_mode_t
+ */
+enum timer3_waveform_generation_mode_t {
+	TIMER3_WGM_NORMAL 							= (0<<8    |0<<8    |0    |0    ), //!< TOP=0xFFFF, Update of OCR1nx at: Immediate, TOVn Flag Set on: MAX
+
+	TIMER3_WGM_PWM_PHASE_CORRECT_8BIT 			= (0<<8    |0<<8    |0    |WGM30), //!< TOP=0x00FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER3_WGM_PWM_PHASE_CORRECT_9BIT 			= (0<<8    |0<<8    |WGM31|0    ), //!< TOP=0x01FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER3_WGM_PWM_PHASE_CORRECT_10BIT 			= (0<<8    |0<<8    |WGM31|WGM30), //!< TOP=0x03FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+
+	TIMER3_WGM_CTC_OCR 							= (0<<8    |WGM32<<8|0    |0    ), //!< TOP=OCRnA,  Update of OCRnx at: Immediate,  TOVn Flag Set on: MAX
+
+	TIMER3_WGM_FAST_PWM_8BIT 					= (0<<8    |WGM32<<8|0    |WGM30), //!< TOP=0x00FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER3_WGM_FAST_PWM_9BIT 					= (0<<8    |WGM32<<8|WGM31|0    ), //!< TOP=0x01FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER3_WGM_FAST_PWM_10BIT 					= (0<<8    |WGM32<<8|WGM31|WGM30), //!< TOP=0x03FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+
+	TIMER3_WGM_PWM_PHASE_FREQUENCY_CORRECT_ICR 	= (WGM33<<8|0<<8    |0    |0    ), //!< TOP=ICRn,   Update of OCRnx at: BOTTOM,     TOVn Flag Set on: BOTTOM
+	TIMER3_WGM_PWM_PHASE_FREQUENCY_CORRECT_OCR 	= (WGM33<<8|0<<8    |0    |WGM30), //!< TOP=OCRnA,  Update of OCRnx at: BOTTOM,     TOVn Flag Set on: BOTTOM
+
+	TIMER3_WGM_PWM_PHASE_CORRECT_ICR 			= (WGM33<<8|0<<8    |WGM31|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER3_WGM_PWM_PHASE_CORRECT_OCR 			= (WGM33<<8|0<<8    |WGM31|WGM30), //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+
+	TIMER3_WGM_CTC_ICR 							= (WGM33<<8|WGM32<<8|0    |0    ), //!< TOP=ICRn,   Update of OCRnx at: Immediate,  TOVn Flag Set on: MAX
+
+	TIMER3_WGM_RESERVED 						= (WGM33<<8|WGM32<<8|0    |WGM30), //!< @note reserved
+
+	TIMER3_WG_FAST_PWM_ICR 						= (WGM33<<8|WGM32<<8|WGM31|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER3_WG_FAST_PWM_OCR 						= (WGM33<<8|WGM32<<8|WGM31|WGM30)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
 };
 
 /** @} */
