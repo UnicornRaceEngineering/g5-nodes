@@ -39,7 +39,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @{
  */
 
-/** For more infomation see the datasheet page 111 */
+/** For more information see the data-sheet page 111 */
 enum timer0_prescalar_t {
 	TIMER0_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER0_PRESCALAR_1 			=		(0   |0   |CS00), //!< clkI/O/(No prescaling)
@@ -52,7 +52,7 @@ enum timer0_prescalar_t {
 	TIMER0_PRESCALAR_EXTERNAL_RISING  = (CS02|CS01|CS00)  //!< External clock source on T0 pin. Clock on rising edge.
 };
 
-/** For more infomation see the datasheet page 139 */
+/** For more information see the data-sheet page 139 */
 enum timer1_prescalar_t {
 	TIMER1_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER1_PRESCALAR_1 			=		(0   |0   |CS10), //!< clkI/O/(No prescaling)
@@ -65,7 +65,7 @@ enum timer1_prescalar_t {
 	TIMER1_PRESCALAR_EXTERNAL_RISING  = (CS12|CS11|CS10)  //!< External clock source on T1 pin. Clock on rising edge.
 };
 
-/** For more infomation see the datasheet page 159 */
+/** For more information see the data-sheet page 159 */
 enum timer2_prescalar_t {
 	TIMER2_PRESCALAR_NO_SOURCE 	= (0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER2_PRESCALAR_1 			= (0   |0   |CS20), //!< clkT2S/(No prescaling)
@@ -77,7 +77,7 @@ enum timer2_prescalar_t {
 	TIMER2_PRESCALAR_1024 		= (CS22|CS21|CS20)  //!< clkT2S/1024 (From prescaler)
 };
 
-/** For more infomation see the datasheet page 139 */
+/** For more information see the data-sheet page 139 */
 enum timer3_prescalar_t {
 	TIMER3_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER3_PRESCALAR_1 			=		(0   |0   |CS30), //!< clkI/O/(No prescaling)
@@ -97,7 +97,7 @@ enum timer3_prescalar_t {
  * @{
  */
 
-/** See datasheet page 110 table 12-1 */
+/** See data-sheet page 110 table 12-1 */
 enum timer0_waveform_generation_mode_t {
 	TIMER0_WGM_NORMAL				= (0    |0    ), //!< TOP=0xFF,  Update of OCR0A at: Immediate, TOV0 Flag Set on: MAX
 	TIMER0_WGM_PWM_PHASE_CORRECT 	= (0    |WGM00), //!< TOP=0xFF,  Update of OCR0A at: TOP, 		TOV0 Flag Set on: BOTTON
@@ -138,7 +138,7 @@ enum timer1_waveform_generation_mode_t {
 	TIMER1_WG_FAST_PWM_OCR 						= (WGM13|WGM12|WGM11|WGM10)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
 };
 
-/** See datasheet page 158 table 14-1 */
+/** See data-sheet page 158 table 14-1 */
 enum timer2_waveform_generation_mode_t {
 	TIMER2_WGM_NORMAL				= (0    |0    ), //!< TOP=0xFF,  Update of OCR2A at: Immediate, TOV0 Flag Set on: MAX
 	TIMER2_WGM_PWM_PHASE_CORRECT 	= (0    |WGM20), //!< TOP=0xFF,  Update of OCR2A at: TOP, 		TOV0 Flag Set on: BOTTON
