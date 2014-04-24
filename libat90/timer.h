@@ -105,6 +105,14 @@ enum timer0_waveform_generation_mode_t {
 	TIMER0_WGM_FAST_PWM				= (WGM01|WGM00)  //!< TOP=0xFF,  Update of OCR0A at: TOP, 		TOV0 Flag Set on: MAX
 };
 
+/** See datasheet page 158 table 14-1 */
+enum timer2_waveform_generation_mode_t {
+	TIMER2_WGM_NORMAL				= (0    |0    ), //!< TOP=0xFF,  Update of OCR2A at: Immediate, TOV0 Flag Set on: MAX
+	TIMER2_WGM_PWM_PHASE_CORRECT 	= (0    |WGM20), //!< TOP=0xFF,  Update of OCR2A at: TOP, 		TOV0 Flag Set on: BOTTON
+	TIMER2_WGM_CTC					= (WGM21|0    ), //!< TOP=OCR2A, Update of OCR2A at: Immediate, TOV0 Flag Set on: MAX
+	TIMER2_WGM_FAST_PWM				= (WGM21|WGM20)  //!< TOP=0xFF,  Update of OCR2A at: TOP, 		TOV0 Flag Set on: MAX
+};
+
 /** @} */
 
 void timer0_set_prescalar(uint8_t prescalar);

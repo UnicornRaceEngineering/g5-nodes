@@ -103,4 +103,9 @@ void timer0_set_waveform_generation_mode(uint8_t wgm) {
 	SET_REGISTER_BITS(TCCR0A, wgm, mask);
 }
 
+void timer2_set_waveform_generation_mode(uint8_t wgm) {
+	const uint8_t mask = WGM21|WGM20;
+	SET_REGISTER_BITS(TCCR2A, wgm, mask);
+}
+
 /** @} */
