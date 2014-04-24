@@ -89,11 +89,29 @@ enum timer3_prescalar_t {
 	TIMER3_PRESCALAR_EXTERNAL_FALLING = (CS32|CS31|0   ), //!< External clock source on T3 pin. Clock on falling edge.
 	TIMER3_PRESCALAR_EXTERNAL_RISING  = (CS32|CS31|CS30)  //!< External clock source on T3 pin. Clock on rising edge.
 };
+
+/** @} */
+
+/**
+ * @name timer_waveform_generation_mode
+ * @{
+ */
+
+/** See datasheet page 110 table 12-1 */
+enum timer0_waveform_generation_mode_t {
+	TIMER0_WGM_NORMAL				= (0    |0    ), //!< TOP=0xFF,  Update of OCR0A at: Immediate, TOV0 Flag Set on: MAX
+	TIMER0_WGM_PWM_PHASE_CORRECT 	= (0    |WGM00), //!< TOP=0xFF,  Update of OCR0A at: TOP, 		TOV0 Flag Set on: BOTTON
+	TIMER0_WGM_CTC					= (WGM01|0    ), //!< TOP=OCR0A, Update of OCR0A at: Immediate, TOV0 Flag Set on: MAX
+	TIMER0_WGM_FAST_PWM				= (WGM01|WGM00)  //!< TOP=0xFF,  Update of OCR0A at: TOP, 		TOV0 Flag Set on: MAX
+};
+
 /** @} */
 
 void timer0_set_prescalar(uint8_t prescalar);
 void timer1_set_prescalar(uint8_t prescalar);
 void timer2_set_prescalar(uint8_t prescalar);
 void timer3_set_prescalar(uint8_t prescalar);
+
+void timer0_set_waveform_generation_mode(uint8_t wgm);
 
 #endif /* TIMER_H */

@@ -90,3 +90,17 @@ void timer3_set_prescalar(uint8_t prescalar) {
 }
 
 /** @} */
+
+
+/**
+ * @name set_waveform_generation_mode
+ * @param wgm The desired Waveform Generation Mode
+ * @{
+ */
+
+void timer0_set_waveform_generation_mode(uint8_t wgm) {
+	const uint8_t mask = WGM01|WGM00;
+	SET_REGISTER_BITS(TCCR0A, wgm, mask);
+}
+
+/** @} */
