@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <io.h>
 #include <bitwise.h>
+#include <timer.h>
 
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
@@ -92,19 +93,21 @@ static void init_pwm16_OC3C_prescalar64(uint16_t count_to) {
 	BIT_CLEAR(TCCR3A, COM3C0);
 
 	// Set Wave Generation Mode to Fast PWM counting to ICR
-	BIT_CLEAR(TCCR3A, WGM30);
-	BIT_SET(TCCR3A, WGM31);
-	BIT_SET(TCCR3B, WGM32);
-	BIT_SET(TCCR3B, WGM33);
+	//BIT_CLEAR(TCCR3A, WGM30);
+	//BIT_SET(TCCR3A, WGM31);
+	//BIT_SET(TCCR3B, WGM32);
+	//BIT_SET(TCCR3B, WGM33);
+	timer3_set_waveform_generation_mode(TIMER3_WGM_FAST_PWM_ICR);
 
 	// Count to the specified value
 	ICR3H = HIGH_BYTE(count_to);
 	ICR3L = LOW_BYTE(count_to);
 
 	// Set prescalar to 64
-	BIT_SET(TCCR3B, CS30);
-	BIT_SET(TCCR3B, CS31);
-	BIT_CLEAR(TCCR3B, CS32);
+	//BIT_SET(TCCR3B, CS30);
+	//BIT_SET(TCCR3B, CS31);
+	//BIT_CLEAR(TCCR3B, CS32);
+	timer3_set_prescalar(TIMER3_PRESCALAR_64);
 }
 
 static inline void set_servo_duty_from_pos(uint16_t duty_top) {

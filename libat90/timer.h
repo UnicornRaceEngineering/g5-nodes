@@ -135,8 +135,8 @@ enum timer1_waveform_generation_mode_t {
 
 	TIMER1_WGM_RESERVED 						= (WGM13<<8|WGM12<<8|0    |WGM10), //!< @note reserved
 
-	TIMER1_WG_FAST_PWM_ICR 						= (WGM13<<8|WGM12<<8|WGM11|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
-	TIMER1_WG_FAST_PWM_OCR 						= (WGM13<<8|WGM12<<8|WGM11|WGM10)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER1_WGM_FAST_PWM_ICR 					= (WGM13<<8|WGM12<<8|WGM11|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER1_WGM_FAST_PWM_OCR 					= (WGM13<<8|WGM12<<8|WGM11|WGM10)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
 };
 
 /** See data-sheet page 158 table 14-1 */
@@ -173,8 +173,8 @@ enum timer3_waveform_generation_mode_t {
 
 	TIMER3_WGM_RESERVED 						= (WGM33<<8|WGM32<<8|0    |WGM30), //!< @note reserved
 
-	TIMER3_WG_FAST_PWM_ICR 						= (WGM33<<8|WGM32<<8|WGM31|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
-	TIMER3_WG_FAST_PWM_OCR 						= (WGM33<<8|WGM32<<8|WGM31|WGM30)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER3_WGM_FAST_PWM_ICR 					= (WGM33<<8|WGM32<<8|WGM31|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER3_WGM_FAST_PWM_OCR 					= (WGM33<<8|WGM32<<8|WGM31|WGM30)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
 };
 
 /** @} */
@@ -185,5 +185,8 @@ void timer2_set_prescalar(uint8_t prescalar);
 void timer3_set_prescalar(uint8_t prescalar);
 
 void timer0_set_waveform_generation_mode(uint8_t wgm);
+void timer1_set_waveform_generation_mode(uint16_t wgm);
+void timer2_set_waveform_generation_mode(uint8_t wgm);
+void timer3_set_waveform_generation_mode(uint16_t wgm);
 
 #endif /* TIMER_H */
