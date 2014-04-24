@@ -34,13 +34,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 
 /**
- * CS02, CS01 and CS00 (Clock Select) sets the source used by the Timer/Counter
- * If external pin modes are used for the Timer/Counter0, transitions on the T0
- * pin will clock the counter even if the pin is configured as an output. This
- * feature allows software control of the counting.
- *
- * For more infomation see the datasheet page 111
+ * @name timer_prescalar
+ * CSn2, CSn1 and CSn0 (Clock Select) sets the source used by the Timer/Counter.
+ * @{
  */
+
+/** For more infomation see the datasheet page 111 */
 enum timer0_prescalar_t {
 	TIMER0_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER0_PRESCALAR_1 			=		(0   |0   |CS00), //!< clkI/O/(No prescaling)
@@ -53,14 +52,7 @@ enum timer0_prescalar_t {
 	TIMER0_PRESCALAR_EXTERNAL_RISING  = (CS02|CS01|CS00)  //!< External clock source on T0 pin. Clock on rising edge.
 };
 
-/**
- * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter
- * If external pin modes are used for the Timer/Counter0, transitions on the T1
- * pin will clock the counter even if the pin is configured as an output. This
- * feature allows software control of the counting.
- *
- * For more infomation see the datasheet page 139
- */
+/** For more infomation see the datasheet page 139 */
 enum timer1_prescalar_t {
 	TIMER1_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER1_PRESCALAR_1 			=		(0   |0   |CS10), //!< clkI/O/(No prescaling)
@@ -73,11 +65,7 @@ enum timer1_prescalar_t {
 	TIMER1_PRESCALAR_EXTERNAL_RISING  = (CS12|CS11|CS10)  //!< External clock source on T1 pin. Clock on rising edge.
 };
 
-/**
- * CS12, CS11 and CS10 (Clock Select) sets the source used by the Timer/Counter.
- *
- * For more infomation see the datasheet page 159
- */
+/** For more infomation see the datasheet page 159 */
 enum timer2_prescalar_t {
 	TIMER2_PRESCALAR_NO_SOURCE 	= (0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER2_PRESCALAR_1 			= (0   |0   |CS20), //!< clkT2S/(No prescaling)
@@ -89,14 +77,7 @@ enum timer2_prescalar_t {
 	TIMER2_PRESCALAR_1024 		= (CS22|CS21|CS20)  //!< clkT2S/1024 (From prescaler)
 };
 
-/**
- * CS32, CS31 and CS30 (Clock Select) sets the source used by the Timer/Counter
- * If external pin modes are used for the Timer/Counter0, transitions on the T3
- * pin will clock the counter even if the pin is configured as an output. This
- * feature allows software control of the counting.
- *
- * For more infomation see the datasheet page 139
- */
+/** For more infomation see the datasheet page 139 */
 enum timer3_prescalar_t {
 	TIMER3_PRESCALAR_NO_SOURCE 	=		(0   |0   |0   ), //!< No clock source (Timer/Counter stopped)
 	TIMER3_PRESCALAR_1 			=		(0   |0   |CS30), //!< clkI/O/(No prescaling)
@@ -108,6 +89,7 @@ enum timer3_prescalar_t {
 	TIMER3_PRESCALAR_EXTERNAL_FALLING = (CS32|CS31|0   ), //!< External clock source on T3 pin. Clock on falling edge.
 	TIMER3_PRESCALAR_EXTERNAL_RISING  = (CS32|CS31|CS30)  //!< External clock source on T3 pin. Clock on rising edge.
 };
+/** @} */
 
 void timer0_set_prescalar(uint8_t prescalar);
 void timer1_set_prescalar(uint8_t prescalar);

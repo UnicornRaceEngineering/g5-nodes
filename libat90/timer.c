@@ -48,6 +48,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 } while (0)
 
 /**
+ * @name set_prescalar
+ * @param prescalar see timer0-3_prescalar_t for valid input
+ * @{
+ */
+
+/**
  * Sets the prescalar for timer0
  * @param  prescalar see timer0_prescalar_t for valid input
  */
@@ -82,3 +88,5 @@ void timer3_set_prescalar(uint8_t prescalar) {
 	const uint8_t mask = CS32|CS31|CS30;
 	SET_REGISTER_BITS(TCCR3B, prescalar, mask);
 }
+
+/** @} */
