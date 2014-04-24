@@ -105,6 +105,39 @@ enum timer0_waveform_generation_mode_t {
 	TIMER0_WGM_FAST_PWM				= (WGM01|WGM00)  //!< TOP=0xFF,  Update of OCR0A at: TOP, 		TOV0 Flag Set on: MAX
 };
 
+/**
+ * @todo: Because WGM11 and WGM10 is on TCCR1A while WGM13 and WGM12 is on TCCR1B
+ *        we will run into trouble. Instead we should shift store them in a
+ *        16 bit value where we have shifted WGM13 and WGM12 into the high bit
+ *        so we later can reverse the process and enter apply it.
+ */
+enum timer1_waveform_generation_mode_t {
+	TIMER1_WGM_NORMAL 							= (0    |0    |0    |0    ), //!< TOP=0xFFFF, Update of OCR1nx at: Immediate, TOVn Flag Set on: MAX
+
+	TIMER1_WGM_PWM_PHASE_CORRECT_8BIT 			= (0    |0    |0    |WGM10), //!< TOP=0x00FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER1_WGM_PWM_PHASE_CORRECT_9BIT 			= (0    |0    |WGM11|0    ), //!< TOP=0x01FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER1_WGM_PWM_PHASE_CORRECT_10BIT 			= (0    |0    |WGM11|WGM10), //!< TOP=0x03FF, Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+
+	TIMER1_WGM_CTC_OCR 							= (0    |WGM12|0    |0    ), //!< TOP=OCRnA,  Update of OCRnx at: Immediate,  TOVn Flag Set on: MAX
+
+	TIMER1_WGM_FAST_PWM_8BIT 					= (0    |WGM12|0    |WGM10), //!< TOP=0x00FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER1_WGM_FAST_PWM_9BIT 					= (0    |WGM12|WGM11|0    ), //!< TOP=0x01FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER1_WGM_FAST_PWM_10BIT 					= (0    |WGM12|WGM11|WGM10), //!< TOP=0x03FF, Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+
+	TIMER1_WGM_PWM_PHASE_FREQUENCY_CORRECT_ICR 	= (WGM13|0    |0    |0    ), //!< TOP=ICRn,   Update of OCRnx at: BOTTOM,     TOVn Flag Set on: BOTTOM
+	TIMER1_WGM_PWM_PHASE_FREQUENCY_CORRECT_OCR 	= (WGM13|0    |0    |WGM10), //!< TOP=OCRnA,  Update of OCRnx at: BOTTOM,     TOVn Flag Set on: BOTTOM
+
+	TIMER1_WGM_PWM_PHASE_CORRECT_ICR 			= (WGM13|0    |WGM11|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+	TIMER1_WGM_PWM_PHASE_CORRECT_OCR 			= (WGM13|0    |WGM11|WGM10), //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: BOTTOM
+
+	TIMER1_WGM_CTC_ICR 							= (WGM13|WGM12|0    |0    ), //!< TOP=ICRn,   Update of OCRnx at: Immediate,  TOVn Flag Set on: MAX
+
+	TIMER1_WGM_RESERVED 						= (WGM13|WGM12|0    |WGM10), //!< @note reserved
+
+	TIMER1_WG_FAST_PWM_ICR 						= (WGM13|WGM12|WGM11|0    ), //!< TOP=ICRn,   Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+	TIMER1_WG_FAST_PWM_OCR 						= (WGM13|WGM12|WGM11|WGM10)  //!< TOP=OCRnA,  Update of OCRnx at: TOP,        TOVn Flag Set on: TOP
+};
+
 /** See datasheet page 158 table 14-1 */
 enum timer2_waveform_generation_mode_t {
 	TIMER2_WGM_NORMAL				= (0    |0    ), //!< TOP=0xFF,  Update of OCR2A at: Immediate, TOV0 Flag Set on: MAX
