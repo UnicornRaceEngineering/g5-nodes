@@ -44,7 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param  prescalar see timer0_prescalar_t for valid input
  */
 void timer0_set_prescalar(uint8_t prescalar) {
-	const uint8_t mask = CS02|CS01|CS00;
+	const uint8_t mask = 1<<CS02|1<<CS01|1<<CS00;
 	SET_REGISTER_BITS(TCCR0A, prescalar, mask);
 }
 
@@ -53,7 +53,7 @@ void timer0_set_prescalar(uint8_t prescalar) {
  * @param prescalar see timer1_prescalar_t for valid input
  */
 void timer1_set_prescalar(uint8_t prescalar) {
-	const uint8_t mask = CS12|CS11|CS10;
+	const uint8_t mask = 1<<CS12|1<<CS11|1<<CS10;
 	SET_REGISTER_BITS(TCCR1B, prescalar, mask);
 }
 
@@ -62,7 +62,7 @@ void timer1_set_prescalar(uint8_t prescalar) {
  * @param prescalar See timer2_prescalar_t for valid input
  */
 void timer2_set_prescalar(uint8_t prescalar) {
-	const uint8_t mask = CS22|CS21|CS20;
+	const uint8_t mask = 1<<CS22|1<<CS21|1<<CS20;
 	SET_REGISTER_BITS(TCCR2A, prescalar, mask);
 }
 
@@ -71,7 +71,7 @@ void timer2_set_prescalar(uint8_t prescalar) {
  * @param prescalar see timer3_prescalar_t for valid input
  */
 void timer3_set_prescalar(uint8_t prescalar) {
-	const uint8_t mask = CS32|CS31|CS30;
+	const uint8_t mask = 1<<CS32|1<<CS31|1<<CS30;
 	SET_REGISTER_BITS(TCCR3B, prescalar, mask);
 }
 
@@ -85,13 +85,13 @@ void timer3_set_prescalar(uint8_t prescalar) {
  */
 
 void timer0_set_waveform_generation_mode(uint8_t wgm) {
-	const uint8_t mask = WGM01|WGM00;
+	const uint8_t mask = 1<<WGM01|1<<WGM00;
 	SET_REGISTER_BITS(TCCR0A, wgm, mask);
 }
 
 void timer1_set_waveform_generation_mode(uint16_t wgm) {
-	const uint8_t maskA = WGM11|WGM10;
-	const uint8_t maskB = WGM13|WGM12;
+	const uint8_t maskA = 1<<WGM11|1<<WGM10;
+	const uint8_t maskB = 1<<WGM13|1<<WGM12;
 
 	const uint8_t wgmA = LOW_BYTE(wgm);
 	const uint8_t wgmB = HIGH_BYTE(wgm);
@@ -101,13 +101,13 @@ void timer1_set_waveform_generation_mode(uint16_t wgm) {
 }
 
 void timer2_set_waveform_generation_mode(uint8_t wgm) {
-	const uint8_t mask = WGM21|WGM20;
+	const uint8_t mask = 1<<WGM21|1<<WGM20;
 	SET_REGISTER_BITS(TCCR2A, wgm, mask);
 }
 
 void timer3_set_waveform_generation_mode(uint16_t wgm) {
-	const uint8_t maskA = WGM31|WGM30;
-	const uint8_t maskB = WGM33|WGM32;
+	const uint8_t maskA = 1<<WGM31|1<<WGM30;
+	const uint8_t maskB = 1<<WGM33|1<<WGM32;
 
 	const uint8_t wgmA = LOW_BYTE(wgm);
 	const uint8_t wgmB = HIGH_BYTE(wgm);
