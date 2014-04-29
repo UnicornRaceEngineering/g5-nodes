@@ -180,6 +180,11 @@ enum timer3_waveform_generation_mode_t {
 
 /** @} */
 
+/**
+ * todo: implement the same as above for COMnC0 and COMnC1 so we can set the
+ * Compare Output Mode in a more high level way.
+ */
+
 void timer0_set_prescalar(uint8_t prescalar);
 void timer1_set_prescalar(uint8_t prescalar);
 void timer2_set_prescalar(uint8_t prescalar);
