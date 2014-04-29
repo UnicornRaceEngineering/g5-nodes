@@ -57,6 +57,12 @@ static void can_default(uint8_t mob);
 #define SERVO_NEUTRAL_FROM_1	(MS_TO_TOP(1.25))
 #define SERVO_NEUTRAL_FROM_2	(MS_TO_TOP(1.75))
 
+#define SERVO_SET_UP()				(pwm_PE5_set_top(SERVO_UP))
+#define SERVO_SET_DOWN()			(pwm_PE5_set_top(SERVO_DOWN))
+#define SERVO_SET_MIDT()			(pwm_PE5_set_top(SERVO_MIDT))
+#define SERVO_SET_NEUTRAL_FROM_1()	(pwm_PE5_set_top(SERVO_NEUTRAL_FROM_1))
+#define SERVO_SET_NEUTRAL_FROM_2()	(pwm_PE5_set_top(SERVO_NEUTRAL_FROM_2))
+
 enum {
 	GEAR_DOWN = -1,
 	GEAR_NEUTRAL = 0,
@@ -91,26 +97,26 @@ static int shift_gear(int gear_dir) {
 	switch (gear_dir) {
 		case GEAR_DOWN:
 			if (current_gear != 0) {
-				pwm_PE5_set_top(SERVO_DOWN);
+				SERVO_SET_DOWN();
 				current_gear--;
 			}
 			break;
 		case GEAR_NEUTRAL:
 			if (current_gear >= 2) {
-				pwm_PE5_set_top(SERVO_NEUTRAL_FROM_2);
+				SERVO_SET_NEUTRAL_FROM_2();
 			} else {
-				pwm_PE5_set_top(SERVO_NEUTRAL_FROM_1);
+				SERVO_SET_NEUTRAL_FROM_1();
 			}
 
 			current_gear = 0;
 			break;
 		case GEAR_UP:
 			if (current_gear != 0) {
-				pwm_PE5_set_top(SERVO_UP);
+				SERVO_SET_UP();
 			} else {
 				// Special case. If we are in neutral we have to shift down to
 				// get to gear 1 as it is laid out as [1, 0, 2, 3, 4, 5, 6]
-				pwm_PE5_set_top(SERVO_DOWN);
+				SERVO_SET_DOWN();
 			}
 			current_gear++;
 			break;
@@ -118,7 +124,7 @@ static int shift_gear(int gear_dir) {
 	}
 	SERVER_DELAY();
 
-	pwm_PE5_set_top(SERVO_MIDT);
+	SERVO_SET_MIDT();
 	SERVER_DELAY();
 
 	IGNITION_CUT_OFF();
