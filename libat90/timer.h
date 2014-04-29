@@ -110,6 +110,7 @@ enum timer0_waveform_generation_mode_t {
  * will run into trouble. Instead we shift them and store them in a 16 bit value
  * where we have shifted WGM13 and WGM12 into the high bit so we later can
  * reverse the process and enter apply it.
+ * @todo: enums are signed int by default in C. Will this cause problems?
  * See data-sheet page 138 table 13-4
  */
 enum timer1_waveform_generation_mode_t {
