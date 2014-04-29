@@ -86,6 +86,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /** @} */
 
 /**
+ * Sets the bitset on the given control register. This works by first
+ * filtering out invalid bitset values according to the mask. The register is
+ * cleared and then we can finally write the bitset value to the register.
+ * @param  ctrl_register The timer control register
+ * @param  bitset        The bitset that should be written to the register
+ * @param  mask          Mask of the bits in the register that should be
+ *                       modified.
+ */
+#define SET_REGISTER_BITS(ctrl_register, bitset, mask) do { \
+	const uint8_t normalized_bitset = BITMASK_CHECK((bitset), (mask)); \
+	BITMASK_CLEAR((ctrl_register), (mask)); /* Clear register before writing */\
+	BITMASK_SET((ctrl_register), (normalized_bitset)); \
+} while (0)
+
+/**
  * Jump at the addresse 0x0000 (not a reset !)
  * @warning not a reset!
  */
