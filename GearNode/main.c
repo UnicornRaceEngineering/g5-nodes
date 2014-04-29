@@ -89,8 +89,9 @@ static void init_pwm16_OC3C_prescalar64(uint16_t count_to) {
 	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
 
 	// Clear on Compare Match
-	BIT_SET(TCCR3A, COM3C1);
-	BIT_CLEAR(TCCR3A, COM3C0);
+	//BIT_SET(TCCR3A, COM3C1);
+	//BIT_CLEAR(TCCR3A, COM3C0);
+	SET_REGISTER_BITS(TCCR3A, (COM3C1|0    ), (COM3C1|COM3C0));
 
 	// Set Wave Generation Mode to Fast PWM counting to ICR
 	//BIT_CLEAR(TCCR3A, WGM30);
