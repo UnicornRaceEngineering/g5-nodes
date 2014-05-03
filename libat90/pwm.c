@@ -1,7 +1,6 @@
+#include "pwm.h"
 #include <stdint.h>
 #include <avr/interrupt.h>
-
-#include "pwm.h"
 #include "timer.h"
 #include "bitwise.h"
 #include "io.h"

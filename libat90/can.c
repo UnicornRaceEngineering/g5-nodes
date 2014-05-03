@@ -62,7 +62,7 @@ uint8_t can_init(void) {
 
 	// It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
-	for (mob_number = 0; mob_number < NB_MOB; mob_number++) {
+	for (mob_number = 0; mob_number < NB_MOB; ++mob_number) {
 		CANPAGE = (mob_number << 4);	// Page index
 		MOB_CLEAR_STATUS();				// All MOb Registers=0
 	}
@@ -121,7 +121,7 @@ ISR (CANIT_vect) {
 	uint8_t mob;
 
 	// Loop over each MOB and check if it have pending interrupt
-	for (mob = 0; mob <= LAST_MOB_NB; mob++) {
+	for (mob = 0; mob <= LAST_MOB_NB; ++mob) {
 		if (MOB_HAS_PENDING_INT(mob)) {
 			CAN_SET_MOB(mob); // Switch to mob
 

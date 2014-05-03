@@ -285,10 +285,10 @@ typedef struct can_msg_t {
  * @{
  */
 #define MOB_TX_DATA(data, len)			{ uint8_t i; \
-											for (i = 0; i < len; i++) \
+											for (i = 0; i < len; ++i) \
 												{ CANMSG = data[i]; } } //!< Put data onto the can
 #define MOB_RX_DATA(data, len)			{ uint8_t i; \
-											for (i = 0; i < len; i++) \
+											for (i = 0; i < len; ++i) \
 												{ data[i] = CANMSG;} } //!< Get data from the can
 /** @} */
 
@@ -362,7 +362,7 @@ typedef struct can_msg_t {
  * @{
  */
 #define MOB_CLEAR_STATUS()				{   uint8_t  volatile *__i_; \
-											for (__i_ =& CANSTMOB; __i_ < &CANSTML; __i_++) \
+											for (__i_ =& CANSTMOB; __i_ < &CANSTML; ++__i_) \
 												{ *__i_= 0x00; }					}
 #define MOB_CLEAR_INT_STATUS()			( CANSTMOB = 0x00	) //!< Clears the interrupt status for the current MOB
 /** @} */
