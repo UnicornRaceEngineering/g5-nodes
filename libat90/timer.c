@@ -27,9 +27,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Provides a simplified interface to the various available timers.
  */
 
+#include "timer.h"
 #include <avr/io.h>
 #include <stdint.h>
-#include "timer.h"
 #include "bitwise.h"
 
 

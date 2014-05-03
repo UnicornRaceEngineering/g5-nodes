@@ -27,11 +27,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 * Used for setting up the CAN subsystem and sending or receiving via the CAN
 */
 
+#include "can.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
 #include "bitwise.h"
-#include "can.h"
 
 static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
 static ovrit_callback_t ovrit_callback = NULL;

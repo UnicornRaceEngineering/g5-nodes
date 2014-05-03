@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * defined at compile time
  */
 
+#include "usart.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h> // size_t
@@ -44,7 +45,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "bitwise.h"
-#include "usart.h"
 
 #ifndef NO_USART0_SUPPORT
 	#ifndef NO_USART0_BUFFERED_INPUT

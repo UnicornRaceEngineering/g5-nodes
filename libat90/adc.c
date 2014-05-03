@@ -27,9 +27,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *	Used for setting up and reading from the ADC
 */
 
+#include "adc.h"
 #include <stdint.h>
 #include <avr/io.h>
-#include "adc.h"
 #include "bitwise.h"
 
 /**

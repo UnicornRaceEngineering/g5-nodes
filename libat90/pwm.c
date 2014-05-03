@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
+#include "pwm.h"
 #include "timer.h"
 #include "bitwise.h"
 #include "io.h"
-#include "pwm.h"
 
 
 void pwm_PE5_init(void) {
