@@ -50,6 +50,8 @@ int main(void) {
 
 	gps_set_getc(usart1_getc);
 	usart1_init(GPS_BAUDRATE);
+
+	can_init();
 	CAN_SEI();
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
@@ -61,36 +63,38 @@ int main(void) {
 	// Main work loop
 	while(1){
 		if (gps_get_fix(&fix) == 0 ) {
+			float dd = GPS_DMS_TO_DD(&(fix.latitude));
+			uint8_t *dd_ptr = (uint8_t*)&dd;
+
 			can_msg_t lat = {
 				.mob = 1,
 				.id = 4,
 				.data = {
 					1,
-					fix.latitude.direction,
-					HIGH_BYTE(fix.latitude.degrees),
-					LOW_BYTE(fix.latitude.degrees),
-					fix.latitude.minutes,
-					fix.latitude.seconds,
+					*(dd_ptr + 0),
+					*(dd_ptr + 1),
+					*(dd_ptr + 2),
+					*(dd_ptr + 3),
 					fix.valid
 				},
-				.dlc = 6,
+				.dlc = 5,
 				.mode = MOB_TRANSMIT
 			};
 
+			dd = GPS_DMS_TO_DD(&(fix.longitude));
 			can_msg_t lon = {
 				.mob = 2,
 				.id = 4,
 				.data = {
 					2,
-					fix.longitude.direction,
-					HIGH_BYTE(fix.longitude.degrees),
-					LOW_BYTE(fix.longitude.degrees),
-					fix.longitude.minutes,
-					fix.longitude.seconds,
+					*(dd_ptr + 0),
+					*(dd_ptr + 1),
+					*(dd_ptr + 2),
+					*(dd_ptr + 3),
 					HIGH_BYTE(fix.speed),
 					LOW_BYTE(fix.speed)
 				},
-				.dlc = 7,
+				.dlc = 6,
 				.mode = MOB_TRANSMIT
 			};
 			can_send(&lat);
