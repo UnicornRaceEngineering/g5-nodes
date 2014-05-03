@@ -98,7 +98,7 @@ static int shift_gear(int gear_dir) {
 		case GEAR_DOWN:
 			if (current_gear != 0) {
 				SERVO_SET_DOWN();
-				current_gear--;
+				--current_gear;
 			}
 			break;
 		case GEAR_NEUTRAL:
@@ -118,7 +118,7 @@ static int shift_gear(int gear_dir) {
 				// get to gear 1 as it is laid out as [1, 0, 2, 3, 4, 5, 6]
 				SERVO_SET_DOWN();
 			}
-			current_gear++;
+			++current_gear;
 			break;
 		default: err = 1; break;
 	}
