@@ -180,8 +180,6 @@ typedef void (*ovrit_callback_t)(void);
 #define CAN_DISABLE()	( CANGCON &= ~(1<<ENASTB))
 #define CAN_FULL_ABORT(){ CANGCON |=  (1<<ABRQ); CANGCON &= ~(1<<ABRQ); }
 
-//#define MASK_FULL_FILTERING   ( (uint16_t){UINT16_MAX}    ) //!< Only listen for the specified ID @todo are we sure this should not be uint32_t instead?
-//#define MASK_NO_FILTERING ( (uint16_t){0}             ) //!< Listen for all ID's (Eg. a spy node)
 #define NB_CANIT_CB (9) //!< Number of canit callbacks.
 
 #define NB_MOB		( 15		) //!< Number of MOB's
@@ -358,7 +356,9 @@ typedef struct can_msg_t {
 /** @} */
 
 /**
- * @name MOB status
+ * @name Clear MOB status
+ * Clear all MOB registers for a single MOB and
+ * clears interrupt status register.
  * @{
  */
 #define MOB_CLEAR_STATUS()				{   uint8_t  volatile *__i_; \
@@ -381,13 +381,25 @@ typedef struct can_msg_t {
 #define MOB_EN_FRM_BUFF_RX()	( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK)						) //!< Enable MOB Frame Buffer Reception
 /** @} */
 
-//Please insert comment !
+/**
+ * @name Can interrupt mode
+ * Enables full function mode, recieve mode and transmit mode respectivly.
+ * @{
+ */
 #define CAN_INIT_ALL()	{CAN_SEI(); CAN_EN_RX_INT(); CAN_EN_TX_INT();	}
 #define CAN_INIT_RX()	{CAN_SEI(); CAN_EN_RX_INT();					}
 #define CAN_INIT_TX()	{CAN_SEI(); CAN_EN_TX_INT();					}
+/** @} */
 
-//Please insert comment !
+/**
+ * @name CAN Bit Timing Register
+ * Set Baud Rate Prescaler, Re-Synchronization Jump Width,
+ * Propagation Time Segment, Sample Point(s) and Phase Segments.
+ * Depends on FOSC and CAN_BAUDRATE.
+ * @{
+ */
 #define CAN_CONF_CANBT()	{ CANBT1=CONF_CANBT1; CANBT2=CONF_CANBT2; CANBT3=CONF_CANBT3; }
+/** @} */
 
 
 //_____ D E C L A R A T I O N S ________________________________________________
