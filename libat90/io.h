@@ -85,13 +85,13 @@ enum io_pinmode_t {
  * @param  pin  The pin to set mode on
  * @param  mode The io_pinmode_t to use
  */
-#define SET_PIN_MODE(port, pin, mode){ \
+#define SET_PIN_MODE(port, pin, mode) do { \
 	if (mode == OUTPUT){ \
 		BIT_SET( DDR_PORT( (port) ), (pin) ); \
 	} else if ( ((mode) == INPUT) || ((mode) == INPUT_PULLUP) ){ \
 		BIT_CLEAR( DDR_PORT( (port) ), (pin) ); \
 		if ((mode) == INPUT_PULLUP) BIT_SET( (port), (pin) ); \
 	} \
-}
+} while(0)
 
 #endif /* IO_H */
