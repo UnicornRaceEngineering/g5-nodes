@@ -292,7 +292,7 @@ typedef struct can_msg_t {
  * @name CAN status Interrupt register
  * @{
  */
-#define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT2 + (CANSIT1 << 8), (mob))	) //!< Check if the given mob has a pending interrupt.
+#define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT2 + (CANSIT1 << 8), (mob))) //!< Check if the given mob has a pending interrupt.
 /** @} */
 
 
