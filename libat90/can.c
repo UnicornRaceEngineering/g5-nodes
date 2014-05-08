@@ -80,8 +80,8 @@ int can_setup(can_msg_t *msg) {
 	case MOB_TRANSMIT:
 		break;
 	case MOB_RECIEVE:
-		MOB_SET_STD_ID(msg->id);
-		MOB_SET_STD_FILTER_FULL();
+		MOB_SET_ID(msg->id);
+		MOB_SET_FILTER_FULL();
 		MOB_SET_DLC(msg->dlc); // Set the expected payload length
 		MOB_EN_RX();
 		CAN_ENABLE_MOB_INTERRUPT(msg->mob);
@@ -107,7 +107,7 @@ int can_receive(can_msg_t *msg) {
 
 int can_send(can_msg_t *msg) {
 	CAN_SET_MOB(msg->mob);
-	MOB_SET_STD_ID(msg->id);
+	MOB_SET_ID(msg->id);
 	MOB_SET_DLC(msg->dlc); // Set the expected payload length
 	MOB_TX_DATA(msg->data, msg->dlc);
 	MOB_EN_TX();
@@ -126,7 +126,7 @@ ISR (CANIT_vect) {
 			CAN_SET_MOB(mob); // Switch to mob
 
 			switch (CANSTMOB) {
-				case MOB_RX_COMPLETED_DLCW:
+				case MOB_RX_DLCW:
 					if ( canit_callback[CANIT_RX_COMPLETED_DLCW] != NULL )
 						(*canit_callback[CANIT_RX_COMPLETED_DLCW])(mob);
 					// Fall through to MOB_RX_COMPLETED on purpose

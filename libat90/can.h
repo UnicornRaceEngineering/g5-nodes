@@ -38,14 +38,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 #include <avr/interrupt.h>
 
-#ifndef UINT16_MAX
-#define UINT16_MAX	((uint16_t)(~0))
-#endif
-
-#ifndef UINT32_MAX
-#define UINT32_MAX	((uint32_t)(~0))
-#endif
-
 /**
  * Can interrupt callback function pointer.
  * @param  mob The mob that caused the interrupt
@@ -59,13 +51,6 @@ typedef void (*ovrit_callback_t)(void);
 
 
 //_____ D E F I N I T I O N S __________________________________________________
-#ifndef F_CPU
-#error	"You must define F_CPU"
-#endif
-
-#ifndef CAN_BAUDRATE
-#error	"You must define CAN_BAUDRATE"
-#endif
 
 #if F_CPU == 16000000				//!< Fclkio = 16 MHz, Tclkio = 62.5 ns
 #if		CAN_BAUDRATE == 100		//!< -- 100Kb/s, 16x Tscl, sampling at 75%
@@ -92,8 +77,6 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT1	0x02	// Tscl  = 2x Tclkio = 125 ns
 #		define CONF_CANBT2	0x04	// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13	// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
-#else
-#error	"This CAN_BAUDRATE value is not defined"
 #endif
 
 // Timing changed to work with 11059200 Hz!
@@ -122,8 +105,6 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT1	0x00	// Tscl  = 1x Tclkio = 83.333 ns
 #		define CONF_CANBT2	0x08	// Tsync = 1x Tscl, Tprs = 5x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x25	// Tpsh1 = 3x Tscl, Tpsh2 = 3x Tscl, 3 sample points
-#else
-#error "This CAN_BAUDRATE value is not defined"
 #endif
 
 #elif F_CPU == 8000000				//!< Fclkio = 8 MHz, Tclkio = 125 ns
@@ -151,12 +132,7 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT1	0x00		// Tscl  = 1x Tclkio = 125 ns
 #		define CONF_CANBT2	0x04		// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13		// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
-#else
-#error "This CAN_BAUDRATE value is not defined"
 #endif
-
-#else
-#error "This FOSC value is not defined"
 #endif
 
 #define CAN_RESET()		( CANGCON  =  (1<<SWRES) )
@@ -235,18 +211,18 @@ enum mob_mode_t {
 * conditional switch on the given status of the MOB.
 */
 enum mob_status_t {
-	MOB_NOT_COMPLETED 		= ( 0x00 ),													//!< 0x00
-	MOB_TX_COMPLETED 		= ( 1<<TXOK ),												//!< 0x40
-	MOB_RX_COMPLETED 		= ( 1<<RXOK ),												//!< 0x20
-	MOB_RX_COMPLETED_DLCW 	= ( (1<<RXOK)|(1<<DLCW) ),									//!< 0xA0
-	MOB_ACK_ERROR 			= ( 1<<AERR ),												//!< 0x01
-	MOB_FORM_ERROR 			= ( 1<<FERR ),												//!< 0x02
-	MOB_CRC_ERROR 			= ( 1<<CERR ),												//!< 0x04
-	MOB_STUFF_ERROR 		= ( 1<<SERR ),												//!< 0x08
-	MOB_BIT_ERROR 			= ( 1<<BERR ),												//!< 0x10
-	MOB_PENDING 			= ( (1<<RXOK)|(1<<TXOK) ),									//!< 0x60
-	MOB_NOT_REACHED 		= ( (1<<AERR)|(1<<FERR)|(1<<CERR)|(1<<SERR)|(1<<BERR) ),	//!< 0x1F
- };
+	MOB_NOT_COMPLETED 	= ( 0x00 ),
+	MOB_TX_COMPLETED 	= ( 1<<TXOK ),
+	MOB_RX_COMPLETED 	= ( 1<<RXOK ),
+	MOB_RX_DLCW		 	= ( (1<<RXOK)|(1<<DLCW) ),
+	MOB_ACK_ERROR 		= ( 1<<AERR ),
+	MOB_FORM_ERROR 		= ( 1<<FERR ),
+	MOB_CRC_ERROR 		= ( 1<<CERR ),
+	MOB_STUFF_ERROR 	= ( 1<<SERR ),
+	MOB_BIT_ERROR 		= ( 1<<BERR ),
+	MOB_PENDING 		= ( (1<<RXOK)|(1<<TXOK) ),
+	MOB_NOT_REACHED 	= ( (1<<AERR)|(1<<FERR)|(1<<CERR)|(1<<SERR)|(1<<BERR) )
+};
 
 typedef struct can_msg_t {
 	uint8_t mob;				//!< Message Object to bind to
@@ -264,34 +240,34 @@ typedef struct can_msg_t {
  * Transmit or receive data on the current MOB
  * @{
  */
-#define MOB_TX_DATA(data, len)			{ uint8_t i; \
-											for (i = 0; i < len; ++i) \
-												{ CANMSG = data[i]; } } //!< Put data onto the can
-#define MOB_RX_DATA(data, len)			{ uint8_t i; \
-											for (i = 0; i < len; ++i) \
-												{ data[i] = CANMSG;} } //!< Get data from the can
+#define MOB_TX_DATA(data, len)	{ uint8_t i; \
+									for (i = 0; i < len; ++i) \
+										{ CANMSG = data[i]; } } //!< Put data onto the can
+#define MOB_RX_DATA(data, len)	{ uint8_t i; \
+									for (i = 0; i < len; ++i) \
+										{ data[i] = CANMSG;} } //!< Get data from the can
 /** @} */
 
 /**
  * @name CAN status Interrupt register
  * @{
  */
-#define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT2 + (CANSIT1 << 8), (mob))) //!< Check if the given mob has a pending interrupt.
+#define MOB_HAS_PENDING_INT(mob)	(BIT_CHECK(CANSIT2 + (CANSIT1 << 8), (mob))) //!< Check if the given mob has a pending interrupt.
 /** @} */
 
 
-#define CAN_SET_MOB(mob)			( CANPAGE = ((mob) << 4)		) //!< Set the can the the specified MOB
+#define CAN_SET_MOB(mob)			(CANPAGE = (mob) << 4) //!< Set the can the the specified MOB
 
 /**
  * @name MOB interrupt
  * Enable or disable interrupts on the specified MOB
  * @{
  */
-#define CAN_ENABLE_MOB_INTERRUPT(mob)	{	CANIE2 |= ((1 << mob) & 0xff); \
-											CANIE1 |= (((1 << mob) >> 8) & 0x7f); }
+#define CAN_ENABLE_MOB_INTERRUPT(mob)	{CANIE2 |= ((1 << mob) & 0xff); \
+										 CANIE1 |= (((1 << mob) >> 8) & 0x7f); }
 
-#define CAN_DISABLE_MOB_INTERRUPT(mob)	{	CANIE2 &= !((1 << mob) & 0xff); \
-											CANIE1 &= !(((1 << mob) >> 8) & 0x7f);}
+#define CAN_DISABLE_MOB_INTERRUPT(mob)	{CANIE2 &= !((1 << mob) & 0xff); \
+										 CANIE1 &= !(((1 << mob) >> 8) & 0x7f);}
 /** @} */
 
 /**
@@ -307,23 +283,23 @@ typedef struct can_msg_t {
  * @name MOB ID
  * @{
  */
-#define MOB_SET_STD_ID_10_4(id) 		(	((*((uint8_t *)(&(id)) + 1)) << 5) + \
-											((*(uint8_t *)(&(id))) >> 3)			)
+#define MOB_SET_ID_10_4(id) 		(	((*((uint8_t *)(&(id)) + 1)) << 5) + \
+										((*(uint8_t *)(&(id))) >> 3)		)
 
-#define MOB_SET_STD_ID_3_0(id) 			(	(*(uint8_t *)(&(id))) << 5 				)
+#define MOB_SET_ID_3_0(id) 			(	(*(uint8_t *)(&(id))) << 5 			)
 
-#define MOB_SET_STD_ID(id) 				{	CANIDT1 = MOB_SET_STD_ID_10_4((id)); \
-											CANIDT2 = MOB_SET_STD_ID_3_0((id)); \
-											CANCDMOB &= (~(1<<IDE));				}
+#define MOB_SET_ID(id) 				{	CANIDT1 = MOB_SET_ID_10_4((id)); \
+										CANIDT2 = MOB_SET_ID_3_0((id)); \
+										CANCDMOB &= (~(1<<IDE));			}
 
-#define MOB_SET_STD_MASK_FILTER(mask)	{	CANIDM1 = MOB_SET_STD_ID_10_4(mask); \
-											CANIDM2 = MOB_SET_STD_ID_3_0( mask);	}
+#define MOB_SET_MASK_FILTER(mask)	{	CANIDM1 = MOB_SET_ID_10_4(mask); \
+										CANIDM2 = MOB_SET_ID_3_0( mask);	}
 
-#define MOB_SET_STD_FILTER_FULL()		{	uint32_t __filterMask_ = UINT32_MAX; \
-											MOB_SET_STD_MASK_FILTER(__filterMask_); }
+#define MOB_SET_FILTER_FULL()		{	uint32_t __filterMask_ = 0xffffffff; \
+										MOB_SET_MASK_FILTER(__filterMask_); }
 
-#define MOB_SET_STD_FILTER_NONE()		{	uint32_t __filterMask_ = 0; \
-											MOB_SET_STD_MASK_FILTER(__filterMask_); }
+#define MOB_SET_FILTER_NONE()		{	uint32_t __filterMask_ = 0; \
+										MOB_SET_MASK_FILTER(__filterMask_); }
 /** @} */
 
 /**
@@ -332,10 +308,10 @@ typedef struct can_msg_t {
  * clears interrupt status register.
  * @{
  */
-#define MOB_CLEAR_STATUS()				{   uint8_t  volatile *__i_; \
-											for (__i_ =& CANSTMOB; __i_ < &CANSTML; ++__i_) \
-												{ *__i_= 0x00; }					}
-#define MOB_CLEAR_INT_STATUS()			( CANSTMOB = 0x00	) //!< Clears the interrupt status for the current MOB
+#define MOB_CLEAR_STATUS()		{   uint8_t  volatile *i; \
+									for (i =& CANSTMOB; i < &CANSTML; ++i) \
+										{ *i = 0x00; }					}
+#define MOB_CLEAR_INT_STATUS()	( CANSTMOB = 0x00	) //!< Clears the interrupt status for the current MOB
 /** @} */
 
 /**
@@ -346,10 +322,12 @@ typedef struct can_msg_t {
  * must re-write the configuration to enable new communication.
  * @{
  */
-#define MOB_ABORT()				( BITMASK_CLEAR(CANCDMOB, MOB_CONMOB_MSK)					) //!< Disable MOB
-#define MOB_EN_TX()				{ BIT_CLEAR(CANCDMOB, CONMOB1); BIT_SET(CANCDMOB, CONMOB0);	} //!< Enable MOB Transmission
-#define MOB_EN_RX()				{ BIT_SET(CANCDMOB, CONMOB1); BIT_CLEAR(CANCDMOB, CONMOB0);	} //!< Enable MOB Reception
-#define MOB_EN_FRM_BUFF_RX()	( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK)						) //!< Enable MOB Frame Buffer Reception
+#define MOB_ABORT()				( BITMASK_CLEAR(CANCDMOB, MOB_CONMOB_MSK)	)	//!< Disable MOB
+#define MOB_EN_TX()				{ BIT_CLEAR(CANCDMOB, CONMOB1);	\
+								  BIT_SET(CANCDMOB, CONMOB0);	} 				//!< Enable MOB Transmission
+#define MOB_EN_RX()				{ BIT_SET(CANCDMOB, CONMOB1);	\
+								  BIT_CLEAR(CANCDMOB, CONMOB0);	} 				//!< Enable MOB Reception
+#define MOB_EN_FRM_BUFF_RX()	( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK)		)	//!< Enable MOB Frame Buffer Reception
 /** @} */
 
 /**
@@ -357,9 +335,9 @@ typedef struct can_msg_t {
  * Enables full function mode, recieve mode and transmit mode respectivly.
  * @{
  */
-#define CAN_INIT_ALL()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX|1<<ENTX)
-#define CAN_INIT_RX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX)
-#define CAN_INIT_TX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENTX)
+#define CAN_INIT_ALL()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX|1<<ENTX))
+#define CAN_INIT_RX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX))
+#define CAN_INIT_TX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENTX))
 /** @} */
 
 /**
@@ -369,7 +347,9 @@ typedef struct can_msg_t {
  * Depends on FOSC and CAN_BAUDRATE.
  * @{
  */
-#define CAN_CONF_CANBT()	{ CANBT1=CONF_CANBT1; CANBT2=CONF_CANBT2; CANBT3=CONF_CANBT3; }
+#define CAN_CONF_CANBT()	{	CANBT1 = CONF_CANBT1;	\
+ 								CANBT2 = CONF_CANBT2;	\
+ 								CANBT3 = CONF_CANBT3;	}
 /** @} */
 
 
