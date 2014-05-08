@@ -59,19 +59,15 @@ typedef void (*ovrit_callback_t)(void);
 
 
 //_____ D E F I N I T I O N S __________________________________________________
-
-#define FOSC	(F_CPU/100)
-#ifndef FOSC
-#error	You must define FOSC
+#ifndef F_CPU
+#error	You must define F_CPU
 #endif
-	// ----------
+
 #ifndef CAN_BAUDRATE
 #error	You must define CAN_BAUDRATE
 #endif
-#define CAN_AUTOBAUD	0
-	// ----------
 
-#if FOSC == 16000				//!< Fclkio = 16 MHz, Tclkio = 62.5 ns
+#if F_CPU == 16000000				//!< Fclkio = 16 MHz, Tclkio = 62.5 ns
 #if		CAN_BAUDRATE == 100		//!< -- 100Kb/s, 16x Tscl, sampling at 75%
 #		define CONF_CANBT1	0x12	// Tscl  =	0x Tclkio = 625 ns
 #		define CONF_CANBT2	0x0C	// Tsync = 1x Tscl, Tprs = 7x Tscl, Tsjw = 1x Tscl
@@ -100,8 +96,8 @@ typedef void (*ovrit_callback_t)(void);
 #error	This CAN_BAUDRATE value is not defined
 #endif
 
-// Timing lavet om til at pass med 11059200 Hz!!!
-#elif FOSC == 110592			//!< Fclkio = 12 MHz, Tclkio = 83.333 ns
+// Timing changed to work with 11059200 Hz!
+#elif F_CPU == 11059200			//!< Fclkio = 12 MHz, Tclkio = 83.333 ns
 #if		CAN_BAUDRATE == 100		//!< -- 100Kb/s, 20x Tscl, sampling at 75%
 #		define CONF_CANBT1	0x0A	// Tscl  = 6x Tclkio = 500 ns
 #		define CONF_CANBT2	0x0E	// Tsync = 1x Tscl, Tprs = 8x Tscl, Tsjw = 1x Tscl
@@ -130,7 +126,7 @@ typedef void (*ovrit_callback_t)(void);
 #error This CAN_BAUDRATE value is not defined
 #endif
 
-#elif FOSC == 8000				//!< Fclkio = 8 MHz, Tclkio = 125 ns
+#elif F_CPU == 8000000				//!< Fclkio = 8 MHz, Tclkio = 125 ns
 #if 	CAN_BAUDRATE == 100		//!< -- 100Kb/s, 16x Tscl, sampling at 75%
 #		define CONF_CANBT1	0x08		// Tscl  = 5x Tclkio = 625 ns
 #		define CONF_CANBT2	0x0C		// Tsync = 1x Tscl, Tprs = 7x Tscl, Tsjw = 1x Tscl
