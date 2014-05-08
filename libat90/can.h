@@ -60,11 +60,11 @@ typedef void (*ovrit_callback_t)(void);
 
 //_____ D E F I N I T I O N S __________________________________________________
 #ifndef F_CPU
-#error	You must define F_CPU
+#error	"You must define F_CPU"
 #endif
 
 #ifndef CAN_BAUDRATE
-#error	You must define CAN_BAUDRATE
+#error	"You must define CAN_BAUDRATE"
 #endif
 
 #if F_CPU == 16000000				//!< Fclkio = 16 MHz, Tclkio = 62.5 ns
@@ -93,7 +93,7 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT2	0x04	// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13	// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
 #else
-#error	This CAN_BAUDRATE value is not defined
+#error	"This CAN_BAUDRATE value is not defined"
 #endif
 
 // Timing changed to work with 11059200 Hz!
@@ -123,7 +123,7 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT2	0x08	// Tsync = 1x Tscl, Tprs = 5x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x25	// Tpsh1 = 3x Tscl, Tpsh2 = 3x Tscl, 3 sample points
 #else
-#error This CAN_BAUDRATE value is not defined
+#error "This CAN_BAUDRATE value is not defined"
 #endif
 
 #elif F_CPU == 8000000				//!< Fclkio = 8 MHz, Tclkio = 125 ns
@@ -152,11 +152,11 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT2	0x04		// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13		// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
 #else
-#error This CAN_BAUDRATE value is not defined
+#error "This CAN_BAUDRATE value is not defined"
 #endif
 
 #else
-#error This FOSC value is not defined
+#error "This FOSC value is not defined"
 #endif
 
 #define CAN_RESET()		( CANGCON  =  (1<<SWRES) )
