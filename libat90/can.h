@@ -185,7 +185,6 @@ typedef void (*ovrit_callback_t)(void);
 #define NB_MOB		( 15		) //!< Number of MOB's
 #define NB_DATA_MAX	( 8			) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB	( NB_MOB-1	) //!< Index of the last MOB. This is useful when looping over all MOB's
-#define NO_MOB		( 0xFF		)
 
 #define MOB_Tx_ENA	( 1 << CONMOB0 ) //!< Mask for Enabling Tx on the current MOB
 #define MOB_Rx_ENA	( 2 << CONMOB0 ) //!< Mask for Enabling Rx on the current MOB
@@ -263,7 +262,6 @@ enum mob_status_t {
 	MOB_BIT_ERROR 			= ( 1<<BERR ),												//!< 0x10
 	MOB_PENDING 			= ( (1<<RXOK)|(1<<TXOK) ),									//!< 0x60
 	MOB_NOT_REACHED 		= ( (1<<AERR)|(1<<FERR)|(1<<CERR)|(1<<SERR)|(1<<BERR) ),	//!< 0x1F
-	MOB_DISABLE 			= ( 0xFF )													//!< 0xFF
  };
 
 typedef struct can_msg_t {
@@ -294,8 +292,7 @@ typedef struct can_msg_t {
  * @name CAN status Interrupt register
  * @{
  */
-#define CANSIT_16					( CANSIT2 + (CANSIT1 << 8)		) //!< The CANSIT holds information about what mob has fired an interrupt. This combines it into a single 16 bit value.
-#define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT_16, (mob))	) //!< Check if the given mob has a pending interrupt.
+#define MOB_HAS_PENDING_INT(mob)	( BIT_CHECK(CANSIT2 + (CANSIT1 << 8), (mob))	) //!< Check if the given mob has a pending interrupt.
 /** @} */
 
 
@@ -311,16 +308,6 @@ typedef struct can_msg_t {
 
 #define CAN_DISABLE_MOB_INTERRUPT(mob)	{	CANIE2 &= !((1 << mob) & 0xff); \
 											CANIE1 &= !(((1 << mob) >> 8) & 0x7f);}
-/** @} */
-
-/**
- * @name Can interrupt
- * enable the can interrupt
- * @{
- */
-#define CAN_SEI()			( BIT_SET(CANGIE, ENIT) ) //!< Enable global CAN interrupts
-#define CAN_EN_TX_INT()		( BIT_SET(CANGIE, ENTX) ) //!< Enable CAN Tx interrupts
-#define CAN_EN_RX_INT()		( BIT_SET(CANGIE, ENRX) ) //!< Enable CAN Rx interrupts
 /** @} */
 
 /**
@@ -386,9 +373,9 @@ typedef struct can_msg_t {
  * Enables full function mode, recieve mode and transmit mode respectivly.
  * @{
  */
-#define CAN_INIT_ALL()	{CAN_SEI(); CAN_EN_RX_INT(); CAN_EN_TX_INT();	}
-#define CAN_INIT_RX()	{CAN_SEI(); CAN_EN_RX_INT();					}
-#define CAN_INIT_TX()	{CAN_SEI(); CAN_EN_TX_INT();					}
+#define CAN_INIT_ALL()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX|1<<ENTX)
+#define CAN_INIT_RX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENRX)
+#define CAN_INIT_TX()	BITMASK_SET(CANGIE, (1<<ENIT|1<<ENTX)
 /** @} */
 
 /**
