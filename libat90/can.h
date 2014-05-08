@@ -126,7 +126,7 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT1	0x02	// Tscl  = 2x Tclkio = 166.666 ns
 #		define CONF_CANBT2	0x08	// Tsync = 1x Tscl, Tprs = 5x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x25	// Tpsh1 = 3x Tscl, Tpsh2 = 3x Tscl, 3 sample points
-#elif	CAN_BAUDRATE == 100		//!< -- 1 Mb/s, 12x Tscl, sampling at 75%
+#elif	CAN_BAUDRATE == 1000	//!< -- 1 Mb/s, 12x Tscl, sampling at 75%
 #		define CONF_CANBT1	0x00	// Tscl  = 1x Tclkio = 83.333 ns
 #		define CONF_CANBT2	0x08	// Tsync = 1x Tscl, Tprs = 5x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x25	// Tpsh1 = 3x Tscl, Tpsh2 = 3x Tscl, 3 sample points
@@ -159,7 +159,7 @@ typedef void (*ovrit_callback_t)(void);
 #		define CONF_CANBT1	0x02		// Tscl  = 2x Tclkio = 250 ns
 #		define CONF_CANBT2	0x04		// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13		// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
-#elif	CAN_BAUDRATE == 100		//!< -- 1 Mb/s, 8x Tscl, sampling at 75%
+#elif	CAN_BAUDRATE == 1000	//!< -- 1 Mb/s, 8x Tscl, sampling at 75%
 #		define CONF_CANBT1	0x00		// Tscl  = 1x Tclkio = 125 ns
 #		define CONF_CANBT2	0x04		// Tsync = 1x Tscl, Tprs = 3x Tscl, Tsjw = 1x Tscl
 #		define CONF_CANBT3	0x13		// Tpsh1 = 2x Tscl, Tpsh2 = 2x Tscl, 3 sample points
