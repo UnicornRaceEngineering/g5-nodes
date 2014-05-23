@@ -19,5 +19,3 @@ set(CXXFLAGS "${CMCU} ${CDEFS} ${CINCS} ${COPT}")
 
 set(CMAKE_C_FLAGS ${CFLAGS})
 set(CMAKE_CXX_FLAGS ${CXXFLAGS})
-
-set(CORELIBS m printf_flt)

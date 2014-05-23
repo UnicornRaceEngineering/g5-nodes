@@ -6,5 +6,6 @@ include(cmake/flags.cmake)
 project(G5_NODES)
 
 add_subdirectory(libat90)
+add_subdirectory(TemplateNode)
 
 

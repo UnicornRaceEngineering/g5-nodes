@@ -1,6 +1,3 @@
-#include_directories(${G5_NODES_SOURCE_DIR}/libat90)
-#link_directories(${G5_NODES_BINARY_DIR}/libat90)
-
 cmake_minimum_required(VERSION 2.6.0)
 
 include(${PROJECT_SOURCE_DIR}/cmake/avr_crosscompile.cmake)
