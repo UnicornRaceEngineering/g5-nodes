@@ -30,8 +30,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PWM_H
 
 #include <stdint.h>
-#include <bitwise.h>
 #include <avr/io.h>
+#include "bitwise.h"
 
 #ifndef PWM_PRESCALAR
 #	define PWM_PRESCALAR	(64)
