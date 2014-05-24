@@ -9,7 +9,7 @@ set(CDEFS "${F_CPU} ${CAN_BAUDRATE}")
 
 set(CSTANDARD "-std=c99")
 set(CDEBUG "-g")
-set(CWARN "-Wall -Wstrict-prototypes -Werror")
+set(CWARN "-Wall -Wstrict-prototypes -Werror") # TODO: add -Wextra and -pedantic
 set(CTUNING "-fpack-struct -fshort-enums -funsigned-bitfields -funsigned-char -flto -mrelax")
 
 set(COPT "-Os")
