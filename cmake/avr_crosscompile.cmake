@@ -42,7 +42,11 @@ function(avr_make_flashable elf_file)
 	avr_create_hex(${elf_file})
 
 	add_custom_target(${elf_file}_writeflash
-		COMMAND ${AVRDUDE} -c ${PROGRAMMER} -p ${PROGRAMMER_MCU} -P usb -B 8 -U flash:w:${elf_file}.hex
+		COMMAND ${AVRDUDE}
+		ARGS 	-c ${PROGRAMMER}
+				-p ${PROGRAMMER_MCU}
+				-P usb -B 8
+				-U flash:w:${elf_file}.hex
 		DEPENDS ${elf_file}_hex
 		VERBATIM
 		)
