@@ -33,8 +33,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "paddleshift.h"
 
-volatile bool paddle_up_pressed = 0;
-volatile bool paddle_down_pressed = 0;
+volatile bool paddle_up_pressed = false;
+volatile bool paddle_down_pressed = false;
 
 void paddle_init(void) {
 	// init paddle up
@@ -56,13 +56,13 @@ void paddle_init(void) {
 
 bool paddle_up_status(void) {
 	const bool status = paddle_up_pressed;
-	paddle_up_pressed = 0; // Reset the pressed status here
+	paddle_up_pressed = false; // Reset the pressed status here
 	return status;
 }
 
 bool paddle_down_status(void) {
 	const bool status = paddle_down_pressed;
-	paddle_down_pressed = 0; // Reset the pressed status here
+	paddle_down_pressed = false; // Reset the pressed status here
 	return status;
 }
 
