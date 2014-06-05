@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @files paddleshift.c
+ * @file paddleshift.c
  * Implements a basic interface to paddleshift controls connected to board
  */
 
