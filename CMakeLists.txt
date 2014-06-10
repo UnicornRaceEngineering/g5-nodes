@@ -10,6 +10,7 @@ add_subdirectory(TemplateNode)
 add_subdirectory(GPSNode)
 add_subdirectory(GearNode)
 add_subdirectory(GearNodeDewalt)
+add_subdirectory(SteeringNode)
 add_subdirectory(examples)
 
 
