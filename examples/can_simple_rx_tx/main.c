@@ -42,9 +42,11 @@ int main(void) {
 
 	can_init();
 
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
+	//CAN_SEI();
+	//CAN_EN_RX_INT();
+	//CAN_EN_TX_INT();
+	can_init();
+	CAN_INIT_ALL();
 
 	sei();										//Enable interrupt
 
@@ -102,14 +104,14 @@ static void rx_complete(uint8_t mob) {
 	};
 	can_receive(&msg); // Fetch the message and fill out the msg struct
 
-#if 0
+#if 1
 	// Print out the received data. Please dont print inside can callbacks
 	// in real code as these are run inside the can ISR
 	usart1_printf("CAN Rx\t id: %d on mob %d :: ", msg.id, msg.mob);
 	usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
 #endif
 
-#if 1
+#if 0
 	// Print data from GPSNode. You might want to insert a delay in the GPS node
 	// or we might not pick up the second msg with the longitude data as we are
 	// busy printing the latitude data.

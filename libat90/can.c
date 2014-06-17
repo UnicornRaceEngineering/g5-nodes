@@ -33,6 +33,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include "bitwise.h"
 
+static void set_baud(void);
+
 static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
 static ovrit_callback_t ovrit_callback = NULL;
 
@@ -58,7 +60,7 @@ uint8_t can_init(void) {
 	uint8_t mob_number;
 
 	CAN_RESET();
-	CAN_CONF_CANBT();
+	set_baud();
 
 	// It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
@@ -69,6 +71,35 @@ uint8_t can_init(void) {
 
 	CAN_ENABLE();
 	return (0);
+}
+
+static void set_baud(void) {
+	int cycles_bit = F_CPU / CAN_BAUDRATE;
+	int i, prescaler = 8;
+
+	for (i = 8; i <= 24; i += 2) {
+		if (!(cycles_bit % i)) {
+			prescaler = cycles_bit / i;
+			break;
+		}
+	}
+	int TQ = ++i;
+	int tsjw = 1;
+	int tprs = TQ / 2 - tsjw;
+	int tph1;
+
+	if ((TQ / 2) % 2)
+		tph1 = (TQ / 4) + 1;
+	else
+		tph1 = TQ / 4;
+
+	int tph2 = TQ / 4;
+
+	CANBT1 = prescaler << 1;
+	SET_REGISTER_BITS(CANBT2, tprs<<PRS0, (1<<PRS0|1<<PRS1|1<<PRS2));
+	SET_REGISTER_BITS(CANBT2, tsjw<<SJW0, (1<<SJW0|1<<SJW1));
+	SET_REGISTER_BITS(CANBT3, tph1<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
+	SET_REGISTER_BITS(CANBT3, tph2<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
 }
 
 int can_setup(can_msg_t *msg) {
