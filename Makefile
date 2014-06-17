@@ -1,7 +1,7 @@
 SHELL=/bin/sh
 MAKE=make
 
-NODES=TemplateNode GPSNode
+NODES=TemplateNode
 SUBDIRS=$(NODES) examples
 
 all:
