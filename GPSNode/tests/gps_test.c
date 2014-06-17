@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <usart.h>
 
 char test_data[] = "blablablabla$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43\r\nfewfioewjiods";
 int test_data_index = 0;
@@ -68,9 +69,9 @@ int main(int argc, char const *argv[]) {
 
 	float lat = GPS_DMS_TO_DD(&(fix2.latitude));
 	float lon = GPS_DMS_TO_DD(&(fix2.longitude));
-	printf("lat: %f\n", lat);
-	printf("lat: %f\n", lon);
+	usart1_printf("lat: %f\n", lat);
+	usart1_printf("lat: %f\n", lon);
 
-	printf("%s: all tests passed\n", __FILE__);
+	usart1_printf("%s: all tests passed\n", __FILE__);
 	return 0;
 }

@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 2.6.0)
+
+include(${PROJECT_SOURCE_DIR}/cmake/avr_crosscompile.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/flags.cmake)
+
+include_directories(${PROJECT_SOURCE_DIR}/libat90)
+link_directories(${PROJECT_BINARY_DIR}/libat90)
+
+set(NODE_NAME GPSNode)
+
+set(SRC_FILES
+	src/gps.c
+	src/main.c)
+
+add_executable(${NODE_NAME} ${SRC_FILES})
+target_link_libraries(${NODE_NAME} libat90)
+
+avr_make_flashable(${NODE_NAME})
+
+set(TEST_SRC_FILES
+	tests/gps_test.c)
+
+# Add the tests
+add_executable(${NODE_NAME}_tests ${TEST_SRC_FILES})
+target_link_libraries(${NODE_NAME}_tests libat90)
+
+avr_make_flashable(${NODE_NAME}_tests)

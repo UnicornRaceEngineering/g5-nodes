@@ -30,3 +30,6 @@ thumbs.db
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
+
+# Everything in the build dir
+build/*
