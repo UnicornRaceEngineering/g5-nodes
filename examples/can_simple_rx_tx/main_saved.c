@@ -96,42 +96,48 @@ int main(void) {
 
 // Callback to be run when rx comletes on the CAN
 static void rx_complete(uint8_t mob) {
+	usart1_printf("double: %d float: %d\n", sizeof(double), sizeof(float));
 	can_msg_t msg = {
 		.mob = mob // mob is the MOB that fired the interrupt
 	};
 	can_receive(&msg); // Fetch the message and fill out the msg struct
 
-#if 1
+#if 0
 	// Print out the received data. Please dont print inside can callbacks
 	// in real code as these are run inside the can ISR
 	usart1_printf("CAN Rx\t id: %d on mob %d :: ", msg.id, msg.mob);
 	usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
 #endif
 
-#if 0
+#if 1
 	// Print data from GPSNode. You might want to insert a delay in the GPS node
 	// or we might not pick up the second msg with the longitude data as we are
 	// busy printing the latitude data.
 	if (msg.data[0] == 1) {
-		char lat_dir = msg.data[1];
-		int lat_deg = MERGE_BYTE(msg.data[2], msg.data[3]);
-		int lat_min = msg.data[4];
-		int lat_sec = msg.data[5];
-		int valid = msg.data[6];
+		float lat_dd;
+		uint8_t *lat_ddptr = (uint8_t*)&lat_dd;
+		*(lat_ddptr + 0) = msg.data[1];
+		*(lat_ddptr + 1) = msg.data[2];
+		*(lat_ddptr + 2) = msg.data[3];
+		*(lat_ddptr + 3) = msg.data[4];
+
+		int valid = msg.data[5];
 		usart1_printf("Validity: %d\n", valid);
-		usart1_printf("lat: %c %d %d' %d\"\n", lat_dir, lat_deg, lat_min, lat_sec);
+		usart1_printf("lat: %lf\n", lat_dd);
 	} else if(msg.data[0] == 2) {
-		char lon_dir = msg.data[1];
-		int lon_deg = MERGE_BYTE(msg.data[2], msg.data[3]);
-		int lon_min = msg.data[4];
-		int lon_sec = msg.data[5];
-		int speed =  MERGE_BYTE(msg.data[6], msg.data[7]);
-		usart1_printf("lon: %c %d %d' %d\"\n", lon_dir, lon_deg, lon_min, lon_sec);
+		float lon_dd;
+		uint8_t *lon_ddptr = (uint8_t*)&lon_dd;
+		*(lon_ddptr + 0) = msg.data[1];
+		*(lon_ddptr + 1) = msg.data[2];
+		*(lon_ddptr + 2) = msg.data[3];
+		*(lon_ddptr + 3) = msg.data[4];
+
+		int speed =  MERGE_BYTE(msg.data[5], msg.data[6]);
+		usart1_printf("lon: %lf\n", lon_dd);
 		usart1_printf("Speed = %d\n", speed);
 	} else {
 		usart1_printf("ERROR: data[0] = %d\n", msg.data[0]);
 	}
-	usart1_printf("double: %d float: %d\n", sizeof(double), sizeof(float));
 #endif
 }
 
