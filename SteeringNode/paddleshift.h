@@ -22,47 +22,42 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
-* @file pwm.h
-* @brief Provides some abstraction for pwm operation
-*/
+ * @file paddleshift.h
+ * Implements a basic interface to paddleshift controls connected to board
+ */
 
-#ifndef PWM_H
-#define PWM_H
+#ifndef PADDLESHIFT_H
+#define PADDLESHIFT_H
 
-#include <stdint.h>
 #include <avr/io.h>
-#include "bitwise.h"
+#include <stdbool.h>
 
-#ifndef PWM_PRESCALAR
-#	define PWM_PRESCALAR	(64)
-#endif
+/**
+ * @name Pin layout
+ * @{
+ */
+#define PADDLE_UP_PORT			PORTE
+#define PADDLE_UP_PIN			PIN7
+#define PADDLE_UP_INT			INT7
+#define PADDLE_UP_ISR_VECT		INT7_vect
+#define PADDLE_UP_ISC1			ISC71
+#define PADDLE_UP_ISC0			ISC70
 
-#ifndef PWM_TOP
-	// (F_CPU / (Prescalar * ( 1+2047)) =
-	// (11059200 Hz / (64 * (1+2047))) 	=
-	// 84.375 Hz = 11.852 ms period
-	// Resolution = log(2047+1)/log(2) = 11 bits
-#	define PWM_TOP	(2047)
-#endif
+#define PADDLE_DOWN_PORT		PORTE
+#define PADDLE_DOWN_PIN			PIN6
+#define PADDLE_DOWN_INT			INT6
+#define PADDLE_DOWN_ISR_VECT	INT6_vect
+#define PADDLE_DOWN_ISC1		ISC61
+#define PADDLE_DOWN_ISC0		ISC60
+/** @} */
 
-#define TOP_TO_HZ(top)	(F_CPU / (PWM_PRESCALAR * (1+(top))))
-#define HZ_TO_MS(hz)	((1/(hz)) * 1000)
+/**
+ * @name Function prototypes
+ * @{
+ */
+void paddle_init(void);
+bool paddle_up_status(void);
+bool paddle_down_status(void);
+/** @} */
 
-#define MS_TO_TOP(ms)	((uint16_t) \
-	((((F_CPU/1000.0)/(double)PWM_PRESCALAR)*((double)(ms)))) - 1)
-
-#define DUTY_TO_TOP(duty)	(duty * (PWM_TOP / 100))
-
-void pwm_PE5_init(void);
-
-static inline void pwm_PE5_set_top(uint16_t top) {
-	OCR3CH = HIGH_BYTE(top);
-	OCR3CL = LOW_BYTE(top);
-}
-
-static inline void pwm_PE5_set_dutycycle(uint8_t dutycycle) {
-	const uint16_t top = DUTY_TO_TOP(dutycycle);
-	pwm_PE5_set_top(top);
-}
-
-#endif /* PWM_H */
+#endif /* PADDLESHIFT_H */

@@ -21,85 +21,53 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file main.c
- * Main entry for the GPS node. This continuously receives data from the GPS and
- * broadcasts it via CAN.
- */
-
 #include <stdint.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
 #include <can.h>
 #include <usart.h>
-#include <bitwise.h>
-#include "gps.h"
+
+#include "paddleshift.h"
 
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
+
 
 int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
 
-	gps_set_getc(usart1_getc);
-	usart1_init(GPS_BAUDRATE);
-
 	can_init();
+
 	CAN_SEI();
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
 
-	sei();	//Enable interrupt
+	usart1_init(115200);
+	paddle_init();
 
-	struct gps_fix fix;
+	sei();										//Enable interrupt
 
-	// Main work loop
+
+	usart1_printf("\n\n\nSTARTING\n");
+
 	while(1){
-		if (gps_get_fix(&fix) == 0 ) {
-			float dd = GPS_DMS_TO_DD(&(fix.latitude));
-			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
-											 // to split it up into 4 bytes
+		// Main work loop
 
-			can_msg_t lat = {
-				.mob = 1,
-				.id = 4,
-				.data = {
-					1,
-					*(dd_ptr + 0),
-					*(dd_ptr + 1),
-					*(dd_ptr + 2),
-					*(dd_ptr + 3),
-					fix.valid
-				},
-				.dlc = 5,
-				.mode = MOB_TRANSMIT
-			};
+		// First lets store the current status of the paddleshifters
+		const bool paddle_up_is_pressed = paddle_up_status();
+		const bool paddle_down_is_pressed = paddle_down_status();
 
-			dd = GPS_DMS_TO_DD(&(fix.longitude));
-			can_msg_t lon = {
-				.mob = 2,
-				.id = 4,
-				.data = {
-					2,
-					*(dd_ptr + 0),
-					*(dd_ptr + 1),
-					*(dd_ptr + 2),
-					*(dd_ptr + 3),
-					HIGH_BYTE(fix.speed),
-					LOW_BYTE(fix.speed)
-				},
-				.dlc = 6,
-				.mode = MOB_TRANSMIT
-			};
-			can_send(&lat);
-			can_send(&lon);
+		if (paddle_up_is_pressed) {
+			//!< @TODO: broadcast this event on the can.
+		} else if (paddle_down_is_pressed) {
+			//!< @TODO: broadcast this event on the can.
 		}
 	}
 
@@ -111,6 +79,17 @@ static void rx_complete(uint8_t mob) {
 		.mob = mob
 	};
 	can_receive(&msg);
+	usart1_printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
+#if 0
+	// Print ascii data
+	usart1_putn(msg.dlc, msg.data);
+#else
+	// Print binary data as hex
+	for (int i = 0; i < msg.dlc; ++i) {
+		usart1_printf("0x%02x ", msg.data[i]);
+	}
+#endif
+	usart1_putc('\n');
 }
 
 static void tx_complete(uint8_t mob) {

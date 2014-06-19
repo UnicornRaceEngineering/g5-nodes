@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ADC_H
 
 #include <stdint.h>
-#include <bitwise.h>
+#include "bitwise.h"
 
 #ifndef ADC_BITS
 #define ADC_BITS 10 //!< How many bits the ADC have

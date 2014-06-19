@@ -41,10 +41,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define KNOTS_TO_KM(d) 			((d)*1.852)
 
 
-typedef struct sentence_t {
-	char s[MAX_SENTENCE_LEN]; //!< The string representation of the sentence
-	int i; //!< The index of the sentence
-} sentence_t;
+struct sentence {
+	char str[MAX_SENTENCE_LEN]; //!< The string representation of the sentence
+	size_t len; //!< The length of the sentence
+};
 
 
 //!< Pointer to the function that returns a new byte from the GPS module.
@@ -57,8 +57,8 @@ gps_getc_t gps_getc = NULL;
  * @param  len Length of the string to be checked.
  * @return     The checksum of the string.
  */
-static unsigned int checksum(const char *s, int len) {
-	unsigned int c = 0;
+static size_t checksum(const char *s, size_t len) {
+	size_t c = 0;
 	while (len--) {
 		c ^= *s++;
 	}
@@ -116,31 +116,36 @@ static uint16_t str2uint(const char *s, size_t n) {
  * @param  fix pointer to the GPS fix where parsed data is stored.
  * @return     0 on success 1 on error
  */
-static int from_rmc(sentence_t *s, gps_fix_t *fix) {
+static int from_rmc(struct sentence *s, struct gps_fix *fix) {
 	if (fix == NULL) return 1;
 
+	/**
+	 * @todo All this adding magic numbers to the index position to get a
+	 * substring is ugly. Find a better way to do this.
+	 */
+
 	const int status_pos = 18;
-	fix->valid = s->s[status_pos] == 'A' ? true : false;
+	fix->valid = s->str[status_pos] == 'A' ? true : false;
 
 	const int lat_pos = 20;
-	fix->latitude.degrees = str2uint(&(s->s[lat_pos]), 2);
-	fix->latitude.minutes = str2uint(&(s->s[lat_pos+2]), 2);
-	if (s->s[lat_pos+4] != '.') return 1;
-	fix->latitude.seconds = (str2uint(&(s->s[lat_pos+5]), 4) / 10000.0) * 60.0;
-	if (s->s[lat_pos+9] != ',') return 1;
-	fix->latitude.direction = s->s[lat_pos+10];
+	fix->latitude.degrees = str2uint(&(s->str[lat_pos]), 2);
+	fix->latitude.minutes = str2uint(&(s->str[lat_pos+2]), 2);
+	if (s->str[lat_pos+4] != '.') return 1;
+	fix->latitude.seconds = (str2uint(&(s->str[lat_pos+5]), 4) / 10000.0) * 60.0;
+	if (s->str[lat_pos+9] != ',') return 1;
+	fix->latitude.direction = s->str[lat_pos+10];
 
 	const int lon_pos = 32;
-	fix->longitude.degrees = str2uint(&(s->s[lon_pos]), 3);
-	fix->longitude.minutes = str2uint(&(s->s[lon_pos+3]), 2);
-	if (s->s[lon_pos+5] != '.') return 1;
-	fix->longitude.seconds = (str2uint(&(s->s[lon_pos+6]), 4) / 10000.0) * 60.0;
-	if (s->s[lon_pos+10] != ',') return 1;
-	fix->longitude.direction = s->s[lon_pos+11];
+	fix->longitude.degrees = str2uint(&(s->str[lon_pos]), 3);
+	fix->longitude.minutes = str2uint(&(s->str[lon_pos+3]), 2);
+	if (s->str[lon_pos+5] != '.') return 1;
+	fix->longitude.seconds = (str2uint(&(s->str[lon_pos+6]), 4) / 10000.0) * 60.0;
+	if (s->str[lon_pos+10] != ',') return 1;
+	fix->longitude.direction = s->str[lon_pos+11];
 
 	const int speed_pos = 45;
 	fix->speed = (int16_t)round(
-		KNOTS_TO_KM(strtod(&(s->s[speed_pos]), NULL)));
+		KNOTS_TO_KM(strtod(&(s->str[speed_pos]), NULL)));
 
 	return 0;
 }
@@ -153,7 +158,7 @@ static int from_rmc(sentence_t *s, gps_fix_t *fix) {
  * @param  s Pointer to where the build sentence is stored.
  * @return   0 if success 1 if error
  */
-static int build_sentence(sentence_t *s) {
+static int build_sentence(struct sentence *s) {
 	if (gps_getc == NULL) return 1;
 
 	char c;
@@ -163,12 +168,12 @@ static int build_sentence(sentence_t *s) {
 
 	do {
 		if (i > MAX_SENTENCE_LEN) return 1;
-		s->s[i++] = c;
+		s->str[i++] = c;
 	} while ((c = gps_getc()) != '\n');
 
-	s->s[i++] = c;
-	s->s[i] = '\0';
-	s->i = i;
+	s->str[i++] = c;
+	s->str[i] = '\0';
+	s->len = i;
 
 	return 0;
 }
@@ -178,16 +183,16 @@ static int build_sentence(sentence_t *s) {
  * @param  s Pointer to the sentence that is verified.
  * @return   true if valid, false if invalid.
  */
-static bool valid_sentence(sentence_t *s) {
+static bool valid_sentence(struct sentence *s) {
 	// Extract the checksum
-	const int chksum_pos = s->i-4;
-	unsigned int chksum = strtoul(&(s->s[chksum_pos]), NULL, 16);
+	const int chksum_pos = s->len-4;
+	unsigned int chksum = strtoul(&(s->str[chksum_pos]), NULL, 16);
 
 	// Verify that the checksum is valid. As the checksum should not include the
 	// sentence start specifier ('$') we give the checksum function a string
 	// where the start specifier is not included.
-	const int len_without_chksum = s->i-6;
-	return (chksum == checksum(&(s->s[1]), len_without_chksum));
+	const int len_without_chksum = s->len-6;
+	return (chksum == checksum(&(s->str[1]), len_without_chksum));
 }
 
 /**
@@ -203,16 +208,16 @@ void gps_set_getc(gps_getc_t getc) {
  * @param  fix Where the GPS fix data is saved.
  * @return     0 on success 1 on error.
  */
-int gps_get_fix(gps_fix_t *fix) {
-	sentence_t sentence = {
-		.s = {'\0'},
-		.i = 0
+int gps_get_fix(struct gps_fix *fix) {
+	struct sentence s = {
+		.str = {'\0'},
+		.len = 0
 	};
 
-	if (build_sentence(&sentence) != 0) return 1;
-	if (!STARTS_WITH("$GPRMC", sentence.s)) return 1;
-	if (!valid_sentence(&sentence)) return 1;
-	if (from_rmc(&sentence, fix) != 0) return 1;
+	if (build_sentence(&s) != 0) 		return 1;
+	if (!STARTS_WITH("$GPRMC", s.str)) 	return 1;
+	if (!valid_sentence(&s)) 			return 1;
+	if (from_rmc(&s, fix) != 0) 		return 1;
 
 	return 0;
 }
