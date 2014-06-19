@@ -58,13 +58,14 @@ int main(void) {
 
 	sei();	//Enable interrupt
 
-	gps_fix_t fix;
+	struct gps_fix fix;
 
 	// Main work loop
 	while(1){
 		if (gps_get_fix(&fix) == 0 ) {
 			float dd = GPS_DMS_TO_DD(&(fix.latitude));
-			uint8_t *dd_ptr = (uint8_t*)&dd;
+			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
+											 // to split it up into 4 bytes
 
 			can_msg_t lat = {
 				.mob = 1,

@@ -26,14 +26,14 @@ int main(int argc, char const *argv[]) {
 
 	gps_set_getc(get_testdata);
 
-	sentence_t s1;
-	gps_fix_t fix1 = {{0}};
+	struct sentence s1;
+	struct gps_fix fix1 = {{0}};
 
 	assert(build_sentence(&s1) == 0);
-	assert(s1.s[0] == '$');
-	assert(s1.s[strlen(s1.s) - 2] == '\r');
-	assert(s1.s[strlen(s1.s) - 1] == '\n');
-	assert(s1.s[strlen(s1.s)] == '\0');
+	assert(s1.str[0] == '$');
+	assert(s1.str[strlen(s1.str) - 2] == '\r');
+	assert(s1.str[strlen(s1.str) - 1] == '\n');
+	assert(s1.str[strlen(s1.str)] == '\0');
 
 	assert(valid_sentence(&s1));
 	assert(from_rmc(&s1, &fix1) == 0);
@@ -51,7 +51,7 @@ int main(int argc, char const *argv[]) {
 
 	assert(fix1.speed == (int16_t)round(KNOTS_TO_KM(0.02)));
 
-	gps_fix_t fix2 = {{0}};
+	struct gps_fix fix2 = {{0}};
 	assert(gps_get_fix(&fix2) == 0);
 
 	assert(fix2.valid == true);
