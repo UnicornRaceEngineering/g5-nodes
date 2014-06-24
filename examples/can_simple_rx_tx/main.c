@@ -40,8 +40,6 @@ int main(void) {
 
 	usart1_init(115200);
 
-	can_init();
-
 	//CAN_SEI();
 	//CAN_EN_RX_INT();
 	//CAN_EN_TX_INT();

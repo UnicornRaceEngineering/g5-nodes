@@ -33,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include "bitwise.h"
 #include "can.h"
+#include "usart.h"
 
 static void set_baud(void);
 
@@ -82,32 +83,52 @@ uint8_t can_init(void) {
 }
 
 static void set_baud(void) {
-	int cycles_bit = F_CPU / CAN_BAUDRATE;
+	long int cycles_bit = (long int)F_CPU / (long int)250000;//262144;
+	usart1_printf("\ncycles %ld \n", F_CPU);
+	usart1_printf("baud rate: %ld \n", 262144);
+	usart1_printf("cycles/bit: %ld \n", cycles_bit);
 	int i, prescaler = 8;
 
 	for (i = 8; i <= 24; i += 2) {
 		if (!(cycles_bit % i)) {
+			usart1_printf("prescaler i: %d \n", i);
 			prescaler = cycles_bit / i;
 			break;
 		}
 	}
-	int TQ = ++i;
-	int tsjw = 1;
-	int tprs = TQ / 2 - tsjw;
+	usart1_printf("prescaler: %d \n", prescaler);
+
+	const int Tbit = i;
+	usart1_printf("Tbit: %d \n", Tbit);
+	const int tsjw = 1;
+	usart1_printf("tsjw: %d \n", tsjw);
+	const int tprs = (Tbit / 2) - tsjw;
+	usart1_printf("tprs: %d \n", tprs);
 	int tph1;
 
-	if ((TQ / 2) % 2)
-		tph1 = (TQ / 4) + 1;
+	if ((Tbit / 2) % 2)
+		tph1 = (Tbit / 4) + 1;
 	else
-		tph1 = TQ / 4;
+		tph1 = Tbit / 4;
 
-	int tph2 = TQ / 4;
+	const int tph2 = Tbit / 4;
+	usart1_printf("tph1: %d \n", tph1);
+	usart1_printf("tph2: %d \n", tph2);
 
-	CANBT1 = prescaler << 1;
-	SET_REGISTER_BITS(CANBT2, tprs<<PRS0, (1<<PRS0|1<<PRS1|1<<PRS2));
-	SET_REGISTER_BITS(CANBT2, tsjw<<SJW0, (1<<SJW0|1<<SJW1));
-	SET_REGISTER_BITS(CANBT3, tph1<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
-	SET_REGISTER_BITS(CANBT3, tph2<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
+	CANBT1 = (prescaler - 1) << 1;
+	SET_REGISTER_BITS(CANBT2, (tprs-1)<<PRS0, (1<<PRS0|1<<PRS1|1<<PRS2));
+	SET_REGISTER_BITS(CANBT2, (tsjw-1)<<SJW0, (1<<SJW0|1<<SJW1));
+	SET_REGISTER_BITS(CANBT3, (tph1-1)<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
+	SET_REGISTER_BITS(CANBT3, (tph2-1)<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
+
+	usart1_printf("\nCANBT1: %x CANBT2: %x CANBT3: %x \n", CANBT1, CANBT2, CANBT3);
+
+	CAN_CONF_CANBT()
+	CANBT1 = 4;
+	CANBT2 = 10;
+	CANBT3 = 38;
+
+	usart1_printf("CANBT1: %x CANBT2: %x CANBT3: %x \n", CANBT1, CANBT2, CANBT3);
 }
 
 int can_setup(can_msg_t *msg) {
@@ -167,6 +188,7 @@ int can_send(can_msg_t *msg) {
 	//clear_mob_status(mob);                    /* Described above */
 
 ISR (CANIT_vect) {
+	usart1_printf("Interrupt\n");
 	uint8_t mob;
 
 	// Loop over each MOB and check if it have pending interrupt
@@ -189,22 +211,27 @@ ISR (CANIT_vect) {
 						(*canit_callback[CANIT_TX_COMPLETED])(mob);
 					break;
 				case MOB_ACK_ERROR:
+					usart1_printf("ACK_ERROR\n");
 					if ( canit_callback[CANIT_ACK_ERROR] != NULL )
 						(*canit_callback[CANIT_ACK_ERROR])(mob);
 					break;
 				case MOB_FORM_ERROR:
+				usart1_printf("FORM_ERROR\n");
 					if ( canit_callback[CANIT_FORM_ERROR] != NULL )
 						(*canit_callback[CANIT_FORM_ERROR])(mob);
 					break;
 				case MOB_CRC_ERROR:
+				usart1_printf("CRC_ERROR\n");
 					if ( canit_callback[CANIT_CRC_ERROR] != NULL )
 						(*canit_callback[CANIT_CRC_ERROR])(mob);
 					break;
 				case MOB_STUFF_ERROR:
+				usart1_printf("STUFF_ERROR\n");
 					if ( canit_callback[CANIT_STUFF_ERROR] != NULL )
 						(*canit_callback[CANIT_STUFF_ERROR])(mob);
 					break;
 				case MOB_BIT_ERROR:
+				usart1_printf("BIT_ERROR\n");
 					if ( canit_callback[CANIT_BIT_ERROR] != NULL )
 						(*canit_callback[CANIT_BIT_ERROR])(mob);
 					break;
