@@ -17,11 +17,6 @@ find_program(PROGRAMMER avrdude)
 set(PROGRAMMER_ID avrispmkII)
 set(PROGRAMMER_MCU c128)
 
-# Make sure we have a working copy of the correct objcopy
-if(NOT CMAKE_OBJCOPY)
-	find_program(AVROBJCOPY_PROGRAM avr-objcopy)
-    set(CMAKE_OBJCOPY ${AVROBJCOPY_PROGRAM})
-endif(NOT CMAKE_OBJCOPY)
 
 # Sets up a custom command and target that Generates an intel hex file from a
 # compiled binary elf file.

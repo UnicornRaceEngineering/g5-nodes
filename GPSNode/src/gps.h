@@ -43,11 +43,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @return The converted DD value
  */
 #define GPS_DMS_TO_DD(dms)	((double)((dms)->degrees + \
-								((dms)->minutes / 60.0) + \
-								 ((dms)->seconds / 3600.0)) * \
-									(((dms)->direction == 'N' || \
-									 (dms)->direction == 'E') \
-									  ? 1 : -1))
+									 ((dms)->minutes / 60.0) + \
+									 ((dms)->seconds / 3600.0)) * \
+										(((dms)->direction == 'N' || \
+										  (dms)->direction == 'E') \
+											? 1 : -1))
 
 
 /**
@@ -57,21 +57,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 typedef uint8_t (*gps_getc_t)(void);
 
 //!< A geographic coordinate in DMS (Degrees, Minutes Seconds) format.
-typedef struct gps_coordinate_t {
+struct gps_coordinate {
 	char direction; //!< 'N'/'S' or 'E'/'W'
 	int16_t degrees;
 	uint8_t minutes;
 	double seconds;
-} gps_coordinate_t;
+};
 
-typedef struct gps_fix_t {
-	gps_coordinate_t latitude;
-	gps_coordinate_t longitude;
+struct gps_fix {
+	struct gps_coordinate latitude;
+	struct gps_coordinate longitude;
 	int16_t speed; //!< speed in km/h
 	bool valid; //!< if valid the fix quality is within international standards.
-} gps_fix_t;
+};
 
 void gps_set_getc(gps_getc_t getc);
-int gps_get_fix(gps_fix_t *fix);
+int gps_get_fix(struct gps_fix *fix);
 
 #endif /* GPS_H */
