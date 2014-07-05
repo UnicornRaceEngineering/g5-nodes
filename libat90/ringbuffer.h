@@ -47,7 +47,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h> // memset()
 
 #ifndef RB_BUFFER_SIZE
-	#define RB_BUFFER_SIZE (32)
+	#define RB_BUFFER_SIZE (512)
 #endif
 
 #define RB_BUFFER_MASK	(RB_BUFFER_SIZE-1)

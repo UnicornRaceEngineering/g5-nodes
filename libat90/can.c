@@ -66,7 +66,10 @@ uint8_t can_init(void) {
 	uint8_t mob_number;
 
 	CAN_RESET();
-	CAN_CONF_CANBT();
+	//CAN_CONF_CANBT();
+	CANBT1=6;
+	CANBT2=8;
+	CANBT3=20;
 
 	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
