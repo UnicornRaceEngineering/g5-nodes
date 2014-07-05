@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdio.h>
 
+#include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
@@ -42,9 +43,7 @@ int main(void) {
 
 	can_init();
 
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
+	CAN_INIT_ALL();
 
 	usart1_init(115200);
 

@@ -41,8 +41,7 @@ int main(void) {
 	usart1_init(115200);
 
 	can_init();
-
-	CAN_INIT_ALL()
+	CAN_INIT_ALL();
 
 	sei();										//Enable interrupt
 

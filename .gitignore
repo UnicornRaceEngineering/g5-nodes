@@ -33,3 +33,5 @@ thumbs.db
 
 # Everything in the build dir
 build/*
+
+.clang_complete
