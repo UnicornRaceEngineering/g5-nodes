@@ -85,7 +85,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MERGE_NIBBLES(h, l) ( ((h) << 4) | (l) 	)
 /** @} */
 
-#define IS_ODD(n)	((n & 1) == 1)
+#define IS_ODD(n)	(((n) & 1) == 1)
 
 /**
  * Sets the bitset on the given control register. This works by first

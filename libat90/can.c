@@ -36,14 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "can.h"
 #include "usart.h"
 
-struct time_quantum_config {
-	int Tbit;
-	int TQ;
-	double TQ_err; //!> @todo: Instead of a double just scale to a large int
-	int prescalar;
-};
-
-static void set_baud(void);
+static int set_baud(void);
+static int set_baud_timings(int prescalar, int Tbit);
 
 static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
 static ovrit_callback_t ovrit_callback = NULL;
@@ -77,7 +71,7 @@ uint8_t can_init(void) {
 	uint8_t mob_number;
 
 	CAN_RESET();
-	set_baud();
+	if (set_baud() != 0) return 1;
 
 	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
@@ -87,100 +81,51 @@ uint8_t can_init(void) {
 	}
 
 	CAN_ENABLE();
-	return (0);
+	return 0;
 }
 
-static int find_best_time_quantum_prescalar(struct time_quantum_config *cfg) {
-	int num_valid_cfg = 0;
+static int set_baud(void) {
+	if ((F_CPU % CAN_BAUDRATE) != 0) return 1;
+
+	const int clks_pr_bit = F_CPU / CAN_BAUDRATE;
 
 	// As per CAN spec Tbit must be must at least from 8 to 25
 	for (int Tbit = 8; Tbit <= 25; ++Tbit) {
-		// Only correct settings for these Tbit are provided by avr
-		if (Tbit != 20
-			&& Tbit != 16
-			&& Tbit != 15
-			&& Tbit != 12
-			&& Tbit != 10
-			&& Tbit != 8) continue;
 
-		const double TQn_sec = 1.0 / (CAN_BAUDRATE * Tbit);
-		if (!(TQn_sec >= 1.0 / F_CPU)) continue;
+		// Make sure the prescalar is a whole integer with no remainder
+		if ((clks_pr_bit % Tbit) != 0) continue;
+		const int prescalar = clks_pr_bit / Tbit;
 
-		const int TDIVn = (F_CPU * TQn_sec) - 1;
+		// Prescalar (BRP[5..0]) is a 6 bit value so it cant be bigger than 2^6
+		if (prescalar > (1<<6)) continue;
 
-		// BRP[5..0] is a 6bit value
-		const int max_BRP_val = (1<<6) - 1;
-		if (TDIVn > max_BRP_val) continue;
-
-		const double clks_pr_TQn = TDIVn + (1 / F_CPU); // Clock ticks per TQ
-
-		const int clks_pr_whole_TQn = round(clks_pr_TQn);
-		const double TQn_err = clks_pr_whole_TQn - clks_pr_TQn;
-
-		// Check if the new found value has a lower error rate than the prevous.
-		if (fabs(TQn_err) < fabs(cfg->TQ_err)) {
-			cfg->Tbit = Tbit;
-			cfg->TQ = clks_pr_whole_TQn;
-			cfg->TQ_err = TQn_err;
-			cfg->prescalar = TDIVn;
-
-			++num_valid_cfg;
-		}
+		return set_baud_timings(prescalar, Tbit);
 	}
 
-	return num_valid_cfg == 0;
+	return 1;
 }
 
-static void set_baud(void) {
-
-	struct time_quantum_config cfg = {
-		.TQ_err = 100000 // Set to a large initial value
-	};
-
-	if (find_best_time_quantum_prescalar(&cfg) != 0) {
-		// Error
-	}
-
+static int set_baud_timings(int prescalar, int Tbit) {
 	const int Tsyns = 1; // Tsyns is always 1 TQ
-
-	int Tprs = 0; // PRopagation time Segment must be 1 to 8 TQ long.
-	int Tph1 = 0; // PHase Segment 1 must be 1 to 8 TQ long.
-	int Tph2 = 0; // PHase Segment 2 must be <= Tph1 and >= 2
-
-	// Values taken from avr at90can128 data sheet table 19-2
-	switch(cfg.Tbit) {
-		case 20: Tprs = 8;  Tph1 = 6; Tph2 = 5; break;
-		case 16: Tprs = 16; Tph1 = 4; Tph2 = 4; break;
-		case 15: Tprs = 7;  Tph1 = 4; Tph2 = 3; break;
-		case 12: Tprs = 5;  Tph1 = 3; Tph2 = 3; break;
-		case 10: Tprs = 4;  Tph1 = 3; Tph2 = 2; break;
-		case 8:  Tprs = 3;  Tph1 = 2; Tph2 = 2; break;
-
-		default:
-			Tprs = IS_ODD(cfg.Tbit) ? ((cfg.Tbit-1)/2) : (cfg.Tbit/2);
-			Tph1 = IS_ODD(cfg.Tbit-Tprs-Tsyns) ? ((Tprs/2)+1) : (Tprs/2);
-			Tph2 = Tprs/2; // Integer division. We round down to nearest int
-
-			break;
-	}
-
+	const int Tprs = IS_ODD(Tbit) ? ((Tbit-1)/2) : (Tbit/2);
+	const int Tph1 = IS_ODD(Tbit-Tprs-Tsyns) ? ((Tprs/2)+1) : (Tprs/2);
+	const int Tph2 = Tprs/2; // Integer division. We round down to nearest int
 	const int Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples.
 
 	// Sanity check
-	if (cfg.Tbit != Tsyns+Tprs+Tph1+Tph2
-		|| (1 <= Tprs && Tprs <= 8)
-		|| (1 <= Tph1 && Tph1 <= 8)
-		|| (2 <= Tph2 && Tph2 <= Tph1))
-	{
-		// Error
-	}
+	if (Tbit != Tsyns+Tprs+Tph1+Tph2
+		|| !(1 <= Tprs && Tprs <= 8)
+		|| !(1 <= Tph1 && Tph1 <= 8)
+		|| !(2 <= Tph2 && Tph2 <= Tph1)) return 1;
 
-
-	SET_REGISTER_BITS(CANBT1, (cfg.prescalar-1)<<BRP0, (1<<BRP5|1<<BRP4|1<<BRP3|1<<BRP2|1<<BRP1|1<<BRP0));
+	SET_REGISTER_BITS(CANBT1, (prescalar-1)<<BRP0,
+		(1<<BRP5|1<<BRP4|1<<BRP3|1<<BRP2|1<<BRP1|1<<BRP0));
 	SET_REGISTER_BITS(CANBT2, (Tprs-1)<<PRS0, (1<<PRS0|1<<PRS1|1<<PRS2));
 	SET_REGISTER_BITS(CANBT2, (Tsjw-1)<<SJW0, (1<<SJW0|1<<SJW1));
 	SET_REGISTER_BITS(CANBT3, (Tph1-1)<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
 	SET_REGISTER_BITS(CANBT3, (Tph2-1)<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
+
+	return 0;
 }
 
 int can_setup(can_msg_t *msg) {
