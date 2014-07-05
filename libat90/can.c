@@ -34,8 +34,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 #include "can.h"
 
-static int set_baud(void);
-static int set_baud_timings(int prescalar, int Tbit);
+static int8_t set_can_config(const uint32_t baudrate);
+static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit);
 
 static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
 static ovrit_callback_t ovrit_callback = NULL;
@@ -84,7 +84,7 @@ uint8_t can_init(void) {
 	which is set in the follow register values.
 	(because 11059200 % 204800 = 0 we get a timing error = 0)
 	 */
-	if (set_baud() != 0) return 1;
+	if (set_can_config(CAN_BAUDRATE) != 0) return 1;
 
 	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
@@ -97,33 +97,33 @@ uint8_t can_init(void) {
 	return 0;
 }
 
-static int set_baud(void) {
-	if ((F_CPU % CAN_BAUDRATE) != 0) return 1;
+static int8_t set_can_config(const uint32_t baudrate) {
+	if ((F_CPU % baudrate) != 0) return 1;
 
-	const int clks_pr_bit = F_CPU / CAN_BAUDRATE;
+	const uint16_t clks_pr_bit = F_CPU / baudrate;
 
 	// As per CAN spec Tbit must be must at least from 8 to 25
-	for (int Tbit = 8; Tbit <= 25; ++Tbit) {
+	for (uint8_t Tbit = 8; Tbit <= 25; ++Tbit) {
 
 		// Make sure the prescalar is a whole integer with no remainder
 		if ((clks_pr_bit % Tbit) != 0) continue;
-		const int prescalar = clks_pr_bit / Tbit;
+		const uint8_t prescalar = clks_pr_bit / Tbit;
 
 		// Prescalar (BRP[5..0]) is a 6 bit value so it cant be bigger than 2^6
 		if (prescalar > (1<<6)) continue;
 
-		return set_baud_timings(prescalar, Tbit);
+		return set_can_timings(prescalar, Tbit);
 	}
 
 	return 1;
 }
 
-static int set_baud_timings(int prescalar, int Tbit) {
-	const int Tsyns = 1; // Tsyns is always 1 TQ
-	const int Tprs = IS_ODD(Tbit) ? ((Tbit-1)/2) : (Tbit/2);
-	const int Tph1 = IS_ODD(Tbit-Tprs-Tsyns) ? ((Tprs/2)+1) : (Tprs/2);
-	const int Tph2 = Tprs/2; // Integer division. We round down to nearest int
-	const int Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples.
+static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit) {
+	const uint8_t Tsyns = 1; // Tsyns is always 1 TQ
+	const uint8_t Tprs = IS_ODD(Tbit) ? ((Tbit-1)/2) : (Tbit/2);
+	const uint8_t Tph1 = IS_ODD(Tbit-Tprs-Tsyns) ? ((Tprs/2)+1) : (Tprs/2);
+	const uint8_t Tph2 = Tprs/2; // Integer division. We round down to nearest int
+	const uint8_t Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples.
 
 	// Sanity check
 	if (Tbit != Tsyns+Tprs+Tph1+Tph2
