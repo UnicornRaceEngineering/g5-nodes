@@ -42,9 +42,7 @@ int main(void) {
 
 	can_init();
 
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
+	CAN_INIT_ALL()
 
 	sei();										//Enable interrupt
 
