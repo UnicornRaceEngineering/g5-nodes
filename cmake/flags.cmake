@@ -1,5 +1,5 @@
 set(F_CPU 11059200)
-set(CAN_BAUDRATE 250)
+set(CAN_BAUDRATE 204800)
 
 option(WITH_LTO
 	"Use Link Time Optimizations" ON

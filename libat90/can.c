@@ -66,9 +66,24 @@ uint8_t can_init(void) {
 	uint8_t mob_number;
 
 	CAN_RESET();
-	CANBT1=6;
-	CANBT2=8;
-	CANBT3=20;
+
+	/*
+	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
+	11059200 % 204800 = 0 which means the CPU freq is divisible with the
+	baud-rate.
+	CPU freq / baud-rate = clock cycles per bit transmitted = 54
+	setting the prescalar to 6
+	and gives Tbit value of 9
+	because: (clock cycles per bit transmitted) / prescalar = Tbit
+	and because Tbit = Tsync + Tprs + Tph1 + Tph2
+	we get:
+	Tprs = 4, Tph1 = 2 and Tph2 = 2
+	which is set in the follow register values.
+	(because 11059200 % 204800 = 0 we get a timing error = 0)
+	 */
+	CANBT1=10;
+	CANBT2=6;
+	CANBT3=18;
 
 	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
