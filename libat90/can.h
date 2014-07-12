@@ -167,12 +167,13 @@ typedef struct can_msg_t {
 //!< @name MOB Transmit and Receive
 //!< Transmit or receive data on the current MOB
 //!< @{
-#define MOB_TX_DATA(data, len)          {   uint8_t i; \
-											for (i = 0; i < len; i++) \
-												{ CANMSG = data[i]; }       } //!< Put data onto the can
-#define MOB_RX_DATA(data, len)          {   uint8_t i; \
-											for (i = 0; i < len; i++) \
-												{ data[i] = CANMSG;}        } //!< Get data from the can
+#define MOB_TX_DATA(data, len) do { \
+	for (uint8_t i = 0; i < len; ++i) { CANMSG = data[i]; } \
+} while (0)
+
+#define MOB_RX_DATA(data, len) do { \
+	for (uint8_t i = 0; i < len; ++i) { data[i] = CANMSG;} \
+} while (0)
 //!< @} ----------
 
 
@@ -188,18 +189,22 @@ typedef struct can_msg_t {
 //@name MOB interrupt
 //!< Enable or disable interrupts on the specified MOB
 //!< @{
-#define CAN_ENABLE_MOB_INTERRUPT(mob)   {   CANIE2 |= ((1 << mob) & 0xff); \
-											CANIE1 |= (((1 << mob) >> 8) & 0x7f);   }
+#define CAN_ENABLE_MOB_INTERRUPT(mob) do { \
+	CANIE2 |= ((1 << mob) & 0xff); \
+	CANIE1 |= (((1 << mob) >> 8) & 0x7f); \
+} while (0)
 
-#define CAN_DISABLE_MOB_INTERRUPT(mob)  {   CANIE2 &= !((1 << mob) & 0xff); \
-											CANIE1 &= !(((1 << mob) >> 8) & 0x7f);  }
+#define CAN_DISABLE_MOB_INTERRUPT(mob) do { \
+	CANIE2 &= !((1 << mob) & 0xff); \
+	CANIE1 &= !(((1 << mob) >> 8) & 0x7f); \
+} while (0)
 //!< @} ----------
 
 
 //!< @name Can interrupt
 //!< enable the can interrupt
 //!< @{
-#define CAN_SEI()           ( BIT_SET(CANGIE, ENIT) ) //!< Enable global CAN interrupts
+#define CAN_SEI()          ( BIT_SET(CANGIE, ENIT) ) //!< Enable global CAN interrupts
 #define CAN_EN_TX_INT()    ( BIT_SET(CANGIE, ENTX) ) //!< Enable CAN Tx interrupts
 #define CAN_EN_RX_INT()    ( BIT_SET(CANGIE, ENRX) ) //!< Enable CAN Rx interrupts
 //!< @} ----------
@@ -220,26 +225,35 @@ typedef struct can_msg_t {
 
 #define MOB_SET_STD_ID_3_0(id)          (   (*(uint8_t *)(&(id))) << 5              )
 
-#define MOB_SET_STD_ID(id)              {   CANIDT1 = MOB_SET_STD_ID_10_4((id)); \
-											CANIDT2 = MOB_SET_STD_ID_3_0((id)); \
-											CANCDMOB &= (~(1<<IDE));                }
+#define MOB_SET_STD_ID(id) do { \
+	CANIDT1 = MOB_SET_STD_ID_10_4((id)); \
+	CANIDT2 = MOB_SET_STD_ID_3_0((id)); \
+	CANCDMOB &= (~(1<<IDE)); \
+} while (0)
 
-#define MOB_SET_STD_MASK_FILTER(mask)   {   CANIDM1 = MOB_SET_STD_ID_10_4(mask); \
-											CANIDM2 = MOB_SET_STD_ID_3_0( mask);    }
+#define MOB_SET_STD_MASK_FILTER(mask) do { \
+	CANIDM1 = MOB_SET_STD_ID_10_4(mask); \
+	CANIDM2 = MOB_SET_STD_ID_3_0( mask); \
+} while (0)
 
-#define MOB_SET_STD_FILTER_FULL()       {   uint32_t __filterMask_ = UINT32_MAX; \
-											MOB_SET_STD_MASK_FILTER(__filterMask_); }
+#define MOB_SET_STD_FILTER_FULL() do { \
+	uint32_t __filterMask_ = UINT32_MAX; \
+	MOB_SET_STD_MASK_FILTER(__filterMask_); \
+} while (0)
 
-#define MOB_SET_STD_FILTER_NONE()       {   uint32_t __filterMask_ = 0; \
-											MOB_SET_STD_MASK_FILTER(__filterMask_); }
+#define MOB_SET_STD_FILTER_NONE() do { \
+	uint32_t __filterMask_ = 0; \
+	MOB_SET_STD_MASK_FILTER(__filterMask_); \
+} while (0)
 //!< @} ----------
 
 
 //!< @name MOB status
 //!< @{
-#define MOB_CLEAR_STATUS()              {   uint8_t  volatile *__i_; \
-											for (__i_ =& CANSTMOB; __i_ < &CANSTML; __i_++) \
-												{ *__i_= 0x00; }                    }
+#define MOB_CLEAR_STATUS() do { \
+	uint8_t  volatile *__i_; \
+	for (__i_ =& CANSTMOB; __i_ < &CANSTML; __i_++) { *__i_= 0x00; } \
+} while (0)
 #define MOB_CLEAR_INT_STATUS()          ( CANSTMOB = 0x00   ) //!< Clears the interrupt status for the current MOB
 //!< @} ----------
 
@@ -249,15 +263,15 @@ typedef struct can_msg_t {
 //!< The user must re-write the configuration to enable new communication.
 //!< @{
 #define MOB_ABORT()             ( BITMASK_CLEAR(CANCDMOB, MOB_CONMOB_MSK)                   ) //!< Disable MOB
-#define MOB_EN_TX()             { BIT_CLEAR(CANCDMOB, CONMOB1); BIT_SET(CANCDMOB, CONMOB0); } //!< Enable MOB Transmission
-#define MOB_EN_RX()             { BIT_SET(CANCDMOB, CONMOB1); BIT_CLEAR(CANCDMOB, CONMOB0); } //!< Enable MOB Reception
+#define MOB_EN_TX()             do { BIT_CLEAR(CANCDMOB, CONMOB1); BIT_SET(CANCDMOB, CONMOB0); } while (0) //!< Enable MOB Transmission
+#define MOB_EN_RX()             do { BIT_SET(CANCDMOB, CONMOB1); BIT_CLEAR(CANCDMOB, CONMOB0); } while (0) //!< Enable MOB Reception
 #define MOB_EN_FRM_BUFF_RX()    ( BITMASK_SET(CANCDMOB, MOB_CONMOB_MSK)                     ) //!< Enable MOB Frame Buffer Reception
 //!< @} ----------
 
 //Please insert comment !
-#define CAN_INIT_ALL()  {CAN_SEI(); CAN_EN_RX_INT(); CAN_EN_TX_INT();}
-#define CAN_INIT_RX()   {CAN_SEI(); CAN_EN_RX_INT();                 }
-#define CAN_INIT_TX()   {CAN_SEI(); CAN_EN_TX_INT();                 }
+#define CAN_INIT_ALL()  do {CAN_SEI(); CAN_EN_RX_INT(); CAN_EN_TX_INT();} while (0)
+#define CAN_INIT_RX()   do {CAN_SEI(); CAN_EN_RX_INT();                 } while (0)
+#define CAN_INIT_TX()   do {CAN_SEI(); CAN_EN_TX_INT();                 } while (0)
 
 
 //_____ D E C L A R A T I O N S ________________________________________________

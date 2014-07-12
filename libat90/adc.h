@@ -46,8 +46,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ADC_VOLTS_PER_BIT		( ADC_MAX_VOLTAGE / ADC_MAX_BITS ) //!< One ADC bit == this many volts
 #define ADC_TO_VOLT(ADCReading)	( ADCReading * ADC_VOLTS_PER_BIT ) //!< Converts a given ADCreading to a Voltage value
 
-#define ADC_START_CONV()		( BIT_SET(ADCSRA, ADSC) 			) //!< Start single conversion
-#define ADC_WAIT_FOR_CONV()		{ while(!BIT_CHECK(ADCSRA, ADIF)); 	} //!< Wait for conversion to complete
+#define ADC_START_CONV()		BIT_SET(ADCSRA, ADSC) 			//!< Start single conversion
+#define ADC_WAIT_FOR_CONV()		while(!BIT_CHECK(ADCSRA, ADIF)) //!< Wait for conversion to complete
 
 
 /** @name ADC control

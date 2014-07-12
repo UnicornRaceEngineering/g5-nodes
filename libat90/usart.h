@@ -90,10 +90,10 @@ enum usart_charSelect_t {
 	#define USART0_RX_IS_BUSY()	(!(BIT_CHECK(UCSR0A, RXC0)))
 	#define USART0_TX_IS_BUSY()	(!(BIT_CHECK(UCSR0A, UDRE0)))
 
-	#define USART0_SET_CHAR_SIZE(size) { \
+	#define USART0_SET_CHAR_SIZE(size) do { \
 		BITMASK_CLEAR(UCSR0C, (0x07 << UCSZ0)); \
 		UCSR0C |= (size << UCSZ0); \
-	}
+	} while (0)
 
 	void usart0_init(uint32_t baudrate);
 	void usart0_setBaudrate(const uint32_t baudrate,
@@ -141,10 +141,10 @@ enum usart_charSelect_t {
 	#define USART1_RX_IS_BUSY()	(!(BIT_CHECK(UCSR1A, RXC1)))
 	#define USART1_TX_IS_BUSY()	(!(BIT_CHECK(UCSR1A, UDRE1)))
 
-	#define USART1_SET_CHAR_SIZE(size) { \
+	#define USART1_SET_CHAR_SIZE(size) do { \
 		BITMASK_CLEAR(UCSR1C, (0x07 << UCSZ1)); \
 		UCSR1C |= (size << UCSZ1); \
-	}
+	} while (0)
 
 	void usart1_init(uint32_t baudrate);
 	void usart1_setBaudrate(const uint32_t baudrate,
