@@ -40,62 +40,6 @@ static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit);
 static canit_callback_t canit_callback[NB_CANIT_CB] = {NULL};
 static ovrit_callback_t ovrit_callback = NULL;
 
-void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
-	canit_callback[interrupt] = callback;
-}
-
-/**
-* @fn can_init
-*
-* @brief
-*   CAN macro initialization. Reset the CAN peripheral, initialize the bit
-*   timing, initialize all the registers mapped in SRAM to put MObs in
-*   inactive state and enable the CAN macro.
-*
-* @warning The CAN macro will be enable after seen on CAN bus a receceive
-*   level as long as of an inter frame (hardware feature).
-*
-* @param  Mode (for "can_fixed_baudrate" param not used)
-*   ==0: start CAN bit timing evaluation from faster baudrate
-*   ==1: start CAN bit timing evaluation with CANBTx registers
-* contents
-*
-* @return Baudrate Status
-*   ==0: research of bit timing configuration failed
-*   ==1: baudrate performed
-*/
-
-uint8_t can_init(void) {
-	uint8_t mob_number;
-
-	CAN_RESET();
-
-	/*
-	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
-	11059200 % 204800 = 0 which means the CPU freq is divisible with the
-	baud-rate.
-	CPU freq / baud-rate = clock cycles per bit transmitted = 54
-	setting the prescalar to 6
-	and gives Tbit value of 9
-	because: (clock cycles per bit transmitted) / prescalar = Tbit
-	and because Tbit = Tsync + Tprs + Tph1 + Tph2
-	we get:
-	Tprs = 4, Tph1 = 2 and Tph2 = 2
-	which is set in the follow register values.
-	(because 11059200 % 204800 = 0 we get a timing error = 0)
-	 */
-	if (set_can_config(CAN_BAUDRATE) != 0) return 1;
-
-	//It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
-	// MOb[0] upto MOb[LAST_MOB_NB].
-	for (mob_number = 0; mob_number < NB_MOB; mob_number++) {
-		CANPAGE = (mob_number << 4);	// Page index
-		MOB_CLEAR_STATUS();				// All MOb Registers=0
-	}
-
-	CAN_ENABLE();
-	return 0;
-}
 
 static int8_t set_can_config(const uint32_t baudrate) {
 	if ((F_CPU % baudrate) != 0) return 1;
@@ -120,10 +64,10 @@ static int8_t set_can_config(const uint32_t baudrate) {
 
 static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit) {
 	const uint8_t Tsyns = 1; // Tsyns is always 1 TQ
-	const uint8_t Tprs = IS_ODD(Tbit) ? ((Tbit-1)/2) : (Tbit/2);
-	const uint8_t Tph1 = IS_ODD(Tbit-Tprs-Tsyns) ? ((Tprs/2)+1) : (Tprs/2);
-	const uint8_t Tph2 = Tprs/2; // Integer division. We round down to nearest int
-	const uint8_t Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples.
+	const uint8_t Tprs = IS_ODD(Tbit)				? ((Tbit-1)/2) : (Tbit/2);
+	const uint8_t Tph1 = IS_ODD(Tbit-Tprs-Tsyns)	? ((Tprs/2)+1) : (Tprs/2);
+	const uint8_t Tph2 = Tprs/2; // We round down to nearest int
+	const uint8_t Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples
 
 	// Sanity check
 	if (Tbit != Tsyns+Tprs+Tph1+Tph2
@@ -138,6 +82,40 @@ static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit) {
 	SET_REGISTER_BITS(CANBT3, (Tph1-1)<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
 	SET_REGISTER_BITS(CANBT3, (Tph2-1)<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
 
+	return 0;
+}
+
+void set_canit_callback(enum can_int_t interrupt, canit_callback_t callback) {
+	canit_callback[interrupt] = callback;
+}
+
+uint8_t can_init(void) {
+	CAN_RESET();
+
+	/*
+	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
+	11059200 % 204800 = 0 which means the CPU freq is divisible with the
+	baud-rate.
+	CPU freq / baud-rate = clock cycles per bit transmitted = 54
+	setting the prescalar to 6
+	and gives Tbit value of 9
+	because: (clock cycles per bit transmitted) / Tbit = prescalar
+	and because Tbit = Tsync + Tprs + Tph1 + Tph2
+	we get:
+	Tprs = 4, Tph1 = 2 and Tph2 = 2
+	which is set in the follow register values.
+	(because 11059200 % 204800 = 0 we get a timing error = 0)
+	 */
+	if (set_can_config(CAN_BAUDRATE) != 0) return 1;
+
+	// It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
+	// MOb[0] upto MOb[LAST_MOB_NB].
+	for (uint8_t mob_number = 0; mob_number < NB_MOB; ++mob_number) {
+		CANPAGE = (mob_number << 4);	// Page index
+		MOB_CLEAR_STATUS();				// All MOb Registers=0
+	}
+
+	CAN_ENABLE();
 	return 0;
 }
 
