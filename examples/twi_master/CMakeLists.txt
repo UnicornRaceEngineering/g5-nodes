@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.6.0)
+
+include_directories(${PROJECT_SOURCE_DIR}/libat90)
+link_directories(${PROJECT_BINARY_DIR}/libat90)
+
+set(NODE_NAME twi_master)
+
+set(SRC_FILES
+	m41t81s_rtc.c
+	main.c)
+
+add_executable(${NODE_NAME} ${SRC_FILES})
+target_link_libraries(${NODE_NAME} libat90)
+
+avr_make_flashable(${NODE_NAME})

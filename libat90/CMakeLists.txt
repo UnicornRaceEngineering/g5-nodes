@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6.0)
 
 set(HEADER_FILES
+	twi.h
 	adc.h
 	bitwise.h
 	can.h
@@ -11,6 +12,7 @@ set(HEADER_FILES
 	usart.h)
 
 set(SRC_FILES
+	twi.c
 	adc.c
 	can.c
 	pwm.c
