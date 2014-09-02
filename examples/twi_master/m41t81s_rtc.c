@@ -122,9 +122,7 @@ int16_t rtc_reset_oscilator(void) {
 
 int16_t rtc_set_stopbit_low(void) {
 	int16_t rc;
-	usart0_printf(" rtc_set_stopbit_low 1\n");
 	if ((rc = update_registers()) < 0) return  rc;
-	usart0_printf(" rtc_set_stopbit_low 2\n");
 
 	if (READ_ST() == LOW) return 0;
 	WRITE_ST(LOW);
@@ -132,27 +130,20 @@ int16_t rtc_set_stopbit_low(void) {
 	twi_write(SECONDS_REG); // The Stop bit is in this register
 	twi_write(register_map[SECONDS_REG]);
 	twi_send_stop_condition();
-	usart0_printf(" rtc_set_stopbit_low 3\n");
 
 	return 0;
 }
 
 int16_t rtc_init(void) {
 	if (rtc_set_stopbit_low() != 0) return -1;
-	usart0_printf("st=%d\n", READ_ST());
+
 	update_registers();
 	bool oscillator_fail = READ_OF();
-	bool halt_update = READ_HT();
-	usart0_printf("OF=%d HT=%d\n", oscillator_fail, halt_update);
 	rtc_disable_halt_update();
 	rtc_set_stopbit_low();
 
 	if (oscillator_fail == HIGH) {
-		usart0_printf(">  waiting for osc to start... ");
 		//rtc_reset_oscilator();
-		usart0_printf("OK\n");
-	} else {
-		usart0_printf("Not restting OF\n");
 	}
 	return 0;
 }

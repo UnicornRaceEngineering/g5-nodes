@@ -168,18 +168,13 @@ int16_t twi_start_write(uint8_t dev_addr) {
  * @return              0 on success 1 on failure
  */
 int16_t twi_start_read(uint8_t dev_addr, uint8_t internal_reg) {
-	// usart0_printf("start_read 1\n");
 	if (twi_start_write(dev_addr) < 0) return -TW_STATUS;
-	// usart0_printf("start_read 2\n");
 	if (twi_write(internal_reg) != 0) return -TW_STATUS;
-	// usart0_printf("start_read 3\n");
 
 	if (twi_send_start_condition() != TW_REP_START) return -TW_STATUS;
-	// usart0_printf("start_read 4\n");
 	// Set the R/W bit high
 	twi_write(address_rw(dev_addr, 'r'));
 	if (TW_STATUS != TW_MR_SLA_ACK) return -TW_STATUS;
-	// usart0_printf("start_read 5 %x\n", TW_STATUS);
 
 	return TW_STATUS;
 	//return TW_STATUS != TW_MR_SLA_ACK; // 1 failure, 0 success
@@ -213,22 +208,17 @@ int16_t twi_write_array(uint8_t dev_addr, uint8_t* arr, size_t len) {
  */
 int16_t twi_read_array(uint8_t dev_addr, uint8_t internal_reg, uint8_t* arr,
 	size_t n) {
-	// usart0_printf("read_array 1\n");
 	if (twi_start_read(dev_addr, internal_reg) < 0) return -TW_STATUS;
-	// usart0_printf("read_array 2\n");
+
 	while (n--) {
-		//*arr++ = twi_read();
 		*arr++ = (n != 0) ? twi_read() : twi_read_nack();
 		uint8_t status = TW_STATUS;
-		// usart0_printf("read_arra read: %x, status: %x ", (*arr), status);
 		if (status != TW_MR_DATA_ACK &&
 		   (status != TW_MR_DATA_NACK && n == 0)) return -TW_STATUS;
-		// usart0_printf("read_array 3\n");
 	}
-	// usart0_printf("read_array 4\n");
 
 	twi_send_stop_condition();
-	// usart0_printf("read_array 5\n");
+
 	return TW_STATUS;
 }
 
