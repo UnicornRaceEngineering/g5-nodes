@@ -103,7 +103,6 @@ static uint8_t bcd2dec(uint8_t bcd) {
 
 
 static int16_t update_registers(void) {
-	//usart0_printf("reading array from twi\n");
 	return twi_read_array(RTC_SLAVE_ADDR, MILI_SECONDS_REG,
 		register_map, NUMBER_OF_REGISTERS);
 
@@ -136,6 +135,8 @@ int16_t rtc_reset_oscilator(void) {
 	twi_write(register_map[ST_REG]);
 	twi_send_stop_condition();
 
+	// The rtc datasheet says that we must wait atleast 4 seconds after setting
+	// OF low.
 	_delay_ms(1000);
 	_delay_ms(1000);
 	_delay_ms(1000);
@@ -179,7 +180,6 @@ int16_t rtc_init(void) {
 
 int16_t rtc_get_time_fix(struct rtc_time* t) {
 	int16_t rc;
-	//usart0_printf("mapping twi registers\n");
 	if ((rc = update_registers()) < 0) return rc;
 
 	t->hundredth_seconds = bcd2dec(register_map[MILI_SECONDS_REG] & 0xFF);
@@ -191,6 +191,5 @@ int16_t rtc_get_time_fix(struct rtc_time* t) {
 	t->month 			 = bcd2dec(register_map[MONTH_REG] & 0x1F);
 	t->year 			 = bcd2dec(register_map[YEAR_REG] & 0xFF);
 
-	//usart0_printf("ST: %u HT: %u\n", READ_ST(), READ_HT());
 	return rc;
 }

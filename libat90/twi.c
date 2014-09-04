@@ -77,11 +77,9 @@ void twi_init_master(void) {
 }
 
 int8_t twi_send_start_condition(void) {
-	// usart0_printf("send_start_cond 1\n");
 	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN); // Send start condition
-	// usart0_printf("send_start_cond 2\n");
 	while (TWI_CMD_NOT_FINISHED); // Wait for start cond to finish transmitting
-	// usart0_printf("send_start_cond 3\n");
+
 	return TW_STATUS;
 }
 
@@ -145,16 +143,13 @@ static inline uint8_t address_rw(uint8_t dev_addr, char rw) {
  */
 int16_t twi_start_write(uint8_t dev_addr) {
 	int16_t rc;
-	// usart0_printf("start_write 1\n");
 	if ((rc = twi_send_start_condition()) != TW_START) return -rc;
-	// usart0_printf("start_write 2\n");
 	// We must shift the dev_addr 1 as it is a 8 bit value with the addr in the
 	// upper 7 bytes and 1 Read/Write indicator bit in the Least Significant Bit.
 	twi_write(address_rw(dev_addr, 'w')); // Start is special case so we don't use it's rc
-	// usart0_printf("start_write 3\n");
 	rc = TW_STATUS; // Instead we read directly from the status reg
 	if ((rc != TW_MT_SLA_ACK) && (rc != TW_MR_SLA_ACK)) return -rc;
-	// usart0_printf("start_write 4\n");
+
 
 	return rc;
 }
