@@ -68,11 +68,11 @@ static void can_default(uint8_t mob);
 #define MS_TO_TOP(ms)	((uint16_t) \
 	((((F_CPU/1000.0)/(double)PRESCALAR)*((double)(ms)))) - 1)
 
-#define SERVO_UP				(MS_TO_TOP(1))
-#define SERVO_DOWN				(MS_TO_TOP(2))
-#define SERVO_MIDT				(MS_TO_TOP(1.5))
-#define SERVO_NEUTRAL_FROM_1	(MS_TO_TOP(1.25))
-#define SERVO_NEUTRAL_FROM_2	(MS_TO_TOP(1.75))
+#define SERVO_UP				(MS_TO_TOP(0.1))
+#define SERVO_DOWN				(MS_TO_TOP(0.2))
+#define SERVO_MIDT				(MS_TO_TOP(0.15))
+#define SERVO_NEUTRAL_FROM_1	(MS_TO_TOP(0.125))
+#define SERVO_NEUTRAL_FROM_2	(MS_TO_TOP(0.175))
 
 enum {
 	GEAR_DOWN = -1,
