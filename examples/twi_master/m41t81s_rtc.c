@@ -37,30 +37,59 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 
+/**
+ * Read a flag from a specified register in the register map
+ * @param  flag The bit index of the flag we want to read
+ * @param  reg  The register number of the flag we want to read
+ * @return      A Bool indicating if the flag is high or low
+ */
+#define READ_FLAG_FROM_REGISTER_MAP(flag, reg) \
+	((bool)BIT_CHECK(register_map[(reg)], (flag)))
+
+/**
+ * Write a flag to the specified register in the register map
+ * @param  flag The bit index of the flag we want to read
+ * @param  reg  The register number of the flag we want to read
+ * @param  x    The value to set the specified bit. Must be HIGH or LOW
+ */
+#define WRITE_FLAG_TO_REGISTER_MAP(flag, reg, x) \
+	(BITMASK_SET_OR_CLEAR(register_map[(reg)], (1 << (flag)), (x)))
+
 /** @name Flags
+ * Read and write values to different flags
  * @{
  */
 #define OF			 (2) //!< Oscillator fail flag
+#define OF_REG		 FLAGS_REG
+#define READ_OF()	 READ_FLAG_FROM_REGISTER_MAP(OF, OF_REG)
+#define WRITE_OF(x)  WRITE_FLAG_TO_REGISTER_MAP(OF, OF_REG, (x))
+
 #define BL			 (4) //!< Battery low bit
+#define BL_REG		 FLAGS_REG
+#define READ_BL()	 READ_FLAG_FROM_REGISTER_MAP(BL, BL_REG)
+#define WRITE_BL(x)  WRITE_FLAG_TO_REGISTER_MAP(BL, BL_REG, (x))
+
 #define AF			 (6) //!< Alarm flag (read only)
+#define AF_REG		 FLAGS_REG
+#define READ_AF()	 READ_FLAG_FROM_REGISTER_MAP(AF, AF_REG)
+#define WRITE_AF(x)  WRITE_FLAG_TO_REGISTER_MAP(AF, AF_REG, (x))
+
+
 #define WDF			 (7) //!< Watchdog flag (read only)
-#define READ_OF()	 ((bool)BIT_CHECK(register_map[FLAGS_REG], OF))
-#define READ_BL()	 ((bool)BIT_CHECK(register_map[FLAGS_REG], BL))
-#define READ_AF()	 ((bool)BIT_CHECK(register_map[FLAGS_REG], AF))
-#define READ_WDF()	 ((bool)BIT_CHECK(register_map[FLAGS_REG], WDF))
-#define WRITE_OF(x)  (BITMASK_SET_OR_CLEAR(register_map[FLAGS_REG], (1 << OF), (x)))
-#define WRITE_BL(x)  (BITMASK_SET_OR_CLEAR(register_map[FLAGS_REG], (1 << BL), (x)))
-#define WRITE_AF(x)  (BITMASK_SET_OR_CLEAR(register_map[FLAGS_REG], (1 << AF), (x)))
-#define WRITE_WDF(x) (BITMASK_SET_OR_CLEAR(register_map[FLAGS_REG], (1 << WDF), (x)))
-/** @} */
+#define WDF_REG		 FLAGS_REG
+#define READ_WDF()	 READ_FLAG_FROM_REGISTER_MAP(WDF, WDF_REG)
+#define WRITE_WDF(x) WRITE_FLAG_TO_REGISTER_MAP(WDF, WDF_REG, (x))
 
 #define ST			(7) //!< Stop bit
-#define READ_ST()	((bool)BIT_CHECK(register_map[SECONDS_REG], ST))
-#define WRITE_ST(x) (BITMASK_SET_OR_CLEAR(register_map[SECONDS_REG], (1 << ST), (x)))
+#define ST_REG		SECONDS_REG
+#define READ_ST()	READ_FLAG_FROM_REGISTER_MAP(ST, ST_REG)
+#define WRITE_ST(x) WRITE_FLAG_TO_REGISTER_MAP(ST, ST_REG, (x))
 
 #define HT			(6) //!< Halt update bit
-#define READ_HT()	((bool)BIT_CHECK(register_map[ALARM_REG2], HT))
-#define WRITE_HT(x) (BITMASK_SET_OR_CLEAR(register_map[ALARM_REG2], (1 << HT), (x)))
+#define HT_REG		ALARM_REG2
+#define READ_HT()	READ_FLAG_FROM_REGISTER_MAP(HT, HT_REG)
+#define WRITE_HT(x) WRITE_FLAG_TO_REGISTER_MAP(HT, HT_REG, (x))
+/** @} */
 
 #if 0
 static uint8_t dec2bcd(uint8_t dec) {
@@ -84,8 +113,8 @@ int16_t rtc_disable_halt_update(void) {
 	if (READ_HT() != LOW) {
 		WRITE_HT(LOW);
 		twi_start_write(RTC_SLAVE_ADDR);
-		twi_write(ALARM_REG2);
-		twi_write(register_map[ALARM_REG2]);
+		twi_write(HT_REG);
+		twi_write(register_map[HT_REG]);
 		twi_send_stop_condition();
 	}
 
@@ -98,13 +127,13 @@ int16_t rtc_reset_oscilator(void) {
 
 	WRITE_ST(HIGH);
 	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(SECONDS_REG);
-	twi_write(register_map[SECONDS_REG]);
+	twi_write(ST_REG);
+	twi_write(register_map[ST_REG]);
 
 	WRITE_ST(LOW);
 	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(SECONDS_REG);
-	twi_write(register_map[SECONDS_REG]);
+	twi_write(ST_REG);
+	twi_write(register_map[ST_REG]);
 	twi_send_stop_condition();
 
 	_delay_ms(1000);
@@ -113,8 +142,8 @@ int16_t rtc_reset_oscilator(void) {
 	_delay_ms(1000);
 	WRITE_OF(LOW);
 	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(FLAGS_REG);
-	twi_write(register_map[FLAGS_REG]);
+	twi_write(OF_REG);
+	twi_write(register_map[OF_REG]);
 
 	twi_send_stop_condition();
 	return rc;
@@ -123,12 +152,12 @@ int16_t rtc_reset_oscilator(void) {
 int16_t rtc_set_stopbit_low(void) {
 	int16_t rc;
 	if ((rc = update_registers()) < 0) return  rc;
-
 	if (READ_ST() == LOW) return 0;
+
 	WRITE_ST(LOW);
 	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(SECONDS_REG); // The Stop bit is in this register
-	twi_write(register_map[SECONDS_REG]);
+	twi_write(ST_REG);
+	twi_write(register_map[ST_REG]);
 	twi_send_stop_condition();
 
 	return 0;
