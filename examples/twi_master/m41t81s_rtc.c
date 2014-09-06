@@ -266,8 +266,14 @@ int16_t rtc_reset_oscilator(void) {
 }
 
 int16_t rtc_set_stopbit_low(void) {
+	/**
+	 * @TODO fix why we need to have a delay here. Also we should not be
+	 * updating the registers here but manually before we call this function.
+	 */
 	int16_t rc;
+	_delay_us(2); // __builtin_avr_delay_cycles(22);
 	if ((rc = update_registers()) < 0) return  rc;
+	_delay_us(2); // __builtin_avr_delay_cycles(13);
 	if (READ_ST() == LOW) return 0;
 
 	WRITE_ST(LOW);
@@ -280,8 +286,6 @@ int16_t rtc_set_stopbit_low(void) {
 }
 
 int16_t rtc_init(void) {
-	if (rtc_set_stopbit_low() != 0) return -1;
-
 	update_registers();
 	rtc_disable_halt_update();
 	rtc_set_stopbit_low();
