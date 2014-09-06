@@ -74,7 +74,6 @@ static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 #define READ_AF()	 READ_FLAG_FROM_REGISTER_MAP(AF, AF_REG)
 #define WRITE_AF(x)  WRITE_FLAG_TO_REGISTER_MAP(AF, AF_REG, (x))
 
-
 #define WDF			 (7) //!< Watchdog flag (read only)
 #define WDF_REG		 FLAGS_REG
 #define READ_WDF()	 READ_FLAG_FROM_REGISTER_MAP(WDF, WDF_REG)
@@ -109,13 +108,13 @@ static int16_t update_registers(void) {
 }
 
 int16_t rtc_disable_halt_update(void) {
-	if (READ_HT() != LOW) {
-		WRITE_HT(LOW);
-		twi_start_write(RTC_SLAVE_ADDR);
-		twi_write(HT_REG);
-		twi_write(register_map[HT_REG]);
-		twi_send_stop_condition();
-	}
+	if (READ_HT() == LOW) return 0;
+
+	WRITE_HT(LOW);
+	twi_start_write(RTC_SLAVE_ADDR);
+	twi_write(HT_REG);
+	twi_write(register_map[HT_REG]);
+	twi_send_stop_condition();
 
 	return 0;
 }
@@ -168,11 +167,10 @@ int16_t rtc_init(void) {
 	if (rtc_set_stopbit_low() != 0) return -1;
 
 	update_registers();
-	bool oscillator_fail = READ_OF();
 	rtc_disable_halt_update();
 	rtc_set_stopbit_low();
 
-	if (oscillator_fail == HIGH) {
+	if (READ_OF() == HIGH) {
 		//rtc_reset_oscilator();
 	}
 	return 0;
