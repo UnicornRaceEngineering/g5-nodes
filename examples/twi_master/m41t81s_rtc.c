@@ -35,6 +35,122 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define HIGH	1
 #define LOW		0
 
+/**
+ * @name Bits
+ * The individual bits in the clock register map
+ * @{
+ */
+#define D0	(1 << 0)
+#define D1	(1 << 1)
+#define D2	(1 << 2)
+#define D3	(1 << 3)
+#define D4	(1 << 4)
+#define D5	(1 << 5)
+#define D6	(1 << 6)
+#define D7	(1 << 7)
+/** @} */
+
+/**
+ * @name Bit masks
+ * Taken directly from the m41t81s rtc datasheet
+ * @{
+ */
+#define HUNDREDTH_OF_SECONDS_TENS_MASK	(D7|D6|D5|D4)
+#define HUNDREDTH_OF_SECONDS_ONES_MASK	(D3|D2|D1|D0)
+#define HUNDREDTH_OF_SECONDS_MASK \
+	(HUNDREDTH_OF_SECONDS_TENS_MASK|HUNDREDTH_OF_SECONDS_ONES_MASK)
+
+#define ST_MASK							(D7)
+
+#define SECONDS_TENS_MASK				(D6|D5|D4)
+#define SECONDS_ONES_MASK				(D3|D2|D1|D0)
+#define SECONDS_MASK \
+	(SECONDS_TENS_MASK|SECONDS_ONES_MASK)
+
+#define MINUTES_TENS_MASK				(D6|D5|D4)
+#define MINUTES_ONES_MASK				(D3|D2|D1|D0)
+#define MINUTES_MASK \
+	(MINUTES_TENS_MASK|MINUTES_ONES_MASK)
+
+#define CEB_MASK						(D7)
+#define CB_MASK							(D6)
+
+#define HOURS_TENS_MASK					(D5|D4)
+#define HOURS_ONES_MASK					(D3|D2|D1|D0)
+#define HOURS_MASK \
+	(HOURS_TENS_MASK|HOURS_ONES_MASK)
+
+#define DAY_OF_WEEK_MASK				(D2|D1|D0)
+
+#define DAY_OF_MONTH_TENS_MASK			(D5|D4)
+#define DAY_OF_MONTH_ONES_MASK			(D3|D2|D1|D0)
+#define DAY_OF_MONTH_MASK \
+	(DAY_OF_MONTH_TENS_MASK|DAY_OF_MONTH_ONES_MASK)
+
+#define MONTH_TENS_MASK					(D4)
+#define MONTH_ONES_MASK					(D3|D2|D1|D0)
+#define MONTH_MASK \
+	(MONTH_TENS_MASK|MONTH_ONES_MASK)
+
+#define YEAR_TENS_MASK					(D7|D6|D5|D4)
+#define YEAR_ONES_MASK					(D3|D2|D1|D0)
+#define YEAR_MASK \
+	(YEAR_TENS_MASK|YEAR_ONES_MASK)
+
+#define OUT_MASK						(D7)
+#define FT_MASK							(D6)
+#define S_MASK							(D5)
+
+#define CALIBARTION_MASK				(D4|D3|D2|D1|D0)
+
+#define OFIE_MASK						(D7)
+
+#define BMB4_TO_BMB0_MASK				(D5|D4|D3|D2)
+#define RB1_TO_RB0_MASK					(D1|D0)
+
+#define AFIE_MASK						(D7)
+#define SQW_MASK						(D6)
+#define ABE_MASK						(D5)
+#define AI_MASK							(D4)
+
+#define ALARM_MONTH_MASK				(D3|D2|D1|D0)
+
+#define ALARM_DAY_OF_MONTH_TENS_MASK	(D5|D4)
+#define ALARM_DAY_OF_MONTH_ONES_MASK	(D3|D2|D1|D0)
+#define ALARM_DAY_OF_MONTH_MASK \
+	(ALARM_DAY_OF_MONTH_TENS_MASK|ALARM_DAY_OF_MONTH_ONES_MASK)
+
+#define ALARM_HOUR_TENS_MASK			(D5|D4)
+#define ALARM_HOUR_ONES_MASK			(D3|D2|D1|D0)
+#define ALARM_HOUR_MASK \
+	(ALARM_HOUR_TENS_MASK|ALARM_HOUR_ONES_MASK)
+
+#define ALARM_MINUTES_TENS_MASK			(D6|D5|D4)
+#define ALARM_MINUTES_ONES_MASK			(D3|D2|D1|D0)
+#define ALARM_MINUTES_MASK \
+	(ALARM_MINUTES_TENS_MASK|ALARM_MINUTES_ONES_MASK)
+
+#define ALARM_SECONDS_TENS_MASK			(D6|D5|D4)
+#define ALARM_SECONDS_ONES_MASK			(D3|D2|D1|D0)
+#define ALARM_SECONDS_MASK \
+	(ALARM_SECONDS_TENS_MASK|ALARM_SECONDS_ONES_MASK)
+
+#define RPT4_MASK						(D7)
+#define RPT5_MASK						(D6)
+#define RPT3_MASK						(D7)
+#define RPT2_MASK						(D7)
+#define RPT1_MASK						(D7)
+
+#define HT_MASK							(D6)
+
+#define WDF_MASK						(D7)
+#define AF_MASK							(D6)
+#define BL_MASK							(D4)
+#define OF_MASK							(D2)
+
+#define RS3_TO_RS0_MASK					(D7|D6|D5|D4)
+/** @} */
+
 static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 
 /**
@@ -102,7 +218,7 @@ static uint8_t bcd2dec(uint8_t bcd) {
 
 
 static int16_t update_registers(void) {
-	return twi_read_array(RTC_SLAVE_ADDR, MILI_SECONDS_REG,
+	return twi_read_array(RTC_SLAVE_ADDR, HUNDREDTH_SECONDS_REG,
 		register_map, NUMBER_OF_REGISTERS);
 
 }
@@ -180,14 +296,14 @@ int16_t rtc_get_time_fix(struct rtc_time* t) {
 	int16_t rc;
 	if ((rc = update_registers()) < 0) return rc;
 
-	t->hundredth_seconds = bcd2dec(register_map[MILI_SECONDS_REG] & 0xFF);
-	t->seconds			 = bcd2dec(register_map[SECONDS_REG] & 0x7F);
-	t->minutes 			 = bcd2dec(register_map[MINUTES_REG] & 0x7F);
-	t->hours 			 = bcd2dec(register_map[CENTURY_HOURS_REG] & 0x3F);
-	t->day_of_week 		 = bcd2dec(register_map[DAY_REG] & 0x07);
-	t->day_of_month		 = bcd2dec(register_map[DATE_REG] & 0x3F);
-	t->month 			 = bcd2dec(register_map[MONTH_REG] & 0x1F);
-	t->year 			 = bcd2dec(register_map[YEAR_REG] & 0xFF);
+	t->hundredth_seconds = bcd2dec(register_map[HUNDREDTH_SECONDS_REG] & HUNDREDTH_OF_SECONDS_MASK);
+	t->seconds			 = bcd2dec(register_map[SECONDS_REG] & SECONDS_MASK);
+	t->minutes 			 = bcd2dec(register_map[MINUTES_REG] & MINUTES_MASK);
+	t->hours 			 = bcd2dec(register_map[CENTURY_HOURS_REG] & HOURS_MASK);
+	t->day_of_week 		 = bcd2dec(register_map[DAY_REG] & DAY_OF_WEEK_MASK);
+	t->day_of_month		 = bcd2dec(register_map[DATE_REG] & DAY_OF_MONTH_MASK);
+	t->month 			 = bcd2dec(register_map[MONTH_REG] & MONTH_MASK);
+	t->year 			 = bcd2dec(register_map[YEAR_REG] & YEAR_MASK);
 
 	return rc;
 }
