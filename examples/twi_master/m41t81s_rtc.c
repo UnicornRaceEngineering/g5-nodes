@@ -155,6 +155,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /**
  * Hold the local representation of the M41T81S's internal registers
+ *
+ * @TODO consider putting this in progmem to save memory
  */
 static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 
@@ -178,6 +180,9 @@ static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 
 /** @name Flags
  * Read and write values to different flags
+ *
+ * @TODO maybe there is a better way to generate these rather than having so
+ * many copy paste macro here
  * @{
  */
 #define OF			 (2) //!< Oscillator fail flag
@@ -256,6 +261,7 @@ static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 #define WRITE_AI(x) WRITE_FLAG_TO_REGISTER_MAP(AI, AI_REG, (x))
 /** @} */
 
+/* PROTOTYPES */
 static uint8_t dec2bcd_tens(uint8_t dec);
 static uint8_t dec2bcd_ones(uint8_t dec);
 static uint8_t bcd2dec(uint8_t bcd);
@@ -280,40 +286,7 @@ static uint8_t bcd2dec(uint8_t bcd) {
 static int16_t update_registers(void) {
 	return twi_read_array(RTC_SLAVE_ADDR, HUNDREDTH_SECONDS_REG,
 		register_map, NUMBER_OF_REGISTERS-1);
-
 }
-
-#if 0
-static int16_t rtc_reset_oscilator(void) {
-	int16_t rc;
-	if ((rc = update_registers()) < 0) return  rc;
-
-	WRITE_ST(HIGH);
-	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(ST_REG);
-	twi_write(register_map[ST_REG]);
-
-	WRITE_ST(LOW);
-	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(ST_REG);
-	twi_write(register_map[ST_REG]);
-	twi_send_stop_condition();
-
-	// The rtc datasheet says that we must wait atleast 4 seconds after setting
-	// OF low.
-	_delay_ms(1000);
-	_delay_ms(1000);
-	_delay_ms(1000);
-	_delay_ms(1000);
-	WRITE_OF(LOW);
-	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(OF_REG);
-	twi_write(register_map[OF_REG]);
-
-	// twi_send_stop_condition();
-	return rc;
-}
-#endif
 
 static void rtc_set_flag(uint8_t reg, uint8_t bit_index, uint8_t value) {
 	WRITE_FLAG_TO_REGISTER_MAP(bit_index, reg, value);
@@ -380,7 +353,17 @@ int16_t rtc_init(void) {
 	stop_watch_dog_timer();
 	configure_flags();
 
+	/**
+	 * We force the stop bit low so that the oscillator starts
+	 * @TODO the datasheet states that the oscillator will restart within one
+	 * second. So maybe that is the cause of the need for a delay after this?
+	 */
 	rtc_set_flag(ST_REG, ST, LOW);
+	/**
+	 * @TODO we need to handle this better. We need to check if the HT bit is
+	 * HIGH, and if it is get the current (power down) timestamp for when the
+	 * clock stopped and store it somewhere.
+	 */
 	rtc_set_flag(HT_REG, HT, LOW);
 	_delay_us(100);
 
@@ -460,10 +443,10 @@ void rtc_set_time(struct rtc_time *t) {
 
 /**
  * Reads the current time from the RTC
- * @param  t struct where the read time is stored
+ * @param  t pointer to struct where the read time is stored
  * @return   Negative value if an error occurred
  */
-int16_t rtc_get_time(struct rtc_time* t) {
+int16_t rtc_get_time(struct rtc_time *t) {
 	int16_t rc;
 	if ((rc = update_registers()) < 0) return rc;
 
