@@ -70,9 +70,17 @@ struct rtc_time {
 	uint8_t year;
 };
 
+void rtc_set_seconds(uint8_t seconds);
+void rtc_set_minutes(uint8_t minutes);
+void rtc_set_hours(uint8_t hours);
+void rtc_set_day_of_week(uint8_t day_of_week);
+void rtc_set_day_of_month(uint8_t day_of_month);
+void rtc_set_month(uint8_t month);
+void rtc_set_year(uint8_t year);
+
 int16_t rtc_init(void);
-int16_t rtc_get_time_fix(struct rtc_time* t);
-int16_t rtc_set_stopbit_low(void);
-int16_t rtc_reset_oscilator(void);
+void rtc_set_time(struct rtc_time *t);
+int16_t rtc_get_time(struct rtc_time* t);
+
 
 #endif /* M41T81S_RTC_H */

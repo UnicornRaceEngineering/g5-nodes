@@ -30,6 +30,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include "m41t81s_rtc.h"
 
+#define DEBUG(str) usart0_printf("%s:%d %s\n", __FILE__, __LINE__, str)
+
 #define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
 
 #define HIGH	1
@@ -151,6 +153,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define RS3_TO_RS0_MASK					(D7|D6|D5|D4)
 /** @} */
 
+/**
+ * Hold the local representation of the M41T81S's internal registers
+ */
 static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 
 /**
@@ -195,47 +200,91 @@ static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
 #define READ_WDF()	 READ_FLAG_FROM_REGISTER_MAP(WDF, WDF_REG)
 #define WRITE_WDF(x) WRITE_FLAG_TO_REGISTER_MAP(WDF, WDF_REG, (x))
 
-#define ST			(7) //!< Stop bit
-#define ST_REG		SECONDS_REG
-#define READ_ST()	READ_FLAG_FROM_REGISTER_MAP(ST, ST_REG)
-#define WRITE_ST(x) WRITE_FLAG_TO_REGISTER_MAP(ST, ST_REG, (x))
+#define ST			 (7) //!< Stop bit
+#define ST_REG		 SECONDS_REG
+#define READ_ST()	 READ_FLAG_FROM_REGISTER_MAP(ST, ST_REG)
+#define WRITE_ST(x)  WRITE_FLAG_TO_REGISTER_MAP(ST, ST_REG, (x))
 
-#define HT			(6) //!< Halt update bit
-#define HT_REG		ALARM_REG2
-#define READ_HT()	READ_FLAG_FROM_REGISTER_MAP(HT, HT_REG)
-#define WRITE_HT(x) WRITE_FLAG_TO_REGISTER_MAP(HT, HT_REG, (x))
+#define HT			 (6) //!< Halt update bit
+#define HT_REG		 ALARM_REG2
+#define READ_HT()	 READ_FLAG_FROM_REGISTER_MAP(HT, HT_REG)
+#define WRITE_HT(x)  WRITE_FLAG_TO_REGISTER_MAP(HT, HT_REG, (x))
+
+#define CEB			 (7)
+#define CEB_REG		 CENTURY_HOURS_REG
+#define READ_CEB()	 READ_FLAG_FROM_REGISTER_MAP(CEB, CEB_REG)
+#define WRITE_CEB(x) WRITE_FLAG_TO_REGISTER_MAP(CEB, CEB_REG, (x))
+
+#define OUT			 (7)
+#define OUT_REG		 CENTURY_HOURS_REG
+#define READ_OUT()	 READ_FLAG_FROM_REGISTER_MAP(OUT, OUT_REG)
+#define WRITE_OUT(x) WRITE_FLAG_TO_REGISTER_MAP(OUT, OUT_REG, (x))
+
+#define FT			 (6)
+#define FT_REG		 CENTURY_HOURS_REG
+#define READ_FT()	 READ_FLAG_FROM_REGISTER_MAP(FT, FT_REG)
+#define WRITE_FT(x)  WRITE_FLAG_TO_REGISTER_MAP(FT, FT_REG, (x))
+
+#define S			 (6)
+#define S_REG		 CENTURY_HOURS_REG
+#define READ_S()	 READ_FLAG_FROM_REGISTER_MAP(S, S_REG)
+#define WRITE_S(x) 	 WRITE_FLAG_TO_REGISTER_MAP(S, FT_REG, (x))
+
+#define OFIE		  (7)
+#define OFIE_REG	  CENTURY_HOURS_REG
+#define READ_OFIE()	  READ_FLAG_FROM_REGISTER_MAP(OFIE, OFIE_REG)
+#define WRITE_OFIE(x) WRITE_FLAG_TO_REGISTER_MAP(OFIE, OFIE_REG, (x))
+
+#define AFIE		  (7)
+#define AFIE_REG	  CENTURY_HOURS_REG
+#define READ_AFIE()	  READ_FLAG_FROM_REGISTER_MAP(AFIE, AFIE_REG)
+#define WRITE_AFIE(x) WRITE_FLAG_TO_REGISTER_MAP(AFIE, AFIE_REG, (x))
+
+#define SQW			 (6)
+#define SQW_REG		 CENTURY_HOURS_REG
+#define READ_SQW()	 READ_FLAG_FROM_REGISTER_MAP(SQW, SQW_REG)
+#define WRITE_SQW(x) WRITE_FLAG_TO_REGISTER_MAP(SQW, SQW_REG, (x))
+
+#define ABE			 (5)
+#define ABE_REG		 CENTURY_HOURS_REG
+#define READ_ABE()	 READ_FLAG_FROM_REGISTER_MAP(ABE, ABE_REG)
+#define WRITE_ABE(x) WRITE_FLAG_TO_REGISTER_MAP(ABE, ABE_REG, (x))
+
+#define AI			 (4)
+#define AI_REG		 CENTURY_HOURS_REG
+#define READ_AI()	 READ_FLAG_FROM_REGISTER_MAP(AI, AI_REG)
+#define WRITE_AI(x) WRITE_FLAG_TO_REGISTER_MAP(AI, AI_REG, (x))
 /** @} */
 
-#if 0
-static uint8_t dec2bcd(uint8_t dec) {
-	return ((dec/10 * 16) + (dec % 10));
+static uint8_t dec2bcd_tens(uint8_t dec);
+static uint8_t dec2bcd_ones(uint8_t dec);
+static uint8_t bcd2dec(uint8_t bcd);
+static int16_t update_registers(void);
+static void rtc_set_flag(uint8_t reg, uint8_t bit_index, uint8_t value);
+static void zero_unused_bits(void);
+static void configure_flags(void);
+static void stop_watch_dog_timer(void);
+
+static uint8_t dec2bcd_tens(uint8_t dec) {
+	return dec / 10;
 }
 
-#endif
+static uint8_t dec2bcd_ones(uint8_t dec) {
+	return dec - (dec2bcd_tens(dec) * 10);
+}
+
 static uint8_t bcd2dec(uint8_t bcd) {
 	return LOW_NIBBLE(bcd) + (10 * HIGH_NIBBLE(bcd));
 }
 
-
 static int16_t update_registers(void) {
 	return twi_read_array(RTC_SLAVE_ADDR, HUNDREDTH_SECONDS_REG,
-		register_map, NUMBER_OF_REGISTERS);
+		register_map, NUMBER_OF_REGISTERS-1);
 
 }
 
-int16_t rtc_disable_halt_update(void) {
-	if (READ_HT() == LOW) return 0;
-
-	WRITE_HT(LOW);
-	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(HT_REG);
-	twi_write(register_map[HT_REG]);
-	twi_send_stop_condition();
-
-	return 0;
-}
-
-int16_t rtc_reset_oscilator(void) {
+#if 0
+static int16_t rtc_reset_oscilator(void) {
 	int16_t rc;
 	if ((rc = update_registers()) < 0) return  rc;
 
@@ -261,42 +310,160 @@ int16_t rtc_reset_oscilator(void) {
 	twi_write(OF_REG);
 	twi_write(register_map[OF_REG]);
 
-	twi_send_stop_condition();
+	// twi_send_stop_condition();
 	return rc;
 }
+#endif
 
-int16_t rtc_set_stopbit_low(void) {
-	/**
-	 * @TODO fix why we need to have a delay here. Also we should not be
-	 * updating the registers here but manually before we call this function.
-	 */
-	int16_t rc;
-	_delay_us(2); // __builtin_avr_delay_cycles(22);
-	if ((rc = update_registers()) < 0) return  rc;
-	_delay_us(2); // __builtin_avr_delay_cycles(13);
-	if (READ_ST() == LOW) return 0;
-
-	WRITE_ST(LOW);
-	twi_start_write(RTC_SLAVE_ADDR);
-	twi_write(ST_REG);
-	twi_write(register_map[ST_REG]);
-	twi_send_stop_condition();
-
-	return 0;
+static void rtc_set_flag(uint8_t reg, uint8_t bit_index, uint8_t value) {
+	WRITE_FLAG_TO_REGISTER_MAP(bit_index, reg, value);
+	twi_write_register(RTC_SLAVE_ADDR, reg, register_map[reg]);
 }
 
+/**
+ * Zeros all bits that must be set to 0 on the RTC according to the data sheet
+ */
+static void zero_unused_bits(void) {
+	// We first set the values in the local reg map
+	SET_REGISTER_BITS(register_map[0x02], 0, (D7));
+	SET_REGISTER_BITS(register_map[0x04], 0, (D7|D6|D5|D4|D3));
+	SET_REGISTER_BITS(register_map[0x05], 0, (D7|D6));
+	SET_REGISTER_BITS(register_map[0x06], 0, (D7|D6|D5));
+	SET_REGISTER_BITS(register_map[0x0F], 0, (D5|D3|D1|D0));
+	register_map[0x10] = 0; // Entire register must be null
+	register_map[0x11] = 0;
+	register_map[0x12] = 0;
+	SET_REGISTER_BITS(register_map[0x13], 0, (D3|D2|D1|D0));
+
+	// We then send each relevant register with the updated values
+	twi_write_register(RTC_SLAVE_ADDR, 0x02, register_map[0x02]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x04, register_map[0x04]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x05, register_map[0x05]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x06, register_map[0x06]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x0F, register_map[0x0F]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x10, register_map[0x10]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x12, register_map[0x12]);
+	twi_write_register(RTC_SLAVE_ADDR, 0x13, register_map[0x13]);
+}
+
+/**
+ * Configure the M41T81S to the desired operation.
+ */
+static void configure_flags(void) {
+	rtc_set_flag(CEB_REG, CEB, LOW);
+	rtc_set_flag(OUT_REG, OUT, LOW);
+	rtc_set_flag(FT_REG, FT, LOW);
+	rtc_set_flag(S_REG, S, LOW);
+	rtc_set_flag(OFIE_REG, OFIE, LOW);
+	rtc_set_flag(AFIE_REG, AFIE, LOW);
+	rtc_set_flag(SQW_REG, SQW, LOW);
+	rtc_set_flag(ABE_REG, ABE, LOW);
+	rtc_set_flag(AI_REG, AI, LOW);
+}
+
+static void stop_watch_dog_timer(void) {
+	SET_REGISTER_BITS(register_map[WATCHDOG_REG], 0,
+		(BMB4_TO_BMB0_MASK|RB1_TO_RB0_MASK));
+
+	twi_write_register(RTC_SLAVE_ADDR, WATCHDOG_REG,
+		register_map[WATCHDOG_REG]);
+}
+
+/**
+ * Initializes the RTC to the correct default value
+ * @return  [description]
+ */
 int16_t rtc_init(void) {
 	update_registers();
-	rtc_disable_halt_update();
-	rtc_set_stopbit_low();
 
-	if (READ_OF() == HIGH) {
-		//rtc_reset_oscilator();
-	}
+	zero_unused_bits();
+	stop_watch_dog_timer();
+	configure_flags();
+
+	rtc_set_flag(ST_REG, ST, LOW);
+	rtc_set_flag(HT_REG, HT, LOW);
+	_delay_us(100);
+
+	struct rtc_time t = {
+		.seconds = 0,
+		.minutes = 30,
+		.hours = 1,
+		.day_of_month = 9,
+		.month = 11,
+		.year = 14
+	};
+	rtc_set_time(&t);
+
 	return 0;
 }
 
-int16_t rtc_get_time_fix(struct rtc_time* t) {
+#define SET_TENS_AND_ONES(reg, tens_mask, ones_mask, value) do { \
+	SET_REGISTER_BITS(register_map[(reg)], (tens_mask), \
+		dec2bcd_tens((value))); \
+	SET_REGISTER_BITS(register_map[(reg)], (ones_mask), \
+		dec2bcd_ones((value))); \
+} while (0)
+
+#define SET_AND_SEND_TIME_UNIT(reg, tens_mask, ones_mask, value) do { \
+	SET_TENS_AND_ONES((reg), (tens_mask), (ones_mask), (value)); \
+	twi_write_register(RTC_SLAVE_ADDR, (reg), register_map[(reg)]); \
+} while (0)
+
+void rtc_set_seconds(uint8_t seconds) {
+	SET_AND_SEND_TIME_UNIT(SECONDS_REG, SECONDS_TENS_MASK, SECONDS_ONES_MASK,
+		seconds);
+}
+
+void rtc_set_minutes(uint8_t minutes) {
+	SET_AND_SEND_TIME_UNIT(MINUTES_REG, MINUTES_TENS_MASK, MINUTES_ONES_MASK,
+		minutes);
+}
+
+void rtc_set_hours(uint8_t hours) {
+	SET_AND_SEND_TIME_UNIT(CENTURY_HOURS_REG, HOURS_TENS_MASK, HOURS_ONES_MASK,
+		hours);
+}
+
+void rtc_set_day_of_week(uint8_t day_of_week) {
+	SET_AND_SEND_TIME_UNIT(DAY_REG, 0x00, DAY_OF_WEEK_MASK, day_of_week);
+}
+
+void rtc_set_day_of_month(uint8_t day_of_month) {
+	SET_AND_SEND_TIME_UNIT(DATE_REG, DAY_OF_MONTH_TENS_MASK,
+		DAY_OF_MONTH_ONES_MASK, day_of_month);
+}
+
+void rtc_set_month(uint8_t month) {
+	SET_AND_SEND_TIME_UNIT(MONTH_REG, MONTH_TENS_MASK, MONTH_ONES_MASK,
+		month);
+}
+
+void rtc_set_year(uint8_t year) {
+	SET_AND_SEND_TIME_UNIT(YEAR_REG, YEAR_TENS_MASK, YEAR_ONES_MASK,
+		year);
+}
+
+
+/**
+ * Set the RTC time to the specified time
+ * @param t pointer to the rtc_time struct with time we want to set
+ */
+void rtc_set_time(struct rtc_time *t) {
+	rtc_set_seconds(t->seconds);
+	rtc_set_minutes(t->minutes);
+	rtc_set_hours(t->hours);
+	rtc_set_day_of_week(t->day_of_week);
+	rtc_set_day_of_month(t->day_of_month);
+	rtc_set_month(t->month);
+	rtc_set_year(t->year);
+}
+
+/**
+ * Reads the current time from the RTC
+ * @param  t struct where the read time is stored
+ * @return   Negative value if an error occurred
+ */
+int16_t rtc_get_time(struct rtc_time* t) {
 	int16_t rc;
 	if ((rc = update_registers()) < 0) return rc;
 

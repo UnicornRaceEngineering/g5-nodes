@@ -57,7 +57,7 @@ int main(void) {
 			// usart0_printf("Getting time fix\n");
 
 			struct rtc_time t;
-			if (!((rc = rtc_get_time_fix(&t)) < 0)) {
+			if (!((rc = rtc_get_time(&t)) < 0)) {
 				//usart0_printf("s/100: %u, s/10: %u s: %u m %u h %u dow %u dom %u month %u year %u rc: %x\n",
 				//	t.hundredths_sec, t.tenth_sec, t.seconds, t.minutes, t.hours,
 				//	t.day_of_week, t.day_of_month, t.month, t.year, rc);

@@ -47,6 +47,8 @@ int16_t twi_start_read(uint8_t dev_addr, uint8_t internal_reg);
 int16_t twi_write_array(uint8_t dev_addr, uint8_t* arr, size_t len);
 int16_t twi_read_array(uint8_t dev_addr, uint8_t internal_reg, uint8_t* arr,
 	size_t n);
+int16_t twi_write_register(uint8_t dev_addr, uint8_t internal_reg,
+	uint8_t value);
 int16_t twi_get_status(void);
 
 #endif /* TWI_H */

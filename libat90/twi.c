@@ -39,6 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "io.h"
 #include "twi.h"
 
+#define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
+
 #define TWI_CMD_NOT_FINISHED	((TWCR & (1<<TWINT)) == 0)
 #define RW_BIT					(1 << 0)
 
@@ -190,6 +192,12 @@ int16_t twi_write_array(uint8_t dev_addr, uint8_t* arr, size_t len) {
 
 	twi_send_stop_condition();
 	return TW_STATUS;
+}
+
+int16_t twi_write_register(uint8_t dev_addr, uint8_t internal_reg,
+	uint8_t value) {
+	uint8_t tx[2] = {internal_reg, value};
+	return twi_write_array(dev_addr, tx, ARR_LEN(tx));
 }
 
 /**
