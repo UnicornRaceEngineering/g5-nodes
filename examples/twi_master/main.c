@@ -61,15 +61,19 @@ int main(void) {
 				//usart0_printf("s/100: %u, s/10: %u s: %u m %u h %u dow %u dom %u month %u year %u rc: %x\n",
 				//	t.hundredths_sec, t.tenth_sec, t.seconds, t.minutes, t.hours,
 				//	t.day_of_week, t.day_of_month, t.month, t.year, rc);
-				usart0_printf("%u/%u/%u %u:%u:%u.%u         \n",
+				// usart0_printf("%u/%u/%u %u:%u:%u.%u         \n",
+				// 	t.year, t.month, t.day_of_month,
+				// 	t.hours, t.minutes, t.seconds, t.hundredth_seconds);
+			} else {
+				usart0_printf("failed to get fix rc: %x ", rc);
+			}
+			usart0_printf("%u/%u/%u %u:%u:%u.%u         \n",
 					t.year, t.month, t.day_of_month,
 					t.hours, t.minutes, t.seconds, t.hundredth_seconds);
-			} else {
-				usart0_printf("failed to get fix rc: %x\n", rc);
-			}
 
 
-			//_delay_ms(18);
+
+			_delay_ms(518);
 
 			//num_tries--;
 		}

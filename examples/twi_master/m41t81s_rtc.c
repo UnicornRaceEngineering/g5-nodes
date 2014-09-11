@@ -270,6 +270,8 @@ static void rtc_set_flag(uint8_t reg, uint8_t bit_index, uint8_t value);
 static void zero_unused_bits(void);
 static void configure_flags(void);
 static void stop_watch_dog_timer(void);
+static void set_and_send_time_unit(uint8_t reg, uint8_t tens_mask,
+	uint8_t ones_mask, uint8_t value);
 
 static uint8_t dec2bcd_tens(uint8_t dec) {
 	return dec / 10;
@@ -354,75 +356,66 @@ int16_t rtc_init(void) {
 	configure_flags();
 
 	/**
-	 * We force the stop bit low so that the oscillator starts
-	 * @TODO the datasheet states that the oscillator will restart within one
-	 * second. So maybe that is the cause of the need for a delay after this?
-	 */
-	rtc_set_flag(ST_REG, ST, LOW);
-	/**
 	 * @TODO we need to handle this better. We need to check if the HT bit is
 	 * HIGH, and if it is get the current (power down) timestamp for when the
 	 * clock stopped and store it somewhere.
 	 */
 	rtc_set_flag(HT_REG, HT, LOW);
-	_delay_us(100);
 
 	struct rtc_time t = {
-		.seconds = 0,
-		.minutes = 30,
-		.hours = 1,
-		.day_of_month = 9,
-		.month = 11,
-		.year = 14
+		.seconds = 16,
+		.minutes = 15,
+		.hours = 14,
+		.day_of_month = 13,
+		.month = 12,
+		.year = 11
 	};
 	rtc_set_time(&t);
+	rtc_set_flag(ST_REG, ST, LOW);
 
 	return 0;
 }
 
-#define SET_TENS_AND_ONES(reg, tens_mask, ones_mask, value) do { \
-	SET_REGISTER_BITS(register_map[(reg)], (tens_mask), \
-		dec2bcd_tens((value))); \
-	SET_REGISTER_BITS(register_map[(reg)], (ones_mask), \
-		dec2bcd_ones((value))); \
-} while (0)
 
-#define SET_AND_SEND_TIME_UNIT(reg, tens_mask, ones_mask, value) do { \
-	SET_TENS_AND_ONES((reg), (tens_mask), (ones_mask), (value)); \
-	twi_write_register(RTC_SLAVE_ADDR, (reg), register_map[(reg)]); \
-} while (0)
+static void set_and_send_time_unit(uint8_t reg, uint8_t tens_mask,
+	uint8_t ones_mask, uint8_t value) {
+	// The tens value is always in the high nipple so we shift it 4
+	SET_REGISTER_BITS(register_map[reg], (dec2bcd_tens(value) << 4), tens_mask);
+	SET_REGISTER_BITS(register_map[reg], dec2bcd_ones(value), ones_mask);
+	twi_write_register(RTC_SLAVE_ADDR, reg, register_map[reg]);
+}
 
 void rtc_set_seconds(uint8_t seconds) {
-	SET_AND_SEND_TIME_UNIT(SECONDS_REG, SECONDS_TENS_MASK, SECONDS_ONES_MASK,
+	set_and_send_time_unit(SECONDS_REG, SECONDS_TENS_MASK, SECONDS_ONES_MASK,
 		seconds);
 }
 
 void rtc_set_minutes(uint8_t minutes) {
-	SET_AND_SEND_TIME_UNIT(MINUTES_REG, MINUTES_TENS_MASK, MINUTES_ONES_MASK,
+	set_and_send_time_unit(MINUTES_REG, MINUTES_TENS_MASK, MINUTES_ONES_MASK,
 		minutes);
 }
 
 void rtc_set_hours(uint8_t hours) {
-	SET_AND_SEND_TIME_UNIT(CENTURY_HOURS_REG, HOURS_TENS_MASK, HOURS_ONES_MASK,
+	set_and_send_time_unit(CENTURY_HOURS_REG, HOURS_TENS_MASK, HOURS_ONES_MASK,
 		hours);
 }
 
 void rtc_set_day_of_week(uint8_t day_of_week) {
-	SET_AND_SEND_TIME_UNIT(DAY_REG, 0x00, DAY_OF_WEEK_MASK, day_of_week);
+	set_and_send_time_unit(DAY_REG, 0x00, DAY_OF_WEEK_MASK, day_of_week);
 }
 
 void rtc_set_day_of_month(uint8_t day_of_month) {
-	SET_AND_SEND_TIME_UNIT(DATE_REG, DAY_OF_MONTH_TENS_MASK,
+	set_and_send_time_unit(DATE_REG, DAY_OF_MONTH_TENS_MASK,
 		DAY_OF_MONTH_ONES_MASK, day_of_month);
 }
 
 void rtc_set_month(uint8_t month) {
-	SET_AND_SEND_TIME_UNIT(MONTH_REG, MONTH_TENS_MASK, MONTH_ONES_MASK,
+	set_and_send_time_unit(MONTH_REG, MONTH_TENS_MASK, MONTH_ONES_MASK,
 		month);
 }
 
 void rtc_set_year(uint8_t year) {
-	SET_AND_SEND_TIME_UNIT(YEAR_REG, YEAR_TENS_MASK, YEAR_ONES_MASK,
+	set_and_send_time_unit(YEAR_REG, YEAR_TENS_MASK, YEAR_ONES_MASK,
 		year);
 }
 

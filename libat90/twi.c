@@ -87,7 +87,18 @@ int8_t twi_send_start_condition(void) {
 
 int8_t twi_send_stop_condition(void) {
 	TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN);
+#if 1
+	/**
+	 * @TODO For some reason the RTC (M41T81S) refuses to respond if not this
+	 * delay is inserted after some commands. As a hack we have just put it
+	 * here.
+	 */
+	int8_t status = TW_STATUS;
+	_delay_us(5);
+	return status;
+#else
 	return TW_STATUS;
+#endif
 }
 
 
