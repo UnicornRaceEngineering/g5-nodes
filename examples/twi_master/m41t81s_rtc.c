@@ -185,80 +185,80 @@ static uint8_t register_map[NUMBER_OF_REGISTERS] = {0};
  * many copy paste macro here
  * @{
  */
-#define OF			 (2) //!< Oscillator fail flag
-#define OF_REG		 FLAGS_REG
-#define READ_OF()	 READ_FLAG_FROM_REGISTER_MAP(OF, OF_REG)
-#define WRITE_OF(x)  WRITE_FLAG_TO_REGISTER_MAP(OF, OF_REG, (x))
+#define OF				(2) //!< Oscillator fail flag
+#define OF_REG			FLAGS_REG
+#define READ_OF()		READ_FLAG_FROM_REGISTER_MAP(OF, OF_REG)
+#define WRITE_OF(x)		WRITE_FLAG_TO_REGISTER_MAP(OF, OF_REG, (x))
 
-#define BL			 (4) //!< Battery low bit
-#define BL_REG		 FLAGS_REG
-#define READ_BL()	 READ_FLAG_FROM_REGISTER_MAP(BL, BL_REG)
-#define WRITE_BL(x)  WRITE_FLAG_TO_REGISTER_MAP(BL, BL_REG, (x))
+#define BL				(4) //!< Battery low bit
+#define BL_REG			FLAGS_REG
+#define READ_BL()		READ_FLAG_FROM_REGISTER_MAP(BL, BL_REG)
+#define WRITE_BL(x)		WRITE_FLAG_TO_REGISTER_MAP(BL, BL_REG, (x))
 
-#define AF			 (6) //!< Alarm flag (read only)
-#define AF_REG		 FLAGS_REG
-#define READ_AF()	 READ_FLAG_FROM_REGISTER_MAP(AF, AF_REG)
-#define WRITE_AF(x)  WRITE_FLAG_TO_REGISTER_MAP(AF, AF_REG, (x))
+#define AF				(6) //!< Alarm flag (read only)
+#define AF_REG			FLAGS_REG
+#define READ_AF()		READ_FLAG_FROM_REGISTER_MAP(AF, AF_REG)
+#define WRITE_AF(x)		WRITE_FLAG_TO_REGISTER_MAP(AF, AF_REG, (x))
 
-#define WDF			 (7) //!< Watchdog flag (read only)
-#define WDF_REG		 FLAGS_REG
-#define READ_WDF()	 READ_FLAG_FROM_REGISTER_MAP(WDF, WDF_REG)
-#define WRITE_WDF(x) WRITE_FLAG_TO_REGISTER_MAP(WDF, WDF_REG, (x))
+#define WDF				(7) //!< Watchdog flag (read only)
+#define WDF_REG			FLAGS_REG
+#define READ_WDF()		READ_FLAG_FROM_REGISTER_MAP(WDF, WDF_REG)
+#define WRITE_WDF(x)	WRITE_FLAG_TO_REGISTER_MAP(WDF, WDF_REG, (x))
 
-#define ST			 (7) //!< Stop bit
-#define ST_REG		 SECONDS_REG
-#define READ_ST()	 READ_FLAG_FROM_REGISTER_MAP(ST, ST_REG)
-#define WRITE_ST(x)  WRITE_FLAG_TO_REGISTER_MAP(ST, ST_REG, (x))
+#define ST				(7) //!< Stop bit
+#define ST_REG			SECONDS_REG
+#define READ_ST()		READ_FLAG_FROM_REGISTER_MAP(ST, ST_REG)
+#define WRITE_ST(x)		WRITE_FLAG_TO_REGISTER_MAP(ST, ST_REG, (x))
 
-#define HT			 (6) //!< Halt update bit
-#define HT_REG		 ALARM_REG2
-#define READ_HT()	 READ_FLAG_FROM_REGISTER_MAP(HT, HT_REG)
-#define WRITE_HT(x)  WRITE_FLAG_TO_REGISTER_MAP(HT, HT_REG, (x))
+#define HT				(6) //!< Halt update bit
+#define HT_REG			ALARM_REG2
+#define READ_HT()		READ_FLAG_FROM_REGISTER_MAP(HT, HT_REG)
+#define WRITE_HT(x)		WRITE_FLAG_TO_REGISTER_MAP(HT, HT_REG, (x))
 
-#define CEB			 (7)
-#define CEB_REG		 CENTURY_HOURS_REG
-#define READ_CEB()	 READ_FLAG_FROM_REGISTER_MAP(CEB, CEB_REG)
-#define WRITE_CEB(x) WRITE_FLAG_TO_REGISTER_MAP(CEB, CEB_REG, (x))
+#define CEB				(7)
+#define CEB_REG			CENTURY_HOURS_REG
+#define READ_CEB()		READ_FLAG_FROM_REGISTER_MAP(CEB, CEB_REG)
+#define WRITE_CEB(x)	WRITE_FLAG_TO_REGISTER_MAP(CEB, CEB_REG, (x))
 
-#define OUT			 (7)
-#define OUT_REG		 CENTURY_HOURS_REG
-#define READ_OUT()	 READ_FLAG_FROM_REGISTER_MAP(OUT, OUT_REG)
-#define WRITE_OUT(x) WRITE_FLAG_TO_REGISTER_MAP(OUT, OUT_REG, (x))
+#define OUT				(7)
+#define OUT_REG			CENTURY_HOURS_REG
+#define READ_OUT()		READ_FLAG_FROM_REGISTER_MAP(OUT, OUT_REG)
+#define WRITE_OUT(x)	WRITE_FLAG_TO_REGISTER_MAP(OUT, OUT_REG, (x))
 
-#define FT			 (6)
-#define FT_REG		 CENTURY_HOURS_REG
-#define READ_FT()	 READ_FLAG_FROM_REGISTER_MAP(FT, FT_REG)
-#define WRITE_FT(x)  WRITE_FLAG_TO_REGISTER_MAP(FT, FT_REG, (x))
+#define FT				(6)
+#define FT_REG			CENTURY_HOURS_REG
+#define READ_FT()		READ_FLAG_FROM_REGISTER_MAP(FT, FT_REG)
+#define WRITE_FT(x)		WRITE_FLAG_TO_REGISTER_MAP(FT, FT_REG, (x))
 
-#define S			 (6)
-#define S_REG		 CENTURY_HOURS_REG
-#define READ_S()	 READ_FLAG_FROM_REGISTER_MAP(S, S_REG)
-#define WRITE_S(x) 	 WRITE_FLAG_TO_REGISTER_MAP(S, FT_REG, (x))
+#define S				(6)
+#define S_REG			CENTURY_HOURS_REG
+#define READ_S()		READ_FLAG_FROM_REGISTER_MAP(S, S_REG)
+#define WRITE_S(x)		WRITE_FLAG_TO_REGISTER_MAP(S, FT_REG, (x))
 
-#define OFIE		  (7)
-#define OFIE_REG	  CENTURY_HOURS_REG
-#define READ_OFIE()	  READ_FLAG_FROM_REGISTER_MAP(OFIE, OFIE_REG)
-#define WRITE_OFIE(x) WRITE_FLAG_TO_REGISTER_MAP(OFIE, OFIE_REG, (x))
+#define OFIE			(7)
+#define OFIE_REG		CENTURY_HOURS_REG
+#define READ_OFIE()		READ_FLAG_FROM_REGISTER_MAP(OFIE, OFIE_REG)
+#define WRITE_OFIE(x)	WRITE_FLAG_TO_REGISTER_MAP(OFIE, OFIE_REG, (x))
 
-#define AFIE		  (7)
-#define AFIE_REG	  CENTURY_HOURS_REG
-#define READ_AFIE()	  READ_FLAG_FROM_REGISTER_MAP(AFIE, AFIE_REG)
-#define WRITE_AFIE(x) WRITE_FLAG_TO_REGISTER_MAP(AFIE, AFIE_REG, (x))
+#define AFIE			(7)
+#define AFIE_REG		CENTURY_HOURS_REG
+#define READ_AFIE()		READ_FLAG_FROM_REGISTER_MAP(AFIE, AFIE_REG)
+#define WRITE_AFIE(x)	WRITE_FLAG_TO_REGISTER_MAP(AFIE, AFIE_REG, (x))
 
-#define SQW			 (6)
-#define SQW_REG		 CENTURY_HOURS_REG
-#define READ_SQW()	 READ_FLAG_FROM_REGISTER_MAP(SQW, SQW_REG)
-#define WRITE_SQW(x) WRITE_FLAG_TO_REGISTER_MAP(SQW, SQW_REG, (x))
+#define SQW				(6)
+#define SQW_REG			CENTURY_HOURS_REG
+#define READ_SQW()		READ_FLAG_FROM_REGISTER_MAP(SQW, SQW_REG)
+#define WRITE_SQW(x)	WRITE_FLAG_TO_REGISTER_MAP(SQW, SQW_REG, (x))
 
-#define ABE			 (5)
-#define ABE_REG		 CENTURY_HOURS_REG
-#define READ_ABE()	 READ_FLAG_FROM_REGISTER_MAP(ABE, ABE_REG)
-#define WRITE_ABE(x) WRITE_FLAG_TO_REGISTER_MAP(ABE, ABE_REG, (x))
+#define ABE				(5)
+#define ABE_REG			CENTURY_HOURS_REG
+#define READ_ABE()		READ_FLAG_FROM_REGISTER_MAP(ABE, ABE_REG)
+#define WRITE_ABE(x)	WRITE_FLAG_TO_REGISTER_MAP(ABE, ABE_REG, (x))
 
-#define AI			 (4)
-#define AI_REG		 CENTURY_HOURS_REG
-#define READ_AI()	 READ_FLAG_FROM_REGISTER_MAP(AI, AI_REG)
-#define WRITE_AI(x) WRITE_FLAG_TO_REGISTER_MAP(AI, AI_REG, (x))
+#define AI				(4)
+#define AI_REG			CENTURY_HOURS_REG
+#define READ_AI()		READ_FLAG_FROM_REGISTER_MAP(AI, AI_REG)
+#define WRITE_AI(x)		WRITE_FLAG_TO_REGISTER_MAP(AI, AI_REG, (x))
 /** @} */
 
 /* PROTOTYPES */
