@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @files twi.h
+ * @file twi.h
  * @brief
  * Provides a simple interface to communicating over the TWI (I2C) interface.
  */

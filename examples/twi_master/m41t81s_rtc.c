@@ -21,6 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @files m41t81s_rtc.c
+ * @brief
+ * Driver for the M41T81S RTC (Real Time Clock).
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <util/delay.h>
@@ -40,6 +46,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * @name Bits
  * The individual bits in the clock register map
+ * @TODO add better error reports
  * @{
  */
 #define D0	(1 << 0)

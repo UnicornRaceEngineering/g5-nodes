@@ -22,9 +22,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @files twi.c
+ * @file twi.c
  * @brief
  * Provides a simple interface to communicating over the TWI (I2C) interface.
+ * @TODO add better error reports
  */
 
 #include <avr/io.h>
