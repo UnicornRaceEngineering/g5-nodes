@@ -28,17 +28,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <util/delay.h>
-
 #include <bitwise.h>
 #include <twi.h>
-#include <usart.h>
 #include "m41t81s_rtc.h"
-
-#define DEBUG(str) usart0_printf("%s:%d %s\n", __FILE__, __LINE__, str)
-
-#define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
 
 #define HIGH	1
 #define LOW		0
@@ -356,6 +349,7 @@ static void stop_watch_dog_timer(void) {
  * @return  [description]
  */
 int16_t rtc_init(void) {
+	twi_init_master();
 	update_registers();
 
 	zero_unused_bits();
