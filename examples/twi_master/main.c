@@ -26,7 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 
 #include <usart.h>
-#include "m41t81s_rtc.h"
+#include <m41t81s_rtc.h>
 #include <io.h>
 
 
