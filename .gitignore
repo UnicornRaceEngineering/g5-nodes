@@ -35,3 +35,7 @@ thumbs.db
 build/*
 
 .clang_complete
+
+#ignore dot-folders / files
+.*
+!/.gitignore # but not the .gitignore file
