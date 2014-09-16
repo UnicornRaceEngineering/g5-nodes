@@ -5,6 +5,7 @@ include(cmake/flags.cmake)
 project(G5_NODES C)
 
 add_subdirectory(libat90)
+add_subdirectory(drivers)
 add_subdirectory(TemplateNode)
 add_subdirectory(GPSNode)
 add_subdirectory(GearNode)
