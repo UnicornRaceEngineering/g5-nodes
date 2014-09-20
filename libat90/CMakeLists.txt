@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6.0)
-
 set(HEADER_FILES
 	twi.h
 	adc.h

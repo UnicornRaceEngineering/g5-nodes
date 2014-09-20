@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6.0)
-
 include_directories(
 	${PROJECT_SOURCE_DIR}/libat90
 	${PROJECT_SOURCE_DIR}/drivers
