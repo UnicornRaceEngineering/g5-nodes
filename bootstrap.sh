@@ -13,6 +13,9 @@ EOF
 
 HOME_FOLDER=/home/vagrant
 
+
+sudo locale-gen UTF-8
+
 apt-get update
 
 apt-get install -y \
