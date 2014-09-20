@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-#echo "Bootstrapping avr-gcc"
-
-cat << EOF
+cat <<EOF
 *****************************
 
 Bootstrapping the VM
@@ -12,9 +10,6 @@ for embedded avr development
 EOF
 
 HOME_FOLDER=/home/vagrant
-
-
-sudo locale-gen UTF-8
 
 apt-get update
 
@@ -74,7 +69,7 @@ compile_avr_gcc() {
 
 ln -s /vagrant $HOME_FOLDER/g5-nodes
 
-cat << EOF
+cat <<EOF
 *****************************
 
 Bootstrapping Done
