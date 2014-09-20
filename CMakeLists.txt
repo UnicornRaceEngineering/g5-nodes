@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.6.0)
+cmake_minimum_required(VERSION 2.8.12)
+
 include(cmake/avr_crosscompile.cmake)
 include(cmake/flags.cmake)
 
@@ -12,5 +13,3 @@ add_subdirectory(GearNode)
 add_subdirectory(GearNodeDewalt)
 add_subdirectory(SteeringNode)
 add_subdirectory(examples)
-
-

@@ -1,16 +1,3 @@
-cmake_minimum_required(VERSION 2.6.0)
-
-set(HEADER_FILES
-	twi.h
-	adc.h
-	bitwise.h
-	can.h
-	io.h
-	pwm.h
-	ringbuffer.h
-	timer.h
-	usart.h)
-
 set(SRC_FILES
 	twi.c
 	adc.c
@@ -19,5 +6,4 @@ set(SRC_FILES
 	timer.c
 	usart.c)
 
-
-add_library(libat90 ${HEADER_FILES} ${SRC_FILES})
+add_library(libat90 ${SRC_FILES})
