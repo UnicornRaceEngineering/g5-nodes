@@ -11,5 +11,5 @@ set(SRC_FILES
 	m41t81s_rtc.c
 	)
 
-target_link_libraries(libat90)
 add_library(drivers ${HEADER_FILES} ${SRC_FILES})
+target_link_libraries(drivers libat90)
