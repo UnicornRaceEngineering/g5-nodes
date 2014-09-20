@@ -17,6 +17,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   require 'time'
   timezone = 'Etc/GMT' + ((Time.zone_offset(Time.now.zone)/60)/60).to_s
   config.vm.provision :shell, :inline => "if [ $(grep -c UTC /etc/timezone) -gt 0 ]; then echo \"#{timezone}\" | sudo tee /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata; fi"
+
+  # Fix locale issue as descriped at:
+  # http://www.pixelninja.me/how-to-fix-invalid-locale-setting-in-ubuntu-14-04-in-the-cloud/
+  config.vm.provision :shell, :inline => 'echo "LC_ALL=\"en_US.UTF-8\"" >> /etc/environment'
+
+  # Run the bootstrap script
   config.vm.provision :shell, path: "bootstrap.sh"
 
 
