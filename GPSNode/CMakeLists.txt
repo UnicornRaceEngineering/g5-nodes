@@ -12,6 +12,7 @@ target_link_libraries(${NODE_NAME} libat90)
 
 avr_make_flashable(${NODE_NAME})
 
+
 set(TEST_SRC_FILES
 	tests/gps_test.c)
 
