@@ -1,16 +1,19 @@
 set(F_CPU 11059200)
 set(CAN_BAUDRATE 204800)
 
-option(WITH_LTO
-	"Use Link Time Optimizations" ON
-)
-
-if (WITH_LTO)
+# In relation to GCC Bugzilla – Bug 59396
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59396
+# Using gcc with link time optimizations when compiling code with ISR functions
+# leads to gcc throwing a warning by mistake in some versions.
+# This bug should be fixed in gcc version 4.8.3
+execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
+			OUTPUT_VARIABLE GCC_VERSION)
+if (GCC_VERSION VERSION_LESS 4.8.3)
+	message(STATUS "Compiling with out Link Time Optimizations - LTO OFF")
+else()
 	set(LTO "-flto")
 	message(STATUS "Compiling with Link Time Optimizations - LTO ON")
-else()
-	message(STATUS "Compiling with out Link Time Optimizations - LTO OFF")
-endif (WITH_LTO)
+endif()
 
 # Name of target Micro Controller Unit
 # see the available avr-gcc mmcu options for possible values
