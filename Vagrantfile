@@ -31,11 +31,34 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # To get list of usb devices use "VBoxManage list usbhost" and copy the
     # address for the desired device
 
-    # TODO get the correct device addresses
+    # Enable usb
+    vb.customize ['modifyvm', :id, "--usb", "on"]
+
+    # auto attach the following USB devices
     vb.customize ["usbfilter", "add", "0", "--target", :id,
-      "--name", "devices for embedded avr",
+      "--name", "Small USB UART",
       "--action", "hold", # Makes the device available
-      "--active", "yes",
+
+      "--manufacturer", "FTDI",
+
+      # "--vendorid", "0x0403",
+      # "--productid", "0x6001",
+      # "--product", "FT232R USB UART",
+      # "--serialnumber", "A600JE0S"
+    ]
+
+    vb.customize ["usbfilter", "add", "0", "--target", :id,
+      "--name", "Programmer",
+      "--action", "hold", # Makes the device available
+
+      "--product", "AVRISP mkII",
+    ]
+
+    vb.customize ["usbfilter", "add", "0", "--target", :id,
+      "--name", "Big USB UART (DB9 connector)",
+      "--action", "hold", # Makes the device available
+
+      "--product", "USB-Serial Controller",
     ]
   end
 
