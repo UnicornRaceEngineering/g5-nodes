@@ -21,28 +21,10 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h> // size_t
-#include <avr/interrupt.h> // sei()
-#include <usart.h>
-#include <util/delay.h>
-#include "ecu.h"
+#ifndef ECU_H
+#define ECU_H
 
-#define XBEE_BAUD 	(115200)
+void ecu_init(void);
+void ecu_parse_package(void);
 
-
-int main(void) {
-	usart1_init(XBEE_BAUD); // xbee
-	ecu_init();
-
-	sei();										//Enable interrupt
-
-	usart1_puts("\nStarting:\n");
-
-	while(1){
-		// Main work loop
-
-		ecu_parse_package();
-	}
-
-    return 0;
-}
+#endif /* ECU_H */

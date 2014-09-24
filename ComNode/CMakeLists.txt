@@ -1,7 +1,9 @@
 set(NODE_NAME ComNode)
 
 set(SRC_FILES
-	main.c)
+	main.c
+	ecu.c
+	)
 
 add_executable(${NODE_NAME} ${SRC_FILES})
 
