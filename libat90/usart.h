@@ -102,7 +102,9 @@ enum usart_charSelect_t {
 	bool usart0_hasData(void);
 #endif
 	uint8_t usart0_getc(void);
+	uint8_t usart0_getc_unbuffered(void);
 	int usart0_putc(const uint8_t c);
+	void usart0_putc_unbuffered(const uint8_t c);
 	int usart0_puts(const char *str);
 	int usart0_putn(size_t n, const uint8_t *str);
 	int usart0_printf(const char *str, ...);
@@ -153,7 +155,9 @@ enum usart_charSelect_t {
 	bool usart1_hasData(void);
 #endif
 	uint8_t usart1_getc(void);
+	uint8_t usart1_getc_unbuffered(void);
 	int usart1_putc(const uint8_t c);
+	void usart1_putc_unbuffered(const uint8_t c);
 	int usart1_puts(const char *str);
 	int usart1_putn(size_t n, const uint8_t *str);
 	int usart1_printf(const char *str, ...);
