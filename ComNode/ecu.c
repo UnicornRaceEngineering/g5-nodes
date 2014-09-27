@@ -21,16 +21,19 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdbool.h>
 #include <avr/interrupt.h>
 #include <usart.h>
 #include <timer.h>
+#include "parser.h"
+#include "ecu.h"
 
 #define ECU_BAUD	(19200)
 
 #define ECU_TIMER				0
 #define ECU_REQUEST_ISR_VECT	TIMER0_COMP_vect
 
-#define ECU_RECV_PKT_SIZE	114 //!< Legacy code uses this package size
+#define ECU_RECV_PKT_SIZE	115 //!< Legacy code uses this package size
 
 static void init_ECU_request_timer(void);
 
@@ -44,15 +47,35 @@ static void init_ECU_request_timer(void) {
 }
 
 void ecu_parse_package(void) {
-	// Apprently the ECU sends packages of a fixed sized length
-	for (int i = 0; i <= ECU_RECV_PKT_SIZE; ++i) {
-		// usart1_printf("[%d: 0x%x], ",i, usart0_getc());
-		usart1_printf("[%d: %d], ", i, usart0_getc());
+	struct parser p = {
+		.package_start_counter = 0,
+		.package_start = false,
+		.bytes_to_read = -1,
+		.val_out = 0,
+		.cfg_index = -1,
+		.sensor_found = false,
+	};
 
-		//!< @TODO implement a parser
-		// const uint8_t ecu_byte = usart0_getc();
+	// Apprently the ECU sends packages of a fixed sized length
+	for (int i = 0; i < ECU_RECV_PKT_SIZE; ++i) {
+		struct sensor s;
+
+		// usart1_printf("[%d: 0x%x], ",i, usart0_getc());
+		// usart1_printf("[%d: %d], ", i, usart0_getc());
+
+		usart1_printf("1\n");
+		const uint8_t ecu_byte = usart0_getc();
+		usart1_printf("2\n");
+		parse_next(ecu_byte, &s, &p); //!< @TODO do something with return value?
+		usart1_printf("3\n");
+		if (p.sensor_found) {
+			//!< @TODO do something with the sensor data
+			usart1_printf("sensor: %s, id: %d, value*1000: %d\n", s.name, s.id,
+				(int)(s.value*1000));
+		} else {
+			usart1_printf("Nothing found\n");
+		}
 	}
-	usart1_putc('\n');
 }
 
 void ecu_init(void) {

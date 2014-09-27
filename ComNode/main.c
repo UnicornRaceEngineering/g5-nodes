@@ -40,7 +40,7 @@ int main(void) {
 
 	while(1){
 		// Main work loop
-
+		usart1_printf("Parsing a package\n");
 		ecu_parse_package();
 	}
 
