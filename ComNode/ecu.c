@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <usart.h>
 #include <timer.h>
-#include "parser.h"
+#include "converter.h"
 #include "ecu.h"
 
 #define ECU_BAUD	(19200)
@@ -33,54 +33,45 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ECU_TIMER				0
 #define ECU_REQUEST_ISR_VECT	TIMER0_COMP_vect
 
-#define ECU_RECV_PKT_SIZE	115 //!< Legacy code uses this package size
 
-static void init_ECU_request_timer(void);
+#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
+struct ecu_package {
+	struct sensor sensor;
+	uint16_t raw_value;
+	size_t length;
+};
 
-static void init_ECU_request_timer(void) {
-	// 1/((F_CPU/Prescaler)/n_timersteps)
-	// 1/((11059200/1024)/256) = approx 23.7 ms or about 42 Hz
-	OCR0A = 100;					// Set start value
-	TIMSK0 |= 1<<OCIE0A; 			// Enable timer compare match interrupt
-	TCCR0A |= 1<<CS02 | 1<<CS00;    // Set prescaler 1024
-}
 
 void ecu_parse_package(void) {
-	struct parser p = {
-		.package_start_counter = 0,
-		.package_start = false,
-		.bytes_to_read = -1,
-		.val_out = 0,
-		.cfg_index = -1,
-		.sensor_found = false,
+	struct ecu_package pkt[] = {
+#		include "package_layout.h"
 	};
 
 	// Apprently the ECU sends packages of a fixed sized length
-	for (int i = 0; i < ECU_RECV_PKT_SIZE; ++i) {
-		struct sensor s;
+	for (int i = 0; i < ARR_LEN(pkt); ++i) {
+		while (pkt[i].length--) {
+			const uint8_t ecu_byte = usart0_getc();
+			if (pkt[i].sensor.id == EMPTY ) continue;
 
-		// usart1_printf("[%d: 0x%x], ",i, usart0_getc());
-		// usart1_printf("[%d: %d], ", i, usart0_getc());
-
-		usart1_printf("1\n");
-		const uint8_t ecu_byte = usart0_getc();
-		usart1_printf("2\n");
-		parse_next(ecu_byte, &s, &p); //!< @TODO do something with return value?
-		usart1_printf("3\n");
-		if (p.sensor_found) {
-			//!< @TODO do something with the sensor data
-			usart1_printf("sensor: %s, id: %d, value*1000: %d\n", s.name, s.id,
-				(int)(s.value*1000));
-		} else {
-			usart1_printf("Nothing found\n");
+			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
 		}
+		pkt[i].sensor.value = convert(pkt[i].sensor.id, pkt[i].raw_value);
+		usart1_printf("%s: %d\n", pkt[i].sensor.name, (int)(pkt[i].sensor.value*1000));
 	}
 }
 
 void ecu_init(void) {
 	usart0_init(ECU_BAUD);	// ECU
-	init_ECU_request_timer();
+
+	// init_ECU_request_timer
+	{
+		// 1/((F_CPU/Prescaler)/n_timersteps)
+		// 1/((11059200/1024)/256) = approx 23.7 ms or about 42 Hz
+		OCR0A = 100;					// Set start value
+		TIMSK0 |= 1<<OCIE0A; 			// Enable timer compare match interrupt
+		TCCR0A |= 1<<CS02 | 1<<CS00;    // Set prescaler 1024
+	}
 }
 
 ISR(ECU_REQUEST_ISR_VECT) {
