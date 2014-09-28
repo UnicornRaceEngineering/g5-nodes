@@ -35,13 +35,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
-struct ecu_package {
-	struct sensor sensor;
-	uint16_t raw_value;
-	size_t length;
-};
 
-static uint16_t clamp(uint16_t value) {
+static uint32_t clamp(uint32_t value) {
 	if(value > (1<<15)){
 		value = -(0xFFFF - value);
 	}
@@ -49,11 +44,15 @@ static uint16_t clamp(uint16_t value) {
 }
 
 void ecu_parse_package(void) {
-	struct ecu_package pkt[] = {
-#		include "ecu_package_layout.h"
+
+	struct ecu_package {
+		struct sensor sensor;
+		uint32_t raw_value; // The raw data received from the ECU
+		size_t length; // length of the data in bytes
+	} pkt[] = {
+#		include "ecu_package_layout.inc"
 	};
 
-	// Apprently the ECU sends packages of a fixed sized length
 	for (int i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = usart0_getc();
@@ -152,8 +151,8 @@ void ecu_init(void) {
 ISR(ECU_REQUEST_ISR_VECT) {
 	// We have to send a start sequence to the ECU to force it respond with data
 	// but if we ask too often it crashes
-	const uint8_t start_seq[10] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
-	for (int i = 0; i < 10; ++i) {
+	const uint8_t start_seq[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
+	for (int i = 0; i < ARR_LEN(start_seq); ++i) {
 		usart0_putc_unbuffered(start_seq[i]);
 	}
 
