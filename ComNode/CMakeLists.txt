@@ -3,7 +3,6 @@ set(NODE_NAME ComNode)
 set(SRC_FILES
 	main.c
 	ecu.c
-	parser.c
 	)
 
 add_executable(${NODE_NAME} ${SRC_FILES})

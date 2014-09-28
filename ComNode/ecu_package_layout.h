@@ -1,9 +1,19 @@
 /**
+ * @file ecu_package_layout.h
  * The ECU spits out data in the following format. The important values here is
  * the .id that signifies what kind of sensor data we receive, and the .length
  * which is how many bytes of that sensor type we should exspect.
  * EMPTY packages are just that, empty, The ECU will put out the specified
  * length of garbage.
+ *
+ * @note
+ * This file is *ONLY* supposed to be included when declaring an ecu_package
+ * array.
+ * <code>
+ * 	struct ecu_package pkt[] = {
+ *	#	include "ecu_package_layout.h"
+ *	};
+ * </code>
  */
 
 {.sensor = {.name = "Fuel Press.", 				.id = FUEL_PRESSURE,}, .raw_value = 0, 			.length = 2,},
