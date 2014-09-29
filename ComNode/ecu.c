@@ -29,7 +29,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define ECU_BAUD	(19200)
 
-#define ECU_TIMER				0
 #define ECU_REQUEST_ISR_VECT	TIMER0_COMP_vect
 
 
@@ -48,11 +47,12 @@ void ecu_parse_package(void) {
 	struct ecu_package {
 		struct sensor sensor;
 		uint32_t raw_value; // The raw data received from the ECU
-		size_t length; // length of the data in bytes
+		size_t length; 		// length of the data in bytes
 	} pkt[] = {
 #		include "ecu_package_layout.inc"
 	};
 
+	// We loop over the package and extract the number of bytes element contains
 	for (int i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = usart0_getc();
@@ -64,33 +64,6 @@ void ecu_parse_package(void) {
 		// Convert the raw data to usable data
 		{
 			switch (pkt[i].sensor.id) {
-			case FUEL_PRESSURE:
-			case STATUS_LAP_COUNT:
-			case STATUS_INJ_SUM:
-			case LAST_GEAR_SHIFT:
-			case MOTOR_OILTEMP:
-			case OIL_PRESSURE:
-			case STATUS_TIME:
-			case STATUS_LAP_TIME:
-			case GEAR_OIL_TEMP:
-			case STATUS_TRACTION:
-			case STATUS_GAS:
-			case STATUS_CAM_TRIG_P1:
-			case STATUS_CAM_TRIG_P2:
-			case STATUS_CHOKER_ADD:
-			case STATUS_LAMBDA_PWM:
-			case TRIGGER_ERR:
-			case CAM_ANGLE1:
-			case CAM_ANGLE2:
-			case ROAD_SPEED:
-			case LOAD:
-			case DWELL_TIME:
-			case MOTOR_FLAGS:
-			case OUT_BITS:
-			case TIME:
-				// No conversion
-				pkt[i].sensor.value = (double)pkt[i].raw_value;
-				break;
 			case STATUS_LAMBDA_V2:
 				pkt[i].sensor.value = (70-clamp(pkt[i].raw_value)/64.0);
 				break;
@@ -122,10 +95,33 @@ void ecu_parse_package(void) {
 			case GZ:
 				pkt[i].sensor.value = (clamp(pkt[i].raw_value) * (1.0/16384));
 				break;
-
+			case FUEL_PRESSURE:
+			case STATUS_LAP_COUNT:
+			case STATUS_INJ_SUM:
+			case LAST_GEAR_SHIFT:
+			case MOTOR_OILTEMP:
+			case OIL_PRESSURE:
+			case STATUS_TIME:
+			case STATUS_LAP_TIME:
+			case GEAR_OIL_TEMP:
+			case STATUS_TRACTION:
+			case STATUS_GAS:
+			case STATUS_CAM_TRIG_P1:
+			case STATUS_CAM_TRIG_P2:
+			case STATUS_CHOKER_ADD:
+			case STATUS_LAMBDA_PWM:
+			case TRIGGER_ERR:
+			case CAM_ANGLE1:
+			case CAM_ANGLE2:
+			case ROAD_SPEED:
+			case LOAD:
+			case DWELL_TIME:
+			case MOTOR_FLAGS:
+			case OUT_BITS:
+			case TIME:
 			case EMPTY:
 			default:
-				// Do nothing as this should never be called
+				// No conversion
 				pkt[i].sensor.value = (double)pkt[i].raw_value;
 				break;
 			}
