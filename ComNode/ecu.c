@@ -42,6 +42,16 @@ static uint32_t clamp(uint32_t value) {
 	return value;
 }
 
+static void send_xbee_array(const uint8_t id, const uint8_t *arr, uint16_t len) {
+	usart1_putc_unbuffered(id);
+	usart1_putc_unbuffered(HIGH_BYTE(len));
+	usart1_putc_unbuffered(LOW_BYTE(len));
+
+	for (int i = 0; i < len; ++i) {
+		usart1_putc_unbuffered(arr[i]);
+	}
+}
+
 void ecu_parse_package(void) {
 
 	struct ecu_package {
@@ -55,7 +65,7 @@ void ecu_parse_package(void) {
 	// We loop over the package and extract the number of bytes element contains
 	for (int i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
-			const uint8_t ecu_byte = usart0_getc();
+			const uint8_t ecu_byte = usart0_getc_unbuffered();
 			if (pkt[i].sensor.id == EMPTY ) continue;
 
 			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
@@ -127,7 +137,23 @@ void ecu_parse_package(void) {
 			}
 		}
 
-		usart1_printf("%s: %d\n", pkt[i].sensor.name, (int)(pkt[i].sensor.value*1000));
+		// usart1_printf("%s: %d\n", pkt[i].sensor.name, (int)(pkt[i].sensor.value*1000));
+
+		// Send the individual sensor data
+		send_xbee_array(pkt[i].sensor.id, (uint8_t*)&(pkt[i].sensor.value),
+			sizeof(pkt[i].sensor.value));
+#if 0
+		{
+			const uint8_t *value_ptr = (uint8_t*)&(pkt[i].sensor.value);
+			usart1_putc_unbuffered(pkt[i].sensor.id);
+			usart1_putc_unbuffered(HIGH_BYTE((uint16_t)sizeof(pkt[i].sensor.value)));
+			usart1_putc_unbuffered(LOW_BYTE((uint16_t)sizeof(pkt[i].sensor.value)));
+			usart1_putc_unbuffered(value_ptr[0]);
+			usart1_putc_unbuffered(value_ptr[1]);
+			usart1_putc_unbuffered(value_ptr[2]);
+			usart1_putc_unbuffered(value_ptr[3]);
+		}
+#endif
 	}
 }
 
@@ -144,12 +170,17 @@ void ecu_init(void) {
 	}
 }
 
+volatile static int request_delay = 0;
+
 ISR(ECU_REQUEST_ISR_VECT) {
 	// We have to send a start sequence to the ECU to force it respond with data
 	// but if we ask too often it crashes
-	const uint8_t start_seq[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
-	for (int i = 0; i < ARR_LEN(start_seq); ++i) {
-		usart0_putc_unbuffered(start_seq[i]);
+	if (request_delay++ == 8) {
+		const uint8_t start_seq[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
+		for (int i = 0; i < ARR_LEN(start_seq); ++i) {
+			usart0_putc_unbuffered(start_seq[i]);
+		}
+		request_delay = 0;
 	}
 
 }
