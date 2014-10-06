@@ -21,6 +21,20 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @file ecu.c
+ * High level interface for the receiving data from the ECU.
+ * The ECU communicates via. UART, but require a keep-alive heart beat to
+ * actually send any data. Therefor we must periodically send the heartbeat.
+ *
+ * @note that the frequency we send the heartbeat is *NOT* the frequency with
+ * which we receive data from the ECU.
+ *
+ * The structure of the data we receive from the ECU can be found in
+ * "ecu_package_layout.inc".
+ *
+ */
+
 #include <stdbool.h>
 #include <avr/interrupt.h>
 #include <usart.h>
@@ -29,8 +43,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define ECU_BAUD	(19200)
 
-#define ECU_REQUEST_ISR_VECT	TIMER0_COMP_vect
+#define ECU_HEARTBEAT_ISR_VECT	TIMER0_COMP_vect
 
+#define HEARTBEAT_DELAY_LENGTH	8 // How many times we delay the heartbeat timer
 
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
@@ -42,6 +57,7 @@ static uint32_t clamp(uint32_t value) {
 	return value;
 }
 
+//!< @TODO Move this into its own module as it doesn't belong here
 static void send_xbee_array(const uint8_t id, const uint8_t *arr, uint16_t len) {
 	usart1_putc_unbuffered(id);
 	usart1_putc_unbuffered(HIGH_BYTE(len));
@@ -160,7 +176,7 @@ void ecu_parse_package(void) {
 void ecu_init(void) {
 	usart0_init(ECU_BAUD);	// ECU
 
-	// init_ECU_request_timer
+	// setup timer 0 which periodically sends heartbeat to the ECU
 	{
 		// 1/((F_CPU/Prescaler)/n_timersteps)
 		// 1/((11059200/1024)/256) = approx 23.7 ms or about 42 Hz
@@ -170,17 +186,18 @@ void ecu_init(void) {
 	}
 }
 
-volatile static int request_delay = 0;
 
-ISR(ECU_REQUEST_ISR_VECT) {
+ISR(ECU_HEARTBEAT_ISR_VECT) {
+	static int delay = HEARTBEAT_DELAY_LENGTH;
+
 	// We have to send a start sequence to the ECU to force it respond with data
 	// but if we ask too often it crashes
-	if (request_delay++ == 8) {
-		const uint8_t start_seq[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
-		for (int i = 0; i < ARR_LEN(start_seq); ++i) {
-			usart0_putc_unbuffered(start_seq[i]);
+	if (!delay--) {
+		const uint8_t heart_beat[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
+		for (int i = 0; i < ARR_LEN(heart_beat); ++i) {
+			usart0_putc_unbuffered(heart_beat[i]);
 		}
-		request_delay = 0;
+		delay = HEARTBEAT_DELAY_LENGTH; // Reset the delay
 	}
 
 }

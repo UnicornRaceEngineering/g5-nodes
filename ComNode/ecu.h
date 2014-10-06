@@ -21,6 +21,20 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @file ecu.h
+ * High level interface for the receiving data from the ECU.
+ * The ECU communicates via. UART, but require a keep-alive heart beat to
+ * actually send any data. Therefor we must periodically send the heartbeat.
+ *
+ * @note that the frequency we send the heartbeat is *NOT* the frequency with
+ * which we receive data from the ECU.
+ *
+ * The structure of the data we receive from the ECU can be found in
+ * "ecu_package_layout.inc".
+ *
+ */
+
 #ifndef ECU_H
 #define ECU_H
 
@@ -67,7 +81,10 @@ enum ecu_id {
 
 struct sensor {
 	const char *name;			// Human readable name
-	enum ecu_id id;					// ID
+	enum ecu_id id;				// ID
+
+	//!< @TODO is all sensor data really of type double? perhabs we should use
+	//!< a union here instead with a double and int field
 	double value; 				// Value of the sensor
 };
 
