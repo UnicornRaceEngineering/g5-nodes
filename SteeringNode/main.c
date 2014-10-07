@@ -30,8 +30,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <can.h>
 #include <usart.h>
+#include <74ls138d_demultiplexer.h>
+#include <io.h>
 
 #include "paddleshift.h"
+
+#define STATUS_LED_PORT	PORTB
+#define STATUS_LED_R	PIN5
+#define STATUS_LED_G	PIN6
+#define STATUS_LED_B	PIN7
 
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
@@ -51,6 +58,14 @@ int main(void) {
 
 	usart1_init(115200);
 	paddle_init();
+	dmux_init();
+
+	// init status LEDS
+	{
+		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_R, OUTPUT);
+		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_G, OUTPUT);
+		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_B, OUTPUT);
+	}
 
 	sei();										//Enable interrupt
 
@@ -69,6 +84,47 @@ int main(void) {
 		} else if (paddle_down_is_pressed) {
 			//!< @TODO: broadcast this event on the can.
 		}
+
+		// Test the status LEDS
+		{
+			const int NUM_LEDS = 8;
+			const enum dmux_y_values y[8] = {
+				DMUX_Y0,
+				DMUX_Y1,
+				DMUX_Y2,
+				DMUX_Y3,
+				DMUX_Y4,
+				DMUX_Y5,
+				DMUX_Y6,
+				DMUX_Y7,
+			};
+			for (int i = 0; i < NUM_LEDS; ++i) {
+				// When setting one of these low we allow current to flow from
+				// the LED to GND thus the LED will light up.
+				// In short LOW == ON
+
+				dmux_set_y_low(y[i]);
+
+				BITMASK_CLEAR(STATUS_LED_PORT,
+					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+
+				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
+				_delay_ms(33);
+				BITMASK_CLEAR(STATUS_LED_PORT,
+					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+
+				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_G);
+				_delay_ms(33);
+				BITMASK_CLEAR(STATUS_LED_PORT,
+					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+
+				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_B);
+				_delay_ms(33);
+				BITMASK_CLEAR(STATUS_LED_PORT,
+					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+			}
+		}
+
 	}
 
     return 0;
