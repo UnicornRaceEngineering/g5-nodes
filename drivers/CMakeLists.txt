@@ -1,5 +1,7 @@
 set(SRC_FILES
-	m41t81s_rtc.c)
+	m41t81s_rtc.c
+	74ls138d_demultiplexer.c
+	)
 
 add_library(drivers ${SRC_FILES})
 
