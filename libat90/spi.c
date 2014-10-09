@@ -32,23 +32,39 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "io.h"
 #include "spi.h"
 
+
+/**
+ * As seen in datasheet table 16-5.
+ * LE = Leading Edge
+ * TE = Trailing Edge
+ */
+enum spi_modes {
+	SPI_MODE_0 = ((0<<CPOL)|(0<<CPHA)), //!< LE: Sample (Rising),	TE: Setup (Falling)
+	SPI_MODE_1 = ((0<<CPOL)|(1<<CPHA)), //!< LE: Setup (Rising),	TE: Sample (Falling)
+	SPI_MODE_2 = ((1<<CPOL)|(0<<CPHA)), //!< LE: Sample (Falling),	TE: Setup (Rising)
+	SPI_MODE_3 = ((1<<CPOL)|(1<<CPHA)), //!< LE: Setup (Falling),	TE: Sample (Rising)
+};
+
+enum spi_prescaler {
+	SPI_PRESCALER_4 	= (0<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_16 	= (0<<SPR1)|(1<<SPR0),
+	SPI_PRESCALER_64 	= (1<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_128 	= (1<<SPR1)|(1<<SPR0),
+};
+
+
 void spi_init_master(const bool enable_interrupts) {
 	SET_PIN_MODE(SPI_PORT, MOSI_PIN, OUTPUT);
 	SET_PIN_MODE(SPI_PORT, SCK_PIN, OUTPUT);
 
 	SET_PIN_MODE(SPI_PORT, SS_PIN, OUTPUT);
 
-	// SPIE = SPI interrupt enable
 	// SPE = SPI Enable
 	// MSTR = Master mode
-	SPCR |= (1<<SPE)|(1<<MSTR);
+	// SPIE = SPI enable interrupts
+	SPCR |= (1<<SPE)|(1<<MSTR)|SPI_PRESCALER_16|SPI_MODE_0 |
+		((enable_interrupts) ? (1<<SPIE) : (0<<SPIE));
 
-	if (enable_interrupts) {
-		SPCR |= (1<<SPIE);
-	}
-
-	// Set prescaler to F_CPU/16
-	SPCR |= (1<<SPR0);
 }
 
 uint8_t spi_tranceive(const uint8_t data) {
