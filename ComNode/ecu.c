@@ -50,11 +50,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
 
-static uint32_t clamp(uint32_t value) {
-	if(value > (1<<15)){
-		value = -(0xFFFF - value);
-	}
-	return value;
+static inline uint32_t clamp(uint32_t value) {
+	return (value > (1<<15)) ? -(0xFFFF - value) : value;
 }
 
 //!< @TODO Move this into its own module as it doesn't belong here
