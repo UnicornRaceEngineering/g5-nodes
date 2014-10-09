@@ -88,10 +88,6 @@ int main(void) {
 			}
 		}
 
-		for (int i = 0; i < 10; ++i) {
-			DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
-			_delay_ms(100);
-		}
 
 #if 1
 		// Test the 7seg
@@ -104,8 +100,9 @@ int main(void) {
 					seg7_disp_char(digit, ascii_num, (num%2 == 0) ?
 						true : false);
 
-					_delay_us(1000);
+					// _delay_us(1000);
 					// _delay_ms(1000/MAX_DIGITS);
+					//_delay_ms(100);
 				}
 			}
 		}

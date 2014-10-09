@@ -112,19 +112,19 @@ enum segment_lines {
 };
 
 static void write_reg(uint8_t reg, uint8_t data) {
-	IO_SET_HIGH(SPI_PORT, SS_PIN); // Mark beginning
+	IO_SET_LOW(SPI_PORT, SS_PIN); 	// Mark beginning
 	spi_tranceive(reg);
 	spi_tranceive(data);
-	IO_SET_LOW(SPI_PORT, SS_PIN); // Latch data in
-	IO_SET_HIGH(SPI_PORT, SS_PIN); // Mark end
+	IO_SET_HIGH(SPI_PORT, SS_PIN); 	// Latch data in
+	IO_SET_LOW(SPI_PORT, SS_PIN); 	// Mark end
 }
 
 
 void seg7_init(void) {
 	spi_init_master(false); // No interrupts
-	write_reg(REG_SCAN_LIMIT, DISP_DIGIT_0_TO_7);
-	write_reg(REG_DECODE_MODE, NO_DECODE_7_TO_0);
-	write_reg(REG_SHUTDOWN, SHUTDOWN_OFF);
+	write_reg(REG_SCAN_LIMIT, 	DISP_DIGIT_0_TO_7);
+	write_reg(REG_DECODE_MODE, 	NO_DECODE_7_TO_0);
+	write_reg(REG_SHUTDOWN, 	SHUTDOWN_OFF);
 	write_reg(REG_DISPLAY_TEST, TEST_OFF);
 
 	seg7_clear_disp();
@@ -133,9 +133,20 @@ void seg7_init(void) {
 }
 
 void seg7_clear_disp(void) {
+#if 0
 	for (int digit = REG_DIGIT_0; digit <= REG_DIGIT_7; ++digit) {
 		write_reg(digit, 0x00);
 	}
+#else
+	write_reg(REG_DIGIT_0, 0x00);
+	write_reg(REG_DIGIT_1, 0x00);
+	write_reg(REG_DIGIT_2, 0x00);
+	write_reg(REG_DIGIT_3, 0x00);
+	write_reg(REG_DIGIT_4, 0x00);
+	write_reg(REG_DIGIT_5, 0x00);
+	write_reg(REG_DIGIT_6, 0x00);
+	write_reg(REG_DIGIT_7, 0x00);
+#endif
 }
 
 void seg7_disp_char(uint8_t digit, const char c, const bool decimal_point) {
