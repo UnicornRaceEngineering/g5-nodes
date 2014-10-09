@@ -41,15 +41,6 @@ int main(void) {
 	while(1){
 		// Main work loop
 
-		// Send sync package
-		{
-			usart1_putc_unbuffered(0xA1);
-			usart1_putc_unbuffered(0xB2);
-			usart1_putc_unbuffered(0xC3);
-			usart1_putc_unbuffered(0xD4);
-			usart1_putc_unbuffered(0xE5);
-			usart1_putc_unbuffered(0xF6);
-		}
 		ecu_parse_package();
 	}
 

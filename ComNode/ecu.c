@@ -56,6 +56,16 @@ static inline uint32_t clamp(uint32_t value) {
 
 //!< @TODO Move this into its own module as it doesn't belong here
 static void send_xbee_array(const uint8_t id, const uint8_t *arr, uint16_t len) {
+	// Send sync package
+	{
+		usart1_putc_unbuffered(0xA1);
+		usart1_putc_unbuffered(0xB2);
+		usart1_putc_unbuffered(0xC3);
+		usart1_putc_unbuffered(0xD4);
+		usart1_putc_unbuffered(0xE5);
+		usart1_putc_unbuffered(0xF6);
+	}
+
 	usart1_putc_unbuffered(id);
 	usart1_putc_unbuffered(HIGH_BYTE(len));
 	usart1_putc_unbuffered(LOW_BYTE(len));
