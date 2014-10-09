@@ -30,20 +30,28 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <can.h>
 #include <usart.h>
-#include <74ls138d_demultiplexer.h>
 #include <io.h>
 
+// Drivers
+#include <74ls138d_demultiplexer.h>
+#include <max7221_7seg.h>
+
 #include "paddleshift.h"
+
+#define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
 
 #define STATUS_LED_PORT	PORTB
 #define STATUS_LED_R	PIN5
 #define STATUS_LED_G	PIN6
 #define STATUS_LED_B	PIN7
 
+#define SHIFT_LIGHT_PORT	PORTE
+#define SHIFT_LIGHT_R		PIN4 // Red rgb light
+#define SHIFT_LIGHT_B		PIN3 // Blue rgb light
+
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
-
 
 int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
@@ -69,6 +77,15 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
+	seg7_init();
+
+	// Disable RPM counter for debuggning
+	SET_PIN_MODE(PORTB, PIN4, OUTPUT);
+	IO_SET_LOW(PORTB, PIN4);
+
+	// Shift light RGB LED
+	SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B, OUTPUT);
+	IO_SET_HIGH(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 	usart1_printf("\n\n\nSTARTING\n");
 
@@ -76,19 +93,37 @@ int main(void) {
 		// Main work loop
 
 		// First lets store the current status of the paddleshifters
-		const bool paddle_up_is_pressed = paddle_up_status();
-		const bool paddle_down_is_pressed = paddle_down_status();
+		{
+			const bool paddle_up_is_pressed = paddle_up_status();
+			const bool paddle_down_is_pressed = paddle_down_status();
 
-		if (paddle_up_is_pressed) {
-			//!< @TODO: broadcast this event on the can.
-		} else if (paddle_down_is_pressed) {
-			//!< @TODO: broadcast this event on the can.
+			if (paddle_up_is_pressed) {
+				//!< @TODO: broadcast this event on the can.
+			} else if (paddle_down_is_pressed) {
+				//!< @TODO: broadcast this event on the can.
+			}
+		}
+
+		// Test the 7seg
+		{
+			for (int num = 0; num <= 9; ++num) {
+				const int MAX_DIGITS = 7;
+				for (int digit = 0; digit < MAX_DIGITS; ++digit){
+					const char ascii_num = num + '0'; // Raw number to ascii
+					DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+					seg7_disp_char(digit, ascii_num, (num%2 == 0) ?
+						true : false);
+
+					// _delay_us(1000);
+					// _delay_ms(1000/MAX_DIGITS);
+					//_delay_ms(100);
+				}
+			}
 		}
 
 		// Test the status LEDS
 		{
-			const int NUM_LEDS = 8;
-			const enum dmux_y_values y[8] = {
+			const enum dmux_y_values leds[] = {
 				DMUX_Y0,
 				DMUX_Y1,
 				DMUX_Y2,
@@ -98,12 +133,12 @@ int main(void) {
 				DMUX_Y6,
 				DMUX_Y7,
 			};
-			for (int i = 0; i < NUM_LEDS; ++i) {
+			for (int i = 0; i < ARR_LEN(leds); ++i) {
 				// When setting one of these low we allow current to flow from
 				// the LED to GND thus the LED will light up.
 				// In short LOW == ON
 
-				dmux_set_y_low(y[i]);
+				dmux_set_y_low(leds[i]);
 
 				BITMASK_CLEAR(STATUS_LED_PORT,
 					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
@@ -124,7 +159,6 @@ int main(void) {
 					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
 			}
 		}
-
 	}
 
     return 0;

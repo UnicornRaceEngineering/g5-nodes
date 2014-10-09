@@ -4,6 +4,8 @@ set(SRC_FILES
 	can.c
 	pwm.c
 	timer.c
-	usart.c)
+	usart.c
+	spi.c
+	)
 
 add_library(libat90 ${SRC_FILES})
