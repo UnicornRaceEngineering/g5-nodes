@@ -21,24 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/interrupt.h> // sei()
-#include <util/delay.h>
+#ifndef XBEE_H
+#define XBEE_H
 
-#include "ecu.h"
-#include "xbee.h"
+#include <stdint.h>
 
-int main(void) {
-	xbee_init();
-	ecu_init();
+void xbee_init(void);
+void xbee_send(const uint8_t id, const uint8_t *arr, uint16_t len);
 
-	sei();										//Enable interrupt
-
-
-	while(1){
-		// Main work loop
-
-		ecu_parse_package();
-	}
-
-    return 0;
-}
+#endif /* XBEE_H */

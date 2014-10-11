@@ -21,24 +21,32 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/interrupt.h> // sei()
-#include <util/delay.h>
+#include <stdint.h>
+#include <usart.h>
+#include <bitwise.h>
 
-#include "ecu.h"
-#include "xbee.h"
+#define XBEE_BAUD 	(115200)
 
-int main(void) {
-	xbee_init();
-	ecu_init();
+#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
-	sei();										//Enable interrupt
-
-
-	while(1){
-		// Main work loop
-
-		ecu_parse_package();
-	}
-
-    return 0;
+static void xbee_putc(uint8_t c) {
+	usart1_putc_unbuffered(c);
 }
+
+void xbee_init(void) {
+	usart1_init(XBEE_BAUD);
+}
+
+void xbee_send(const uint8_t id, const uint8_t *arr, uint16_t len) {
+
+	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6};
+	for (int i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
+
+	xbee_putc(id);
+	xbee_putc(HIGH_BYTE(len));
+	xbee_putc(LOW_BYTE(len));
+
+	for (int i = 0; i < len; ++i) xbee_putc(arr[i]);
+}
+
+

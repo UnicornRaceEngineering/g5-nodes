@@ -3,6 +3,7 @@ set(NODE_NAME ComNode)
 set(SRC_FILES
 	main.c
 	ecu.c
+	xbee.c
 	)
 
 add_executable(${NODE_NAME} ${SRC_FILES})

@@ -39,7 +39,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <usart.h>
 #include <timer.h>
+
 #include "ecu.h"
+#include "xbee.h"
 
 #define ECU_BAUD	(19200)
 
@@ -52,27 +54,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static inline uint32_t clamp(uint32_t value) {
 	return (value > (1<<15)) ? -(0xFFFF - value) : value;
-}
-
-//!< @TODO Move this into its own module as it doesn't belong here
-static void send_xbee_array(const uint8_t id, const uint8_t *arr, uint16_t len) {
-	// Send sync package
-	{
-		usart1_putc_unbuffered(0xA1);
-		usart1_putc_unbuffered(0xB2);
-		usart1_putc_unbuffered(0xC3);
-		usart1_putc_unbuffered(0xD4);
-		usart1_putc_unbuffered(0xE5);
-		usart1_putc_unbuffered(0xF6);
-	}
-
-	usart1_putc_unbuffered(id);
-	usart1_putc_unbuffered(HIGH_BYTE(len));
-	usart1_putc_unbuffered(LOW_BYTE(len));
-
-	for (int i = 0; i < len; ++i) {
-		usart1_putc_unbuffered(arr[i]);
-	}
 }
 
 void ecu_parse_package(void) {
@@ -160,23 +141,9 @@ void ecu_parse_package(void) {
 			}
 		}
 
-		// usart1_printf("%s: %d\n", pkt[i].sensor.name, (int)(pkt[i].sensor.value*1000));
-
 		// Send the individual sensor data
-		send_xbee_array(pkt[i].sensor.id, (uint8_t*)&(pkt[i].sensor.value),
+		xbee_send(pkt[i].sensor.id, (uint8_t*)&(pkt[i].sensor.value),
 			sizeof(pkt[i].sensor.value));
-#if 0
-		{
-			const uint8_t *value_ptr = (uint8_t*)&(pkt[i].sensor.value);
-			usart1_putc_unbuffered(pkt[i].sensor.id);
-			usart1_putc_unbuffered(HIGH_BYTE((uint16_t)sizeof(pkt[i].sensor.value)));
-			usart1_putc_unbuffered(LOW_BYTE((uint16_t)sizeof(pkt[i].sensor.value)));
-			usart1_putc_unbuffered(value_ptr[0]);
-			usart1_putc_unbuffered(value_ptr[1]);
-			usart1_putc_unbuffered(value_ptr[2]);
-			usart1_putc_unbuffered(value_ptr[3]);
-		}
-#endif
 	}
 }
 
