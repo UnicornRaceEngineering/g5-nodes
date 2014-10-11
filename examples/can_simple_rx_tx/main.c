@@ -51,7 +51,6 @@ int main(void) {
 	can_msg_t rx_msg = {
 		.mob = 8,
 		.id = 4,
-		.dlc = 7,
 
 		.mode = MOB_RECIEVE
 	};
@@ -64,20 +63,24 @@ int main(void) {
 		rx_msg.dlc
 	);
 
-
 	while(1){
 		// Main work loop
 		_delay_ms(250);
 
-#if 0
+#if 1 // this codepiece sends messages. outcomment when not in use.
+		static int count = 0;
 		// send a message with id 4 on MOB 10
 		can_msg_t tx_msg = {
 			.mob = 10,
 			.id = 4,
-			.data = {'H', 'E', 'L', 'L', 'O', '!', '!'},
+			.data = {'H', 'E', 'L', 'L', 'O', '!', count + '0'},
 			.dlc = 7,
 			.mode = MOB_TRANSMIT
 		};
+
+		count++;
+		if(count == 10)
+			count = 0;
 
 		can_send(&tx_msg);
 		usart1_printf("CAN Tx\t id %d, mob %d, :: ", tx_msg.id, tx_msg.mob);

@@ -54,7 +54,13 @@ compile_avr_gcc() {
 	../$GCC_FOLDER/configure \
 		--enable-lto \
 		--enable-languages=c,c++ \
-		--target=avr
+		--target=avr \
+		--with-avrlibc \
+		--disable-nls \
+		--disable-libssp \
+		--prefix=/usr/lib \
+		# --with-sysroot="/usr/lib/avr" \
+
 
 	make
 	make install

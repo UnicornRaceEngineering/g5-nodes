@@ -93,6 +93,9 @@ int8_t twi_send_stop_condition(void) {
 	 * @TODO For some reason the RTC (M41T81S) refuses to respond if not this
 	 * delay is inserted after some commands. As a hack we have just put it
 	 * here.
+	 * This problem seems only aparent in avr-gcc version 4.8.1 (tested on mac).
+	 * The delay is not necessary when compiled with avr-gcc version 4.8.2 on
+	 * Ubuntu Linux.
 	 */
 	int8_t status = TW_STATUS;
 	_delay_us(5);

@@ -21,25 +21,40 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
-
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
-
 #include <avr/io.h>
-#include <stdbool.h>
 
+#ifndef DEMULTIPLEXER_74LS138D
+#define DEMULTIPLEXER_74LS138D
+
+enum dmux_pins {
+	DMUX_A_PIN = PIN7,
+	DMUX_B_PIN = PIN6,
+	DMUX_C_PIN = PIN5,
+};
+
+enum dmux_masks {
+	DMUX_A = (1 << DMUX_A_PIN),
+	DMUX_B = (1 << DMUX_B_PIN),
+	DMUX_C = (1 << DMUX_C_PIN),
+
+	DMUX_MASK = (DMUX_A|DMUX_B|DMUX_C),
+};
 
 /**
- * @name Function prototypes
- * @{
+ *
  */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
+enum dmux_y_values {
+	DMUX_Y0 = 0x00, // All off.
+	DMUX_Y1 = DMUX_A,
+	DMUX_Y2 = DMUX_B,
+	DMUX_Y3 = DMUX_A|DMUX_B,
+	DMUX_Y4 = DMUX_C,
+	DMUX_Y5 = DMUX_A|DMUX_C,
+	DMUX_Y6 = DMUX_B|DMUX_C,
+	DMUX_Y7 = DMUX_A|DMUX_B|DMUX_C,
+};
 
-#endif /* PADDLESHIFT_H */
+void dmux_init(void);
+void dmux_set_y_low(enum dmux_y_values mask);
+
+#endif /* DEMULTIPLEXER_74LS138D */

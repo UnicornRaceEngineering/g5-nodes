@@ -148,6 +148,7 @@ int can_setup(can_msg_t *msg) {
 int can_receive(can_msg_t *msg) {
 	msg->dlc = MOB_GET_DLC();           // Fill in the msg dlc
 	MOB_RX_DATA(msg->data, msg->dlc);   // Fill in the msg data
+	msg->id = MOB_GET_STD_ID();
 	MOB_CLEAR_INT_STATUS();     // and reset MOb status
 	MOB_EN_RX();                // re-enable reception. We keep listning for this msg
 	return 0;

@@ -22,24 +22,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
+ * @file max7221_7seg.h
+ * Driver for the MAX7221 7 segment Serially Interfaced, 8-Digit LED Display
+ * Drivers.
  */
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
 
-#include <avr/io.h>
+#ifndef MAX7221_7SEG_H
+#define MAX7221_7SEG_H
+
+#include <stdint.h>
 #include <stdbool.h>
 
+void seg7_init(void);
+void seg7_clear_disp(void);
+void seg7_disp_char(int8_t digit, const char c, const bool decimal_point);
+void seg7_disp_str(char *str, int8_t start, int8_t end);
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */
+#endif /* MAX7221_7SEG_H */
