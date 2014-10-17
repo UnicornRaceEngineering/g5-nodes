@@ -37,6 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <max7221_7seg.h>
 
 #include "paddleshift.h"
+#include "statuslight.h"
 
 #if 0
 #include <avr/fuse.h>
@@ -44,11 +45,6 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #endif
 
 #define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
-
-#define STATUS_LED_PORT	PORTB
-#define STATUS_LED_R	PIN5
-#define STATUS_LED_G	PIN6
-#define STATUS_LED_B	PIN7
 
 #define SHIFT_LIGHT_PORT	PORTE
 #define SHIFT_LIGHT_R		PIN4 // Red rgb light
@@ -81,15 +77,7 @@ int main(void) {
 
 	usart1_init(115200);
 	paddle_init();
-	dmux_init();
-
-	// init status LEDS
-	{
-		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_R, OUTPUT);
-		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_G, OUTPUT);
-		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_B, OUTPUT);
-	}
-
+	statuslight_init();
 
 	seg7_init();
 
@@ -102,8 +90,6 @@ int main(void) {
 	IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 	usart1_printf("\n\n\nSTARTING\n");
-
-	IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
 
 	sei();										//Enable interrupt
 
@@ -170,22 +156,16 @@ int main(void) {
 				dmux_set_y_low(leds[i]);
 
 				{
-					BITMASK_CLEAR(STATUS_LED_PORT,
-						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
-					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
-					_delay_us(5000/2);
-					BITMASK_CLEAR(STATUS_LED_PORT,
-						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					set_rgb_color(RED); 		_delay_us(2500);
+					set_rgb_color(GREEN); 		_delay_us(2500);
+					set_rgb_color(BLUE); 		_delay_us(2500);
 
-					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_G);
-					_delay_us(5000/2);
-					BITMASK_CLEAR(STATUS_LED_PORT,
-						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					set_rgb_color(YELLOW); 		_delay_us(2500);
+					set_rgb_color(MAGENTA); 	_delay_us(2500);
+					set_rgb_color(CYAN); 		_delay_us(2500);
 
-					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_B);
-					_delay_us(5000/2);
-					BITMASK_CLEAR(STATUS_LED_PORT,
-						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					set_rgb_color(WHITE); 		_delay_us(2500);
+					set_rgb_color(COLOR_OFF); 	_delay_us(2500);
 				}
 			}
 		}

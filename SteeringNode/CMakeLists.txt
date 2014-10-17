@@ -2,7 +2,9 @@ set(NODE_NAME SteeringNode)
 
 set(SRC_FILES
 	main.c
-	paddleshift.c)
+	paddleshift.c
+	statuslight.c
+	)
 
 add_executable(${NODE_NAME} ${SRC_FILES})
 
