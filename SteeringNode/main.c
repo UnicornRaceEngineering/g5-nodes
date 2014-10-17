@@ -38,6 +38,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "paddleshift.h"
 
+#if 0
+#include <avr/fuse.h>
+FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
+#endif
+
 #define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
 
 #define STATUS_LED_PORT	PORTB
@@ -52,6 +57,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
+
+static void display_3left_7segs(const int16_t val) {
+	const int8_t hundreth = val / 100;
+	const int8_t tens = (val - (hundreth * 100)) / 10;
+	const int8_t ones = (val - (tens * 10));
+
+	seg7_disp_char(0, hundreth+'0', false);
+	seg7_disp_char(1, tens+'0', false);
+	seg7_disp_char(2, ones+'0', true);
+}
 
 int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
@@ -75,7 +90,6 @@ int main(void) {
 		SET_PIN_MODE(STATUS_LED_PORT, STATUS_LED_B, OUTPUT);
 	}
 
-	sei();										//Enable interrupt
 
 	seg7_init();
 
@@ -85,9 +99,13 @@ int main(void) {
 
 	// Shift light RGB LED
 	SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B, OUTPUT);
-	IO_SET_HIGH(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+	IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 	usart1_printf("\n\n\nSTARTING\n");
+
+	IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
+
+	sei();										//Enable interrupt
 
 	while(1){
 		// Main work loop
@@ -103,24 +121,35 @@ int main(void) {
 				//!< @TODO: broadcast this event on the can.
 			}
 		}
-
+#if 1
 		// Test the 7seg
 		{
+			// Test the raw diplay
 			for (int num = 0; num <= 9; ++num) {
-				const int MAX_DIGITS = 7;
-				for (int digit = 0; digit < MAX_DIGITS; ++digit){
+				for (int digit = 0; digit < 7; ++digit){
 					const char ascii_num = num + '0'; // Raw number to ascii
-					DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 					seg7_disp_char(digit, ascii_num, (num%2 == 0) ?
 						true : false);
-
-					// _delay_us(1000);
-					// _delay_ms(1000/MAX_DIGITS);
-					//_delay_ms(100);
 				}
+					_delay_us(5000);
+			}
+
+			for (int i = 0; i < 1000; ++i){
+				display_3left_7segs(i);
+				_delay_us(5000);
+			}
+
+			for (int i = 0; i < 1000; ++i){
+				char buff[4];
+				snprintf(buff, 4, "%d", i);
+				seg7_disp_str(buff, 0, 3);
+				_delay_us(5000);
 			}
 		}
 
+#endif
+
+#if 1
 		// Test the status LEDS
 		{
 			const enum dmux_y_values leds[] = {
@@ -140,25 +169,27 @@ int main(void) {
 
 				dmux_set_y_low(leds[i]);
 
-				BITMASK_CLEAR(STATUS_LED_PORT,
-					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+				{
+					BITMASK_CLEAR(STATUS_LED_PORT,
+						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
+					_delay_us(5000/2);
+					BITMASK_CLEAR(STATUS_LED_PORT,
+						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
 
-				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_R);
-				_delay_ms(33);
-				BITMASK_CLEAR(STATUS_LED_PORT,
-					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_G);
+					_delay_us(5000/2);
+					BITMASK_CLEAR(STATUS_LED_PORT,
+						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
 
-				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_G);
-				_delay_ms(33);
-				BITMASK_CLEAR(STATUS_LED_PORT,
-					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
-
-				IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_B);
-				_delay_ms(33);
-				BITMASK_CLEAR(STATUS_LED_PORT,
-					((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+					IO_SET_HIGH(STATUS_LED_PORT, STATUS_LED_B);
+					_delay_us(5000/2);
+					BITMASK_CLEAR(STATUS_LED_PORT,
+						((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B)));
+				}
 			}
 		}
+#endif
 	}
 
     return 0;

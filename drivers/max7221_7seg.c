@@ -149,10 +149,10 @@ void seg7_clear_disp(void) {
 #endif
 }
 
-void seg7_disp_char(uint8_t digit, const char c, const bool decimal_point) {
+void seg7_disp_char(int8_t digit, const char c, const bool decimal_point) {
 	uint8_t patteren; // segment patteren
 
-	digit += REG_DIGIT_0;
+	digit += REG_DIGIT_0; // Convert digit to correct register
 	if (!IS_IN_RANGE(digit, REG_DIGIT_0, REG_DIGIT_7)) return; // out of range
 
 	switch (c) {
@@ -167,11 +167,13 @@ void seg7_disp_char(uint8_t digit, const char c, const bool decimal_point) {
 	case '8': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_E|SEG_F|SEG_G); 	break;
 	case '9': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_F|SEG_G); 		break;
 
-	case ' ': patteren = 0x00; /* blank */								break;
+	case '-': patteren = (SEG_G); 										break;
+
 
 	//!< @TODO add support for letters
 
-	default: patteren = 0; 												break;
+	case ' ':
+	default: patteren = 0x00;											break;
 	}
 
 	if (decimal_point) {
@@ -179,4 +181,15 @@ void seg7_disp_char(uint8_t digit, const char c, const bool decimal_point) {
 	}
 
 	write_reg(digit, patteren);
+}
+
+void seg7_disp_str(char *str, int8_t start, int8_t end) {
+	do {
+		if (start == end) break;
+		if (*str == '.') continue;
+		seg7_disp_char(start++, *str, ((*str+1 == '.') ? true : false));
+	} while (str++);
+
+	// Fill out remaining digits with blanks
+	while (start != end) seg7_disp_char(start++, ' ', false);
 }

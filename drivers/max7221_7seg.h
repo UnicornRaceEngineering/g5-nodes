@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 void seg7_init(void);
 void seg7_clear_disp(void);
-void seg7_disp_char(uint8_t digit, const char c, const bool decimal_point);
+void seg7_disp_char(int8_t digit, const char c, const bool decimal_point);
+void seg7_disp_str(char *str, int8_t start, int8_t end);
 
 #endif /* MAX7221_7SEG_H */
