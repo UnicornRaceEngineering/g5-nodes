@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h> // strlen
 #include <spi.h>
 #include <bitwise.h>
 
@@ -184,12 +185,20 @@ void seg7_disp_char(int8_t digit, const char c, const bool decimal_point) {
 }
 
 void seg7_disp_str(char *str, int8_t start, int8_t end) {
-	do {
-		if (start == end) break;
-		if (*str == '.') continue;
-		seg7_disp_char(start++, *str, ((*str+1 == '.') ? true : false));
-	} while (str++);
-
-	// Fill out remaining digits with blanks
-	while (start != end) seg7_disp_char(start++, ' ', false);
+	size_t len = strlen(str);
+#if 1
+	while (end >= start) {
+		if (len) {
+			if (str[--len] == '.') continue;
+			seg7_disp_char(end--, str[len], ((str[len+1] == '.') ?
+				true : false));
+		} else {
+			seg7_disp_char(end--, '0', false);
+		}
+	}
+#else
+	while (end >= start) {
+		seg7_disp_char(end--, (len ? str[--len] : '0'), true);
+	}
+#endif
 }

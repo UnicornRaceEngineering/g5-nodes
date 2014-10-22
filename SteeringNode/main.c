@@ -54,15 +54,6 @@ static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 
-static void display_3left_7segs(const int16_t val) {
-	const int8_t hundreth = val / 100;
-	const int8_t tens = (val - (hundreth * 100)) / 10;
-	const int8_t ones = (val - (tens * 10));
-
-	seg7_disp_char(0, hundreth+'0', false);
-	seg7_disp_char(1, tens+'0', false);
-	seg7_disp_char(2, ones+'0', true);
-}
 
 int main(void) {
 	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
@@ -120,15 +111,11 @@ int main(void) {
 					_delay_us(5000);
 			}
 
-			for (int i = 0; i < 1000; ++i){
-				display_3left_7segs(i);
-				_delay_us(5000);
-			}
-
-			for (int i = 0; i < 1000; ++i){
-				char buff[4];
-				snprintf(buff, 4, "%d", i);
-				seg7_disp_str(buff, 0, 3);
+			// Test the high level display string with dot
+			for (int i = 0; i < 150; ++i){
+				char buff[3+1+1] = {'\0'}; // 3 digits 1 dot and 1 \0
+				snprintf(buff, ARR_LEN(buff), "%d.", i);
+				seg7_disp_str(buff, 0, 2);
 				_delay_us(5000);
 			}
 		}
