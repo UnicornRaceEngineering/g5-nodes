@@ -59,10 +59,18 @@ void spi_init_master(const bool enable_interrupts) {
 
 	SET_PIN_MODE(SPI_PORT, SS_PIN, OUTPUT);
 
+	/**
+	 * @TODO we have to be able to set the frequency that SPI will use. This
+	 * requires taking a desired input frequency and converting that into
+	 * correct prescaler. This is because 7seg should use prescaler 16 while the
+	 * sd card requires a sub 400kHz frequency (64 prescaler) when initializing
+	 * but can run at any speed afterwards.
+	 */
+
 	// SPE = SPI Enable
 	// MSTR = Master mode
 	// SPIE = SPI enable interrupts
-	SPCR |= (1<<SPE)|(1<<MSTR)|SPI_PRESCALER_16|SPI_MODE_0 |
+	SPCR |= (1<<SPE)|(1<<MSTR)|SPI_PRESCALER_64|SPI_MODE_0 |
 		((enable_interrupts) ? (1<<SPIE) : (0<<SPIE));
 
 }
