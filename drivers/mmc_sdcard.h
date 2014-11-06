@@ -29,7 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define SD_BLOCKSIZE 512
 
-int8_t sd_spi_mode_initialization(void);
+int8_t sd_init(void);
 int8_t sd_read_block(uint8_t *buff, int32_t sector, int16_t offset,
 					 int16_t n);
 int8_t sd_write_block(uint8_t *data, int32_t sector, size_t n);

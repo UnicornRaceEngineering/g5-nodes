@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <avr/io.h>
 
 #define SPI_PORT	PORTB
 #define MISO_PIN	PIN3
@@ -38,7 +39,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SCK_PIN		PIN1
 #define SS_PIN		PIN0
 
-void spi_init_master(const bool enable_interrupts);
+enum spi_prescaler {
+	SPI_PRESCALER_4 	= (0<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_16 	= (0<<SPR1)|(1<<SPR0),
+	SPI_PRESCALER_64 	= (1<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_128 	= (1<<SPR1)|(1<<SPR0),
+};
+
+void spi_init_master(const bool enable_interrupts, const enum spi_prescaler);
 uint8_t spi_tranceive(const uint8_t data);
 
 

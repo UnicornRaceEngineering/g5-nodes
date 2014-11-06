@@ -45,32 +45,16 @@ enum spi_modes {
 	SPI_MODE_3 = ((1<<CPOL)|(1<<CPHA)), //!< LE: Setup (Falling),	TE: Sample (Rising)
 };
 
-enum spi_prescaler {
-	SPI_PRESCALER_4 	= (0<<SPR1)|(0<<SPR0),
-	SPI_PRESCALER_16 	= (0<<SPR1)|(1<<SPR0),
-	SPI_PRESCALER_64 	= (1<<SPR1)|(0<<SPR0),
-	SPI_PRESCALER_128 	= (1<<SPR1)|(1<<SPR0),
-};
-
-
-void spi_init_master(const bool enable_interrupts) {
+void spi_init_master(const bool enable_interrupts, const enum spi_prescaler prescaler) {
 	SET_PIN_MODE(SPI_PORT, MOSI_PIN, OUTPUT);
 	SET_PIN_MODE(SPI_PORT, SCK_PIN, OUTPUT);
 
 	SET_PIN_MODE(SPI_PORT, SS_PIN, OUTPUT);
 
-	/**
-	 * @TODO we have to be able to set the frequency that SPI will use. This
-	 * requires taking a desired input frequency and converting that into
-	 * correct prescaler. This is because 7seg should use prescaler 16 while the
-	 * sd card requires a sub 400kHz frequency (64 prescaler) when initializing
-	 * but can run at any speed afterwards.
-	 */
-
 	// SPE = SPI Enable
 	// MSTR = Master mode
 	// SPIE = SPI enable interrupts
-	SPCR |= (1<<SPE)|(1<<MSTR)|SPI_PRESCALER_64|SPI_MODE_0 |
+	SPCR |= (1<<SPE)|(1<<MSTR)|SPI_MODE_0|prescaler |
 		((enable_interrupts) ? (1<<SPIE) : (0<<SPIE));
 
 }

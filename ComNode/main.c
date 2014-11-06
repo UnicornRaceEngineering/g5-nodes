@@ -37,8 +37,6 @@ int main(void) {
 	xbee_init();
 	ecu_init();
 
-	spi_init_master(false);
-
 	sei();										//Enable interrupt
 
 	usart1_putc_unbuffered('\n');
@@ -47,7 +45,7 @@ int main(void) {
 	usart1_putc_unbuffered('\r');
 
 
-	if (sd_spi_mode_initialization() != 0) {
+	if (sd_init() != 0) {
 		usart1_printf("SD Connection error\n");
 	} else {
 		usart1_printf("SD connected\n");

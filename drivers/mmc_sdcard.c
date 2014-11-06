@@ -253,7 +253,7 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
  * Flow descriped on page 171
  * @return  0 on success 1 on failure
  */
-int8_t sd_spi_mode_initialization(void) {
+static int8_t sd_spi_mode_initialization(void) {
 	delay(100); // Delay atleast 74 cyckles
 
 	struct response res = {0};
@@ -307,6 +307,13 @@ int8_t sd_spi_mode_initialization(void) {
 			|| (send_cmd(SET_BLOCKLEN, SD_BLOCKSIZE, &res) != 0)) return 1;
 	}
 
+	return 0;
+}
+
+int8_t sd_init(void) {
+	spi_init_master(false, SPI_PRESCALER_64); // SPI_F < 400 kHz
+	if (sd_spi_mode_initialization() != 0) return 1;
+	spi_init_master(false, SPI_PRESCALER_4); // SPI_F max
 	return 0;
 }
 

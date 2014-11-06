@@ -122,7 +122,7 @@ static void write_reg(uint8_t reg, uint8_t data) {
 
 
 void seg7_init(void) {
-	spi_init_master(false); // No interrupts
+	spi_init_master(false, SPI_PRESCALER_16); // No interrupts
 	write_reg(REG_SCAN_LIMIT, 	DISP_DIGIT_0_TO_7);
 	write_reg(REG_DECODE_MODE, 	NO_DECODE_7_TO_0);
 	write_reg(REG_SHUTDOWN, 	SHUTDOWN_OFF);
