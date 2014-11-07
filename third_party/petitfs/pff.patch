@@ -1,0 +1,96 @@
+Binary files petitfs_root/.DS_Store and petitfs_root_mod/.DS_Store differ
+diff -ENwbur petitfs_root/src/diskio.c petitfs_root_mod/src/diskio.c
+--- petitfs_root/src/diskio.c	2014-06-10 00:24:26.000000000 +0200
++++ petitfs_root_mod/src/diskio.c	2014-11-06 22:05:13.000000000 +0100
+@@ -2,6 +2,9 @@
+ /* Low level disk I/O module skeleton for Petit FatFs (C)ChaN, 2014      */
+ /*-----------------------------------------------------------------------*/
+ 
++#include <stdint.h>
++#include <string.h> // memcpy
++#include <mmc_sdcard.h>
+ #include "diskio.h"
+ 
+ 
+@@ -13,7 +16,7 @@
+ {
+ 	DSTATUS stat;
+ 
+-	// Put your code here
++	stat = (sd_init() != 0) ? STA_NOINIT : 0;
+ 
+ 	return stat;
+ }
+@@ -33,7 +36,8 @@
+ {
+ 	DRESULT res;
+ 
+-	// Put your code here
++	res = (sd_read_block(buff, sector, offset, count) != 0)
++		? RES_ERROR : RES_OK;
+ 
+ 	return res;
+ }
+@@ -45,27 +49,32 @@
+ /*-----------------------------------------------------------------------*/
+ 
+ DRESULT disk_writep (
+-	BYTE* buff,		/* Pointer to the data to be written, NULL:Initiate/Finalize write operation */
++	const BYTE* buff,		/* Pointer to the data to be written, NULL:Initiate/Finalize write operation */
+ 	DWORD sc		/* Sector number (LBA) or Number of bytes to send */
+ )
+ {
+ 	DRESULT res;
+ 
++	static uint32_t sector;
++
++	uint8_t block_data[SD_BLOCKSIZE];
++	uint8_t *block_ptr = block_data;
+ 
+ 	if (!buff) {
+ 		if (sc) {
+-
+ 			// Initiate write process
+-
++			sector = sc;
++			res = RES_OK;
+ 		} else {
+-
+ 			// Finalize write process
+-
++			res = (sd_write_block(block_data, sector, SD_BLOCKSIZE) != 0) ?
++				RES_ERROR : RES_OK;
+ 		}
+ 	} else {
+-
+-		// Send data to the disk
+-
++		// Write data
++		memcpy(block_ptr, buff, sc);
++		block_ptr += sc;
++		res = RES_OK;
+ 	}
+ 
+ 	return res;
+diff -ENwbur petitfs_root/src/pffconf.h petitfs_root_mod/src/pffconf.h
+--- petitfs_root/src/pffconf.h	2014-06-10 00:24:26.000000000 +0200
++++ petitfs_root_mod/src/pffconf.h	2014-11-06 22:19:24.000000000 +0100
+@@ -10,13 +10,13 @@
+ /---------------------------------------------------------------------------*/
+ 
+ #define	_USE_READ	1	/* Enable pf_read() function */
+-#define	_USE_DIR	0	/* Enable pf_opendir() and pf_readdir() function */
+-#define	_USE_LSEEK	0	/* Enable pf_lseek() function */
+-#define	_USE_WRITE	0	/* Enable pf_write() function */
++#define	_USE_DIR	1	/* Enable pf_opendir() and pf_readdir() function */
++#define	_USE_LSEEK	1	/* Enable pf_lseek() function */
++#define	_USE_WRITE	1	/* Enable pf_write() function */
+ 
+-#define _FS_FAT12	0	/* Enable FAT12 */
++#define _FS_FAT12	1	/* Enable FAT12 */
+ #define _FS_FAT16	1	/* Enable FAT16 */
+-#define _FS_FAT32	0	/* Enable FAT32 */
++#define _FS_FAT32	1	/* Enable FAT32 */
+ 
+ 
+ /*---------------------------------------------------------------------------/
