@@ -1,7 +1,6 @@
-Binary files petitfs_root/.DS_Store and petitfs_root_mod/.DS_Store differ
-diff -ENwbur petitfs_root/src/diskio.c petitfs_root_mod/src/diskio.c
+diff -ENwbur petitfs_root/src/diskio.c petitfs_root_patched/src/diskio.c
 --- petitfs_root/src/diskio.c	2014-06-10 00:24:26.000000000 +0200
-+++ petitfs_root_mod/src/diskio.c	2014-11-06 22:05:13.000000000 +0100
++++ petitfs_root_patched/src/diskio.c	2014-11-10 18:09:50.000000000 +0100
 @@ -2,6 +2,9 @@
  /* Low level disk I/O module skeleton for Petit FatFs (C)ChaN, 2014      */
  /*-----------------------------------------------------------------------*/
@@ -31,7 +30,7 @@ diff -ENwbur petitfs_root/src/diskio.c petitfs_root_mod/src/diskio.c
  
  	return res;
  }
-@@ -45,27 +49,32 @@
+@@ -45,27 +49,34 @@
  /*-----------------------------------------------------------------------*/
  
  DRESULT disk_writep (
@@ -44,8 +43,8 @@ diff -ENwbur petitfs_root/src/diskio.c petitfs_root_mod/src/diskio.c
  
 +	static uint32_t sector;
 +
-+	uint8_t block_data[SD_BLOCKSIZE];
-+	uint8_t *block_ptr = block_data;
++	static uint8_t block_data[SD_BLOCKSIZE];
++	static int16_t data_written = 0;
  
  	if (!buff) {
  		if (sc) {
@@ -60,21 +59,23 @@ diff -ENwbur petitfs_root/src/diskio.c petitfs_root_mod/src/diskio.c
 -
 +			res = (sd_write_block(block_data, sector, SD_BLOCKSIZE) != 0) ?
 +				RES_ERROR : RES_OK;
++			data_written = 0;
  		}
  	} else {
 -
 -		// Send data to the disk
 -
 +		// Write data
-+		memcpy(block_ptr, buff, sc);
-+		block_ptr += sc;
++		memcpy(block_data+data_written, buff, ((sc >= SD_BLOCKSIZE)
++			? (SD_BLOCKSIZE-sc) : sc));
++		data_written += sc;
 +		res = RES_OK;
  	}
  
  	return res;
-diff -ENwbur petitfs_root/src/pffconf.h petitfs_root_mod/src/pffconf.h
+diff -ENwbur petitfs_root/src/pffconf.h petitfs_root_patched/src/pffconf.h
 --- petitfs_root/src/pffconf.h	2014-06-10 00:24:26.000000000 +0200
-+++ petitfs_root_mod/src/pffconf.h	2014-11-06 22:19:24.000000000 +0100
++++ petitfs_root_patched/src/pffconf.h	2014-11-10 18:06:17.000000000 +0100
 @@ -10,13 +10,13 @@
  /---------------------------------------------------------------------------*/
  
