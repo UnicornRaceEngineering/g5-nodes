@@ -29,9 +29,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"
 
 #include <usart.h>
-#include <spi.h>
-#include <mmc_sdcard.h>
+// #include <spi.h>
+// #include <mmc_sdcard.h>
 #include <stdio.h>
+
+#include <pff.h>
+#include <diskio.h>
+
+#define PUT_RC(func) usart1_printf("rc=%d", func)
 
 int main(void) {
 	xbee_init();
@@ -44,7 +49,7 @@ int main(void) {
 	usart1_putc_unbuffered('\n');
 	usart1_putc_unbuffered('\r');
 
-
+#if 0
 	if (sd_init() != 0) {
 		usart1_printf("SD Connection error\n");
 	} else {
@@ -73,6 +78,26 @@ int main(void) {
 			}
 		}
 	}
+#endif
+
+	FATFS fs; 		// File system object
+	// DIR dir;		// Directory object
+	// FILINFO finfo;	// File infomation
+
+	PUT_RC(usart1_printf("rc=%d", disk_initialize()));
+	PUT_RC(pf_mount(&fs));
+	PUT_RC(pf_open("testfile.txt"));
+
+	unsigned int bytes_read = 0;
+	uint8_t buff[512] = {'\0'};
+
+	do {
+		uint8_t res = pf_read(&buff, 512-1, &bytes_read);
+		if (res != FR_OK) break;
+	} while (bytes_read == 512-1);
+	buff[512-1] = '\0';
+
+	usart1_printf("%s", buff);
 
 	while(1){
 		// Main work loop
