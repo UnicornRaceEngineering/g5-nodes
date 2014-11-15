@@ -155,15 +155,20 @@ struct response {
 	};
 };
 
-static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r);
-
-
 enum card_type card_type = 0;
 
+/**
+ * Transmit a byte to the sd card
+ * @param x Byte that is trasmitted
+ */
 static inline void tx(uint8_t x) {
 	spi_tranceive(x);
 }
 
+/**
+ * Receive a byte from the sd card
+ * @return  Byte received
+ */
 static inline uint8_t rx(void) {
 	return spi_tranceive(IDLE_BYTE);
 }
@@ -186,7 +191,7 @@ static inline uint32_t adjust_sector(uint32_t sector) {
  * delay cyckles.
  * @param n Number of delay bytes to send
  */
-static void delay(int n) {
+static void idle_clock(int n) {
 	SS_L();
 	for (int i = 0; i < n; ++i) tx(IDLE_BYTE);
 	SS_H();
@@ -208,6 +213,13 @@ static void check_r1(uint8_t r1) {
 }
 #endif
 
+/**
+ * Sends a command to the SD card
+ * @param  cmd The command send to the SD card
+ * @param  arg The command arguments
+ * @param  r   pointer to where the response is stored
+ * @return     0: success 1: failure
+ */
 static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 	SS_L();
 
@@ -298,10 +310,10 @@ static int8_t read_ocr(uint32_t *ocr) {
 
 /**
  * Flow descriped on page 171
- * @return  0 on success 1 on failure
+ * @return  0:success 1:failure
  */
 static int8_t sd_spi_mode_initialization(void) {
-	delay(100); // Delay atleast 74 cyckles
+	idle_clock(10); // Delay atleast 74 cyckles (10*8 = 80)
 
 	struct response res = {0};
 	int16_t retries = 0;
@@ -356,6 +368,11 @@ static int8_t sd_spi_mode_initialization(void) {
 	return 0;
 }
 
+/**
+ * Inits the sd card. This must be called before any other sd functionality can
+ * be performed.
+ * @return  1:success 0:failure
+ */
 int8_t sd_init(void) {
 	spi_init_master(false, SPI_PRESCALER_64); // SPI_F < 400 kHz
 	if (sd_spi_mode_initialization() != 0) return 1;
@@ -395,7 +412,7 @@ int8_t sd_read_block(uint8_t *buff, uint32_t sector, int16_t offset,
 	int16_t remaining = (SD_BLOCKSIZE+sizeof(uint16_t)) - offset - n;
 
 	// Throw away everything before the offset
-	if (offset != 0) do rx(); while (--offset);
+	while (offset--) rx();
 
 	// Save n bytes in the buffer
 	do *buff++ = rx(); while (--n);
@@ -454,15 +471,18 @@ int8_t sd_write_block(uint8_t *data, uint32_t sector, size_t n) {
 
 			case 0x0B: // [3|2|1] = [101] Data rejected due to a CRC error
 			case 0x0D: // [3|2|1] = [110] Data Rejected due to a Write Error
-			default:
-				SS_H();
-				return 1;
+			default: goto error;
 		}
 		// Wait for end of write with a timeout of 500ms
-		for (int timeout = 5000; rx() != IDLE_BYTE; --timeout) _delay_us(100);
-
+		int timeout;
+		for (timeout = 5000; rx() != IDLE_BYTE; --timeout) _delay_us(100);
+		if (timeout == 0) goto error;
 		SS_H();
 	}
 
 	return 0;
+
+error:
+	SS_H();
+	return 1;
 }
