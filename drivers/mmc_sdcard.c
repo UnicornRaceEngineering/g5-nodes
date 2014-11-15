@@ -21,10 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stddef.h>
+#include <stddef.h> // size_t
+#include <string.h> // memcpy()
+#include <stdint.h>
+#include <stdbool.h>
 #include <avr/io.h>
 #include <util/delay.h>
-#include <stdint.h>
 #include <spi.h>
 #include <io.h>
 
@@ -117,6 +119,25 @@ enum R1_masks {
 };
 #endif
 
+enum OCR_masks {
+	OCR_RESERVED 					= (0x1E007F7F),
+	OCR_RESERVED_FOR_LOW_VOLTAGE 	= (1UL<<7),
+	OCR_27_28						= (1UL<<15),
+	OCR_28_29						= (1UL<<16),
+	OCR_29_30						= (1UL<<17),
+	OCR_30_31						= (1UL<<18),
+	OCR_31_32						= (1UL<<19),
+	OCR_32_33						= (1UL<<20),
+	OCR_33_34						= (1UL<<21),
+	OCR_34_35						= (1UL<<22),
+	OCR_35_36						= (1UL<<23),
+	OCR_S18A						= (1UL<<24), // Switching to 1.8V Accepted
+	OCR_UHS_II						= (1UL<<29),
+	OCR_CCS							= (1UL<<30), // Card Capacity Status (CCS)
+	OCR_BUSY						= (1UL<<31), // Is LOW if card has not
+												 // powered up yet
+};
+
 enum response_length {
 	R1_LEN = 1,
 	R2_LEN = 2,
@@ -145,6 +166,17 @@ static inline void tx(uint8_t x) {
 
 static inline uint8_t rx(void) {
 	return spi_tranceive(IDLE_BYTE);
+}
+
+/**
+ * SDSC Card (CCS=0) uses byte unit address and SDHC and SDXC Cards (CCS=1) use
+ * block unit address (512 bytes unit). Therefor we have to convert to the
+ * correct sector.
+ * @param  sector Input sector
+ * @return        Sector in adjusted form that the card type accepts
+ */
+static inline uint32_t adjust_sector(uint32_t sector) {
+	return (!USES_BLOCK_ADDRESSING(card_type)) ? sector * SD_BLOCKSIZE : sector;
 }
 
 /**
@@ -250,6 +282,21 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 }
 
 /**
+ * Reads the OCR from the sd card and places the result at the given pointer
+ * @param  ocr[OUT] pointer to where the OCR value is stored
+ * @return          0 on success 1 on failure
+ */
+static int8_t read_ocr(uint32_t *ocr) {
+	struct response r;
+	const int8_t rc = send_cmd(READ_OCR, 0, &r);
+	if (rc != 0 || r.r1[0] != 0) return 1;
+
+	memcpy(ocr, r.r3, sizeof(*ocr));
+
+	return 0;
+}
+
+/**
  * Flow descriped on page 171
  * @return  0 on success 1 on failure
  */
@@ -284,10 +331,9 @@ static int8_t sd_spi_mode_initialization(void) {
 			_delay_us(100);
 		}
 
-		if (retries <= 0 || (send_cmd(READ_OCR, 0, &res) != 0)) return 1;
-
-		uint32_t *ocr = (uint32_t*)&res.r3[1]; // R3 byte[1:4] is OCR
-		card_type = (*ocr & (1UL<<29)) ? (CT_SD2|CT_HC_XC) : CT_SD2;
+		uint32_t ocr;
+		if (retries <= 0 || read_ocr(&ocr) != 0) return 1;
+		card_type = (ocr & OCR_CCS) ? (CT_SD2|CT_HC_XC) : CT_SD2;
 	} else {
 		// SDv1 or MMCv3
 		if (send_cmd(SD_SEND_OP_COND, 0, &res) != 0) return 1;
@@ -317,16 +363,22 @@ int8_t sd_init(void) {
 	return 0;
 }
 
-int8_t sd_read_block(uint8_t *buff, int32_t sector, int16_t offset,
+/**
+ * Reads a block from the SD card
+ * @param  buff   Pointer to where read data is stored
+ * @param  sector Sector where the block is located on the SD card
+ * @param  offset Seek to offset before storing data
+ * @param  n      How many bytes to read from the block
+ * @return        1:success 0:failure
+ */
+int8_t sd_read_block(uint8_t *buff, uint32_t sector, int16_t offset,
 					 int16_t n) {
 	if (buff == NULL) return 1;
 	if (!(offset+n <= SD_BLOCKSIZE)) return 1;
 
 	// Check if card uses block or byte addressing
-	if (!USES_BLOCK_ADDRESSING(card_type)) sector *= SD_BLOCKSIZE;
-
 	struct response r;
-	if (send_cmd(READ_SINGLE_BLOCK, sector, &r) != 0) return 1;
+	if (send_cmd(READ_SINGLE_BLOCK, adjust_sector(sector), &r) != 0) return 1;
 
 	SS_L();
 
@@ -355,15 +407,22 @@ int8_t sd_read_block(uint8_t *buff, int32_t sector, int16_t offset,
 	return 0;
 }
 
-int8_t sd_write_block(uint8_t *data, int32_t sector, size_t n) {
+/**
+ * Writes a block to the SD card. if n < SD_BLOCKSIZE remaining bytes in the
+ * block will be filled with zeroes.
+ * @param  data   Pointer to the data that should be written the the block
+ * @param  sector Sector where the block i located
+ * @param  n      How many bytes should be written to the block
+ * @return        1:success 0:failure
+ */
+int8_t sd_write_block(uint8_t *data, uint32_t sector, size_t n) {
 	if (data == NULL) return 1;
 
 	// Initiate sector write
 	{
 		struct response r;
 		// Check if card uses block or byte addressing
-		if (!USES_BLOCK_ADDRESSING(card_type)) sector *= SD_BLOCKSIZE;
-		if (send_cmd(WRITE_BLOCK, sector, &r) != 0) return 1;
+		if (send_cmd(WRITE_BLOCK, adjust_sector(sector), &r) != 0) return 1;
 		if (r.r1[0] != 0) return 1;
 		SS_L();
 
