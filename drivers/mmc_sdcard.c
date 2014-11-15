@@ -32,6 +32,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "mmc_sdcard.h"
 
+/**
+ * @file mmc_sdcard.c
+ * Low level driver for reading and writing SD cards using SPI. Information on
+ * the specification can be found at:
+ * https://www.sdcard.org/downloads/pls/simplified_specs/
+ * In the "Physical Layer Simplified Specification" document.
+ */
+
 #define SS_L()	IO_SET_LOW(SPI_PORT, SS_PIN);
 #define SS_H()	IO_SET_HIGH(SPI_PORT, SS_PIN);
 

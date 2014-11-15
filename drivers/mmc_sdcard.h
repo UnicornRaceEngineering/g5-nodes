@@ -21,6 +21,14 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @file mmc_sdcard.c
+ * Low level driver for reading and writing SD cards using SPI. Information on
+ * the specification can be found at:
+ * https://www.sdcard.org/downloads/pls/simplified_specs/
+ * In the "Physical Layer Simplified Specification" document.
+ */
+
 #ifndef MMC_SDCARD_H
 #define MMC_SDCARD_H
 
