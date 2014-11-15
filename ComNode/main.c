@@ -29,14 +29,88 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"
 
 #include <usart.h>
-// #include <spi.h>
-// #include <mmc_sdcard.h>
+#include <string.h>
+#include <spi.h>
+#include <mmc_sdcard.h>
 #include <stdio.h>
 
 #include <pff.h>
 #include <diskio.h>
 
-#define PUT_RC(func) usart1_printf("rc=%d", func)
+#if 1
+#define PUT_RC(func) usart1_printf("rc=%d at line %d\n", func, __LINE__)
+
+static FRESULT scan_files (char* path) {
+    FRESULT res;
+    FILINFO fno;
+    DIR dir;
+    int i;
+
+
+    res = pf_opendir(&dir, path);
+    if (res == FR_OK) {
+        i = strlen(path);
+        for (;;) {
+            res = pf_readdir(&dir, &fno);
+            if (res != FR_OK || fno.fname[0] == 0) break;
+            if (fno.fattrib & AM_DIR) {
+                sprintf(&path[i], "/%s", fno.fname);
+                res = scan_files(path);
+                if (res != FR_OK) break;
+                path[i] = 0;
+            } else {
+                usart1_printf("%s/%s\n", path, fno.fname);
+            }
+        }
+    }
+
+    return res;
+}
+
+static void test_fs(void) {
+	FATFS fs; 		// File system object
+
+	// PUT_RC(disk_initialize());
+	PUT_RC(pf_mount(&fs));
+
+	PUT_RC(scan_files("/LOGS"));
+	PUT_RC(pf_open("TESTFILE.TXT"));
+
+	// Read what is current in testfile.txt
+	{
+		unsigned bytes_read = 0;
+		uint8_t read_buffer[128] = {'\0'};
+		PUT_RC(pf_read(&read_buffer, 128-1, &bytes_read));
+
+		usart1_printf("read %u bytes:\n", bytes_read);
+		usart1_printf("%s\n", read_buffer);
+	}
+
+	// Write something new in the file
+	{
+		PUT_RC(pf_lseek(0));
+
+		unsigned bytes_written = 0;
+		char wbuff[] = "123456789";
+
+		PUT_RC(pf_write(wbuff, strlen(wbuff), &bytes_written));
+		usart1_printf("bytes written=%d\n", bytes_written);
+		PUT_RC(pf_write(0, 0, &bytes_written));
+		usart1_printf("bytes written=%d\n", bytes_written);
+	}
+		PUT_RC(pf_lseek(0));
+
+	// Read the new data written
+	{
+		unsigned bytes_read = 0;
+		uint8_t read_buffer[128] = {'\0'};
+		PUT_RC(pf_read(&read_buffer, 128-1, &bytes_read));
+
+		usart1_printf("read %u bytes:\n", bytes_read);
+		usart1_printf("%s\n", read_buffer);
+	}
+}
+#endif
 
 int main(void) {
 	xbee_init();
@@ -49,55 +123,7 @@ int main(void) {
 	usart1_putc_unbuffered('\n');
 	usart1_putc_unbuffered('\r');
 
-#if 0
-	if (sd_init() != 0) {
-		usart1_printf("SD Connection error\n");
-	} else {
-		usart1_printf("SD connected\n");
-		char tx[SD_BLOCKSIZE];
-		uint8_t buff[SD_BLOCKSIZE];
-
-		bool found_char = false;
-		for (int block = 0; block < 50; ++block) {
-			const int tx_len = snprintf(tx, SD_BLOCKSIZE, "This is a test string on the SD card written to block address %#x", block);
-			if (sd_write_block((uint8_t*)tx, block, tx_len) != 0) {
-				usart1_printf("Write error\n");
-				continue;
-			}
-			if (sd_read_block(buff, block, 0, SD_BLOCKSIZE) == 0) {
-				for (int i = 0; i < SD_BLOCKSIZE; ++i) {
-					if (buff[i] >= ' ' && buff[i] <= 'z') {
-						usart1_putc(buff[i]);
-						found_char = true;
-					}
-				}
-			if (found_char) usart1_printf("\n---\n");
-			found_char = false;
-			} else {
-				usart1_printf("Read error\n");
-			}
-		}
-	}
-#endif
-
-	FATFS fs; 		// File system object
-	// DIR dir;		// Directory object
-	// FILINFO finfo;	// File infomation
-
-	PUT_RC(usart1_printf("rc=%d", disk_initialize()));
-	PUT_RC(pf_mount(&fs));
-	PUT_RC(pf_open("testfile.txt"));
-
-	unsigned int bytes_read = 0;
-	uint8_t buff[512] = {'\0'};
-
-	do {
-		uint8_t res = pf_read(&buff, 512-1, &bytes_read);
-		if (res != FR_OK) break;
-	} while (bytes_read == 512-1);
-	buff[512-1] = '\0';
-
-	usart1_printf("%s", buff);
+	test_fs();
 
 	while(1){
 		// Main work loop
