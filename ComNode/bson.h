@@ -83,6 +83,16 @@ struct bson_element {
 			uint8_t *data;
 			int32_t len;
 		} binary;
+		union {
+			struct {
+				struct bson_element *e;
+				size_t n_elem;
+			} elements;
+			struct {
+				int32_t doc_len;
+				size_t offset;
+			}raw_elements;
+		};
 	};
 };
 

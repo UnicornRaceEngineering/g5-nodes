@@ -58,8 +58,10 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 	switch (e->e_id) {
 		case ID_STRING:
 			{
+				if (e->str == NULL) return -buff_i;
 				int32_t str_len = strnlen(e->str, len)+1;
-				if (len < (int32_t)buff_i+str_len+sizeof(int32_t)) return -buff_i;
+				if (len < (int32_t)buff_i+str_len+sizeof(int32_t))
+					return -buff_i;
 
 				for (size_t i = 0; i < sizeof(int32_t); ++i) {
 					buff[buff_i++] = ((uint8_t*)&str_len)[i];
@@ -71,10 +73,19 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 			}
 			break;
 
-		case ID_EMBEDED_DOCUMENT:
 		case ID_ARRAY:
-			//!> @TODO implement this
+			//!< @TODO implement this
 			return -buff_i;
+			break;
+
+		case ID_EMBEDED_DOCUMENT:
+			if (e->elements.e == NULL) return -buff_i;
+			{
+				int32_t doc_len = serialize(&buff[buff_i], e->elements.e,
+					e->elements.n_elem, len);
+				if (doc_len < 0) return -buff_i;
+				buff_i += doc_len;
+			}
 			break;
 
 		case ID_BOOL:
@@ -135,7 +146,8 @@ int32_t serialize(uint8_t *buff, struct bson_element *elements, size_t n_elem,
 	for (size_t i = 0; i < n_elem; ++i) {
 		const int32_t buffer_left = len - document_size;
 		if (buffer_left < 0) return -document_size;
-		const int32_t e_size = serialize_element(buff, &elements[i], buffer_left);
+		const int32_t e_size = serialize_element(buff, &elements[i],
+			buffer_left);
 		if (e_size < 0) return -document_size;
 		document_size += e_size;
 		buff += e_size;
@@ -170,7 +182,9 @@ int32_t find_key(struct bson_element *e, uint8_t *bson, int32_t n) {
 		const size_t bson_key = strnlen((char*)bson+seek_pos, MAX_KEY_LEN);
 		seek_pos += bson_key + 1; // plus null byte
 		if (n < seek_pos) return -seek_pos;
-		if (bson_key == key_len && strncmp(e->key, (char*)&bson[seek_pos-bson_key-1], key_len) == 0) match_found = true;
+		if (bson_key == key_len && strncmp(e->key,
+											(char*)&bson[seek_pos-bson_key-1],
+											key_len) == 0) match_found = true;
 
 		if (match_found) e->e_id = e_id;
 		switch (e_id) {
@@ -182,18 +196,31 @@ int32_t find_key(struct bson_element *e, uint8_t *bson, int32_t n) {
 						((uint8_t*)&str_len)[i] = bson[seek_pos++];
 					}
 					if (n < seek_pos+str_len) return -seek_pos;
-					if (match_found) strncpy(e->str, (char*)&bson[seek_pos], str_len);
+					if (match_found) strncpy(e->str, (char*)&bson[seek_pos],
+											str_len);
 					seek_pos += str_len;
 				}
 				break;
 
-			case ID_EMBEDED_DOCUMENT:
 			case ID_ARRAY:
 				//!< @TODO implement this
 				break;
 
+			case ID_EMBEDED_DOCUMENT:
+				{
+					if (n < seek_pos+(int32_t)sizeof(int32_t)) return -seek_pos;
+					e->raw_elements.offset = seek_pos;
+					int32_t doc_len;
+					for (size_t i = 0; i < sizeof(int32_t); ++i) {
+						((uint8_t*)&doc_len)[i] = bson[seek_pos++];
+					}
+					seek_pos += e->raw_elements.doc_len = doc_len;
+				}
+				break;
+
 			case ID_BOOL:
-				if (match_found) e->boolean = bson[seek_pos++] == 0x01 ? true : false;
+				if (match_found) e->boolean = bson[seek_pos++] == 0x01
+					? true : false;
 				else seek_pos++;
 				if (n < seek_pos) return -seek_pos;
 				break;
@@ -257,7 +284,8 @@ int32_t find_key(struct bson_element *e, uint8_t *bson, int32_t n) {
 
 #include <stdio.h>
 
-static bool verify_serialized_bson(int32_t encode_len, uint8_t *buff, int32_t ref_len, uint8_t *ref) {
+static bool verify_serialized_bson(int32_t encode_len, uint8_t *buff,
+								   int32_t ref_len, uint8_t *ref) {
 	bool test_passed = true;
 
 	if (encode_len < 0) {
@@ -272,11 +300,11 @@ static bool verify_serialized_bson(int32_t encode_len, uint8_t *buff, int32_t re
 
 	printf("serialize len=%u\n", encode_len);
 	for (int i = 0; i < encode_len; ++i) {
-		printf("%#2x ", buff[i]);
+		printf("%#.2x, ", buff[i]);
 		if (buff[i] != ref[i]) {
-			printf("Error expected %#2x\n", ref[i]);
+			printf("Error expected %#.2x\n", ref[i]);
 			test_passed = false;
-			break;
+			// break;
 		}
 	}
 	printf("\n%s\n", test_passed ? "Test passed" : "Test failed");
@@ -357,6 +385,16 @@ int main(void) {
 		int32_t rc = find_key(&found_e, buff, ARR_LEN(buff));
 		if (rc < 0) test_passed = false;
 		if (memcmp(found_e.binary.data, e[2].binary.data, ARR_LEN(bin)) != 0) test_passed = false;
+	}
+
+	printf("\n\nTest serializing embedded doc\n");
+	// Test serialize nested elements
+	{
+		// struct bson_element embed_e[1] = {{.e_id=ID_EMBEDED_DOCUMENT, .key="doc", .elements.e=e, .elements.n_elem=ARR_LEN(e)}};
+		struct bson_element embed_e = {.e_id=ID_EMBEDED_DOCUMENT, .key="doc", .elements.e=e, .elements.n_elem=ARR_LEN(e)};
+		int32_t encode_len = serialize(buff, &embed_e, 1, ARR_LEN(buff));
+		uint8_t ref[] = {69, 0, 0, 0, 3, 100, 111, 99, 0, 59, 0, 0, 0, 2, 115, 116, 114, 0, 17, 0, 0, 0, 84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 115, 116, 114, 105, 110, 103, 0, 16, 105, 110, 116, 101, 103, 101, 114, 0, 42, 0, 0, 0, 5, 98, 117, 102, 102, 0, 4, 0, 0, 0, 0, 1, 2, 3, 4, 0, 0,};
+		if (verify_serialized_bson(encode_len, buff, ARR_LEN(ref), ref) == false) test_passed = false;
 	}
 
 	printf("\n\n%s testing BSON\n", test_passed ? "SUCCESS" : "FAILED");
