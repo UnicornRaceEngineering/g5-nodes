@@ -32,31 +32,34 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 #include <string.h>
 
-#include <usart.h>
-
 #include "bson.h"
 
-int32_t serialize_element(uint8_t *buff, struct bson_element *e, int32_t len) {
+#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
+
+int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
+	if (buff == NULL || e == NULL || len < 1) return -1;
 
 	int32_t buff_i = 0;
+
+	// Insert element id (type identifier)
 	buff[buff_i++] = e->e_id;
 
+	// Insert the key
 	if (e->key == NULL) return -buff_i;
 	size_t key_len = strnlen(e->key, 32);
-	if (len < buff_i+key_len+1) return -buff_i;
-	for (int i = 0; i < key_len; ++i) {
+	if (len < buff_i+key_len+1) return -buff_i; // Check buffer is big enough
+	for (size_t i = 0; i < key_len; ++i) {
 		buff[buff_i++] = e->key[i];
 	}
-
 	buff[buff_i++] = '\0'; // Add null terminator to the key string
 
 	switch (e->e_id) {
 		case ID_STRING:
 			{
 				int32_t str_len = strnlen(e->str, len)+1;
-				if (len < buff_i+str_len+sizeof(int32_t)) return -buff_i;
+				if (len < (int32_t)buff_i+str_len+sizeof(int32_t)) return -buff_i;
 
-				for (int i = 0; i < sizeof(int32_t); ++i) {
+				for (size_t i = 0; i < sizeof(int32_t); ++i) {
 					buff[buff_i++] = ((uint8_t*)&str_len)[i];
 				}
 
@@ -86,7 +89,7 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, int32_t len) {
 		case ID_32_INTEGER:
 			// Integers is LSB first
 			if (len < sizeof(int32_t)) return -buff_i;
-			for (int i = 0; i < sizeof(int32_t); ++i) {
+			for (size_t i = 0; i < sizeof(int32_t); ++i) {
 				buff[buff_i++] = ((uint8_t*)&e->int32)[i];
 			}
 			break;
@@ -96,17 +99,17 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, int32_t len) {
 		case ID_64_INTEGER:
 			// Integers is LSB first
 			if (len < sizeof(uint64_t)) return -buff_i;
-			for (int i = 0; i < sizeof(int64_t); ++i) {
+			for (size_t i = 0; i < sizeof(int64_t); ++i) {
 				buff[buff_i++] = ((uint8_t*)&e->int64)[i];
 			}
 			break;
 		case ID_BINARY:
 			if (len < sizeof(uint32_t) + 1 + e->binary.len) return -buff_i;
-			for (int i = 0; i < sizeof(int32_t); ++i) {
+			for (size_t i = 0; i < sizeof(int32_t); ++i) {
 				buff[buff_i++] = ((uint8_t*)&e->binary.len)[i];
 			}
 			buff[buff_i++] = e->binary.subtype;
-			for (int i = 0; i < e->binary.len; ++i) {
+			for (int32_t i = 0; i < e->binary.len; ++i) {
 				buff[buff_i++] = ((uint8_t*)e->binary.data)[i];
 			}
 			break;
@@ -118,3 +121,115 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, int32_t len) {
 
 	return buff_i;
 }
+
+int32_t serialize(uint8_t *buff, struct bson_element *elements, size_t n_elem,
+				  size_t len) {
+	if (buff == NULL || elements == NULL || len < sizeof(int32_t)+1) return -1;
+
+	int32_t document_size = sizeof(int32_t);
+	uint8_t *buff_start = buff; // Reference to the start of the buffer
+
+	buff += document_size;
+	for (size_t i = 0; i < n_elem; ++i) {
+		const int32_t buffer_left = len - document_size;
+		if (buffer_left < 0) return -document_size;
+		const int32_t e_size = serialize_element(buff, &elements[i], buffer_left);
+		if (e_size < 0) return -document_size;
+		document_size += e_size;
+		buff += e_size;
+	}
+
+	document_size += 1; // Remeber we add the zero byte at the end
+	for (size_t i = 0; i < sizeof(int32_t); ++i) {
+		buff_start[i] = ((uint8_t*)&document_size)[i];
+	}
+
+	*buff = 0x00;
+
+	return document_size;
+}
+
+
+#ifdef TEST_BSON
+
+#include <stdio.h>
+
+static bool verify_serialized_bson(int32_t encode_len, uint8_t *buff, int32_t ref_len, uint8_t *ref) {
+	bool test_passed = true;
+
+	if (encode_len < 0) {
+		printf("Enocde returned error %d\n", encode_len);
+		return false;
+	}
+
+	if (ref_len != encode_len) {
+		printf("Encoded string not same length as reference string\n");
+		test_passed = false;
+	}
+
+	printf("serialize len=%u\n", encode_len);
+	for (int i = 0; i < encode_len; ++i) {
+		printf("%#2x ", buff[i]);
+		if (buff[i] != ref[i]) {
+			printf("Error expected %#2x\n", ref[i]);
+			test_passed = false;
+			break;
+		}
+	}
+	printf("\n%s\n", test_passed ? "Test passed" : "Test failed");
+	return test_passed;
+}
+
+int main(void) {
+	uint8_t buff[128];
+	bool test_passed = true;
+
+	uint8_t bin[] = {1,2,3,4};
+	struct bson_element e[] = {
+		{.e_id = ID_STRING, .key = "str", .str = "This is a string"},
+		{.e_id = ID_32_INTEGER, .key = "integer", .int32 = 42},
+		{.e_id = ID_BINARY, .binary.subtype=SUB_GENERIC, .key="buff", .binary.data=bin, .binary.len=ARR_LEN(bin)},
+	};
+
+	// Test serializing single element
+	{
+		// Test String serializing
+		printf("\n\nTest String serializing\n");
+		{
+			int32_t encode_len = serialize_element(buff, &e[0], ARR_LEN(buff));
+			uint8_t ref[] = {0x2,0x73,0x74,0x72,0,0x11,0,0,0,0x54,0x68,0x69,0x73,0x20,0x69,0x73,0x20,0x61,0x20,0x73,0x74,0x72,0x69,0x6e,0x67,0};
+			int32_t ref_len = ARR_LEN(ref);
+			if (verify_serialized_bson(encode_len, buff, ref_len, ref) == false)
+				test_passed = false;
+		}
+
+		// Test int32 serializing
+		printf("\n\nTest int32 serializing\n");
+		{
+			int32_t encode_len = serialize_element(buff, &e[1], ARR_LEN(buff));
+			uint8_t ref[] = {0x10, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72, 0x00, 0x2a, 0x00, 0x00, 0x00};
+			if (verify_serialized_bson(encode_len, buff, ARR_LEN(ref), ref) == false)
+				test_passed = false;
+		}
+
+		// Test binary serializing
+		printf("\n\nTest binary serializing\n");
+		{
+			int32_t encode_len = serialize_element(buff, &e[2], ARR_LEN(buff));
+			uint8_t ref[] = {0x05, 0x62, 0x75, 0x66, 0x66, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04,};
+			if (verify_serialized_bson(encode_len, buff, ARR_LEN(ref), ref) == false)
+				test_passed = false;
+		}
+	}
+
+	printf("\n\nTest serialize array of elements\n");
+
+	int32_t encode_len = serialize(buff, e, ARR_LEN(e), ARR_LEN(buff));
+	uint8_t ref[] = {0x3b, 0x00, 0x00, 0x00, 0x02, 0x73, 0x74, 0x72, 0x00, 0x11, 0x00, 0x00, 0x00, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00, 0x10, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x05, 0x62, 0x75, 0x66, 0x66, 0x00, 0x04, 0x00, 0, 0, 0, 1, 2, 3, 4, 0};
+	if (verify_serialized_bson(encode_len, buff, ARR_LEN(ref), ref) == false)
+		test_passed = false;
+
+	printf("\n\n%s testing BSON\n", test_passed ? "SUCCESS" : "FAILED");
+}
+
+#endif

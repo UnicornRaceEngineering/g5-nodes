@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 enum element_identifier {
 	ID_DOUBLE 			= 0x01,
@@ -85,6 +86,9 @@ struct bson_element {
 	};
 };
 
-int32_t serialize_element(uint8_t *buff, struct bson_element *e, int32_t len);
+int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len);
+int32_t serialize(uint8_t *buff, struct bson_element *elements, size_t n_elem,
+				  size_t len);
+
 
 #endif /* BSON_H */

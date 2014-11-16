@@ -115,21 +115,6 @@ static void test_fs(void) {
 }
 #endif
 
-static void verify_bson(int32_t encode_len, uint8_t *buff, int32_t ref_len, uint8_t *ref) {
-	if (ref_len != encode_len)
-		usart1_printf("Encoded string not same length as reference string\n");
-
-	usart1_printf("serialize len=%u\n", encode_len);
-	for (int i = 0; i < encode_len; ++i) {
-		usart1_printf("%#2x ", buff[i]);
-		if (buff[i] != ref[i]) {
-			usart1_printf("Error expected %#2x\n", ref[i]);
-			break;
-		}
-	}
-	usart1_printf("\n");
-}
-
 int main(void) {
 	xbee_init();
 	ecu_init();
@@ -141,43 +126,11 @@ int main(void) {
 	usart1_putc_unbuffered('\n');
 	usart1_putc_unbuffered('\r');
 
+	usart1_printf("Starting\n\n\n");
+
 	test_fs();
 
 
-	{
-		uint8_t buff[128];
-
-		// Test String serializing
-		usart1_printf("\n\nTest String serializing\n");
-		{
-			struct bson_element e = {.e_id = ID_STRING, .key = "str", .str = "This is a string"};
-			int32_t encode_len = serialize_element(buff, &e, 128);
-			uint8_t ref[] = {0x2,0x73,0x74,0x72,0,0x11,0,0,0,0x54,0x68,0x69,0x73,0x20,0x69,0x73,0x20,0x61,0x20,0x73,0x74,0x72,0x69,0x6e,0x67,0};
-			int32_t ref_len = ARR_LEN(ref);
-			verify_bson(encode_len, buff, ref_len, ref);
-		}
-
-		// Test int32 serializing
-		usart1_printf("\n\nTest int32 serializing\n");
-		{
-			struct bson_element e = {.e_id = ID_32_INTEGER, .key = "integer", .int32 = 42};
-			int32_t encode_len = serialize_element(buff, &e, 128);
-			uint8_t ref[] = {0x10, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72, 0x00, 0x2a, 0x00, 0x00, 0x00};
-			verify_bson(encode_len, buff, ARR_LEN(ref), ref);
-		}
-
-		// Test binary serializing
-		usart1_printf("\n\nTest binary serializing\n");
-		{
-			uint8_t bin[] = {1,2,3,4};
-			struct bson_element e = {.e_id = ID_BINARY, .binary.subtype=SUB_GENERIC, .key="buff", .binary.data=bin, .binary.len=ARR_LEN(bin)};
-			int32_t encode_len = serialize_element(buff, &e, 128);
-			uint8_t ref[] = {0x05, 0x62, 0x75, 0x66, 0x66, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04,};
-			verify_bson(encode_len, buff, ARR_LEN(ref), ref);
-		}
-
-		usart1_printf("\n\nDone testing BSON\n");
-	}
 
 	while(1){
 		// Main work loop
