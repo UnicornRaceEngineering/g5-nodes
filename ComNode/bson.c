@@ -36,6 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
+#define MAX_KEY_LEN	32
+
 int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 	if (buff == NULL || e == NULL || len < 1) return -1;
 
@@ -46,7 +48,7 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 
 	// Insert the key
 	if (e->key == NULL) return -buff_i;
-	size_t key_len = strnlen(e->key, 32);
+	size_t key_len = strnlen(e->key, MAX_KEY_LEN);
 	if (len < buff_i+key_len+1) return -buff_i; // Check buffer is big enough
 	for (size_t i = 0; i < key_len; ++i) {
 		buff[buff_i++] = e->key[i];
@@ -149,6 +151,107 @@ int32_t serialize(uint8_t *buff, struct bson_element *elements, size_t n_elem,
 	return document_size;
 }
 
+int32_t find_key(struct bson_element *e, uint8_t *bson, int32_t n) {
+	if (e == NULL || e->key == NULL || bson == NULL) return -1;
+
+	const size_t key_len = strnlen(e->key, MAX_KEY_LEN);
+	int32_t seek_pos = 0;
+	int32_t document_size;
+	for (size_t i = 0; i < sizeof(int32_t); ++i) {
+		((uint8_t*)&document_size)[i] = bson[seek_pos++];
+	}
+
+	if (n < seek_pos) return -seek_pos;
+
+	bool match_found = false;
+	while (n > seek_pos && document_size > seek_pos && !match_found) {
+		const enum  element_identifier e_id = bson[seek_pos++];
+
+		const size_t bson_key = strnlen((char*)bson+seek_pos, MAX_KEY_LEN);
+		seek_pos += bson_key + 1; // plus null byte
+		if (n < seek_pos) return -seek_pos;
+		if (bson_key == key_len && strncmp(e->key, (char*)&bson[seek_pos-bson_key-1], key_len) == 0) match_found = true;
+
+		if (match_found) e->e_id = e_id;
+		switch (e_id) {
+			case ID_STRING:
+				{
+					if (n < seek_pos+(int32_t)sizeof(int32_t)) return -seek_pos;
+					int32_t str_len;
+					for (size_t i = 0; i < sizeof(int32_t); ++i) {
+						((uint8_t*)&str_len)[i] = bson[seek_pos++];
+					}
+					if (n < seek_pos+str_len) return -seek_pos;
+					if (match_found) strncpy(e->str, (char*)&bson[seek_pos], str_len);
+					seek_pos += str_len;
+				}
+				break;
+
+			case ID_EMBEDED_DOCUMENT:
+			case ID_ARRAY:
+				//!< @TODO implement this
+				break;
+
+			case ID_BOOL:
+				if (match_found) e->boolean = bson[seek_pos++] == 0x01 ? true : false;
+				else seek_pos++;
+				if (n < seek_pos) return -seek_pos;
+				break;
+
+			case ID_MIN_KEY:
+			case ID_MAX_KEY:
+			case ID_UNDEFINED:
+			case ID_NULL_VALUE:
+				// Do nothing
+				break;
+
+			case ID_32_INTEGER:
+				if (n < seek_pos+(int32_t)sizeof(int32_t)) return -seek_pos;
+				if (match_found) {
+					for (size_t i = 0; i < sizeof(int32_t); ++i) {
+						((uint8_t*)&e->int32)[i] = bson[seek_pos++];
+					}
+				} else {
+					seek_pos += sizeof(int32_t);
+				}
+				break;
+
+			case ID_UTC_DATETIME:
+			case ID_TIMESTAMP:
+			case ID_64_INTEGER:
+			if (n < seek_pos+(int32_t)sizeof(int64_t)) return -seek_pos;
+				if (match_found) {
+					for (size_t i = 0; i < sizeof(int64_t); ++i) {
+						((uint8_t*)&e->int64)[i] = bson[seek_pos++];
+					}
+				} else {
+					seek_pos += sizeof(int64_t);
+				}
+				break;
+
+			case ID_BINARY:
+				if (n < seek_pos+(int32_t)sizeof(int32_t)+1) return -seek_pos;
+				for (size_t i = 0; i < sizeof(int32_t); ++i) {
+					((uint8_t*)&e->binary.len)[i] = bson[seek_pos++];
+				}
+				e->binary.subtype = bson[seek_pos++];
+				if (n < seek_pos + e->binary.len) return -seek_pos;
+				if (match_found) {
+					for (int32_t i = 0; i < e->binary.len; ++i) {
+						e->binary.data[i] = bson[seek_pos++];
+					}
+				} else {
+					seek_pos += e->binary.len;
+				}
+				break;
+
+			default:
+				return -seek_pos;
+		}
+	}
+
+	return seek_pos;
+}
 
 #ifdef TEST_BSON
 
@@ -228,6 +331,33 @@ int main(void) {
 	uint8_t ref[] = {0x3b, 0x00, 0x00, 0x00, 0x02, 0x73, 0x74, 0x72, 0x00, 0x11, 0x00, 0x00, 0x00, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00, 0x10, 0x69, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x05, 0x62, 0x75, 0x66, 0x66, 0x00, 0x04, 0x00, 0, 0, 0, 1, 2, 3, 4, 0};
 	if (verify_serialized_bson(encode_len, buff, ARR_LEN(ref), ref) == false)
 		test_passed = false;
+
+	printf("\n\nTest finding key\n");
+		// Find the str key
+	{
+		char str_buff[64] = {'\0'};
+		struct bson_element found_e = {.key="str", .str=str_buff};
+		int32_t rc = find_key(&found_e, buff, ARR_LEN(buff));
+		if (rc < 0) test_passed = false;
+		if (strcmp(found_e.str, e[0].str) != 0) test_passed = false;
+	}
+
+	// Find the integer key
+	{
+		struct bson_element found_e = {.key="integer"};
+		int32_t rc = find_key(&found_e, buff, ARR_LEN(buff));
+		if (rc < 0) test_passed = false;
+		if (found_e.int32 != e[1].int32) test_passed = false;
+	}
+
+	// Find the buff key containing binary data
+	{
+		uint8_t bin_buff[64] = {'\0'};
+		struct bson_element found_e = {.key="buff", .binary.data=bin_buff};
+		int32_t rc = find_key(&found_e, buff, ARR_LEN(buff));
+		if (rc < 0) test_passed = false;
+		if (memcmp(found_e.binary.data, e[2].binary.data, ARR_LEN(bin)) != 0) test_passed = false;
+	}
 
 	printf("\n\n%s testing BSON\n", test_passed ? "SUCCESS" : "FAILED");
 }
