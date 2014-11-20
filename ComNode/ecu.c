@@ -39,9 +39,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <usart.h>
 #include <timer.h>
+#include <m41t81s_rtc.h>
+
+#include <pff.h>
 
 #include "ecu.h"
 #include "xbee.h"
+#include "bson.h"
 
 #define ECU_BAUD	(19200)
 
@@ -66,8 +70,14 @@ void ecu_parse_package(void) {
 #		include "ecu_package_layout.inc"
 	};
 
+	uint8_t buff[512];
+	size_t b_i = 0;
+	struct bson_element b_pkt_document[ARR_LEN(pkt)];
+	struct bson_element b_pkt_elements[ARR_LEN(pkt)][2];
+	usart1_printf("total stack size=%d\n", sizeof(b_pkt_document) + sizeof(b_pkt_elements) + sizeof(pkt));
+
 	// We loop over the package and extract the number of bytes element contains
-	for (int i = 0; i < ARR_LEN(pkt); ++i) {
+	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = usart0_getc_unbuffered();
 			if (pkt[i].sensor.id == EMPTY ) continue;
@@ -141,10 +151,44 @@ void ecu_parse_package(void) {
 			}
 		}
 
-		// Send the individual sensor data
-		xbee_send(pkt[i].sensor.id, (uint8_t*)&(pkt[i].sensor.value),
-			sizeof(pkt[i].sensor.value));
+		if (pkt[i].sensor.id != EMPTY) {
+			// Ready sensor for serialization
+			// Make an element that contains the value and timestamp
+			b_pkt_document[b_i].e_id 				= ID_EMBEDED_DOCUMENT;
+			b_pkt_document[b_i].key 				= (char*)pkt[i].sensor.name;
+			b_pkt_document[b_i].elements.e			= b_pkt_elements[b_i];
+			b_pkt_document[b_i].elements.n_elem		= 2;
+
+			// Pack the value
+			b_pkt_elements[b_i][0].e_id 			= ID_DOUBLE;
+			b_pkt_elements[b_i][0].key 				= "val";
+			b_pkt_elements[b_i][0].floating_val		= pkt[i].sensor.value;
+
+			// Pack the timestamp
+			b_pkt_elements[b_i][1].e_id 			= ID_32_INTEGER; //ID_UTC_DATETIME;
+			b_pkt_elements[b_i][1].key 				= "ts";
+			b_pkt_elements[b_i][1].utc_datetime		= 0; //rtc_utc_datetime();
+			b_i++;
+		}
 	}
+
+	struct bson_element e = {
+		.e_id=ID_EMBEDED_DOCUMENT, .key="ecu", .elements.e=b_pkt_document,
+		.elements.n_elem=--b_i
+	};
+
+	unsigned bytes_written = 0;
+	int32_t btw = serialize(buff, &e, 1, ARR_LEN(buff));
+	if (btw > 0) pf_write(buff, btw, &bytes_written);
+	if ((int32_t)bytes_written != btw) {
+		// Handle error
+	}
+
+	if (btw > 0)
+		xbee_send(0, buff, (btw > 0) ? btw : 0);
+	else
+		usart1_printf("btw=%ld\n", btw);
+
 }
 
 void ecu_init(void) {
@@ -168,7 +212,7 @@ ISR(ECU_HEARTBEAT_ISR_VECT) {
 	// but if we ask too often it crashes
 	if (!delay--) {
 		const uint8_t heart_beat[] = {0x12,0x34,0x56,0x78,0x17,0x08,0,0,0,0};
-		for (int i = 0; i < ARR_LEN(heart_beat); ++i) {
+		for (size_t i = 0; i < ARR_LEN(heart_beat); ++i) {
 			usart0_putc_unbuffered(heart_beat[i]);
 		}
 		delay = HEARTBEAT_DELAY_LENGTH; // Reset the delay
