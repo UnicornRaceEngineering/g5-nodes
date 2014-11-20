@@ -78,6 +78,7 @@ struct bson_element {
 		int32_t int32;
 		int64_t timestamp;
 		int64_t int64;
+		double floating_val;
 		struct {
 			enum binary_subtype subtype;
 			uint8_t *data;

@@ -38,6 +38,45 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define MAX_KEY_LEN	32
 
+
+#define DOUBLE_FRACTION_S	52 // Fraction is 52 bits
+#define DOUBLE_EXPONENT_S	11 // Exponent is 11 bits
+
+#define FLOAT_FRACTION_S	23 // Fraction is 23 bits
+#define FLOAT_EXPONENT_S	8  // Exponent is  8 bits
+
+/**
+ * represents a double as a 64-bit double.
+ * @param  v double value we want to represent as a double
+ * @return   64bit value that represents v as a double
+ */
+static uint64_t repr_double(double v) {
+	if (sizeof(v) == sizeof(uint64_t)) {
+		uint64_t d;
+		memcpy(&d, &v, sizeof(d));
+		return d;
+	}
+
+	// We have to manually do the cast
+    uint32_t f;
+    memcpy(&f, &v, sizeof(f));
+    uint32_t s = f>>31; // get sign
+    uint32_t e = ((f&0x7f800000)>>FLOAT_FRACTION_S) - 128 + 1024; // get exponent and convert its bias from 128 to 1024
+    uint32_t m = f&0x007fffff; // get mantisa (the exponant)
+
+    uint64_t d = s; // store sign (in lowest bit)
+
+    d <<= DOUBLE_EXPONENT_S; // make space for exponent
+    d |= e;   // store exponent
+
+    d <<= FLOAT_FRACTION_S; // add space for 23 most significant bits of mantisa
+    d |= m;   // store 23 bits of mantisa
+
+    d <<= DOUBLE_FRACTION_S-FLOAT_FRACTION_S; // trail zeros in place of lower significant bit of mantisa
+
+    return d;
+}
+
 int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 	if (buff == NULL || e == NULL || len < 1) return -1;
 
@@ -124,6 +163,16 @@ int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 			buff[buff_i++] = e->binary.subtype;
 			for (int32_t i = 0; i < e->binary.len; ++i) {
 				buff[buff_i++] = ((uint8_t*)e->binary.data)[i];
+			}
+			break;
+
+		case ID_DOUBLE:
+			{
+				uint64_t d = repr_double(e->floating_val);
+				if (len < sizeof(d)) return -buff_i;
+				for (size_t i = 0; i < sizeof(d); ++i) {
+					buff[buff_i++] = ((uint8_t*)&d)[i];
+				}
 			}
 			break;
 
@@ -272,6 +321,9 @@ int32_t find_key(struct bson_element *e, uint8_t *bson, int32_t n) {
 				}
 				break;
 
+			case ID_DOUBLE:
+				//!< @TODO implement this
+
 			default:
 				return -seek_pos;
 		}
@@ -390,7 +442,6 @@ int main(void) {
 	printf("\n\nTest serializing embedded doc\n");
 	// Test serialize nested elements
 	{
-		// struct bson_element embed_e[1] = {{.e_id=ID_EMBEDED_DOCUMENT, .key="doc", .elements.e=e, .elements.n_elem=ARR_LEN(e)}};
 		struct bson_element embed_e = {.e_id=ID_EMBEDED_DOCUMENT, .key="doc", .elements.e=e, .elements.n_elem=ARR_LEN(e)};
 		int32_t encode_len = serialize(buff, &embed_e, 1, ARR_LEN(buff));
 		uint8_t ref[] = {69, 0, 0, 0, 3, 100, 111, 99, 0, 59, 0, 0, 0, 2, 115, 116, 114, 0, 17, 0, 0, 0, 84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 115, 116, 114, 105, 110, 103, 0, 16, 105, 110, 116, 101, 103, 101, 114, 0, 42, 0, 0, 0, 5, 98, 117, 102, 102, 0, 4, 0, 0, 0, 0, 1, 2, 3, 4, 0, 0,};
