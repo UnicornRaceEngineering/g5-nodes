@@ -156,7 +156,7 @@ void ecu_parse_package(void) {
 				{
 					.e_id 			= ID_UTC_DATETIME,
 					.key 			= "ts",
-					.utc_datetime 	= 0, // rtc_utc_datetime(),
+					.utc_datetime 	= rtc_utc_datetime(),
 				},
 			};
 

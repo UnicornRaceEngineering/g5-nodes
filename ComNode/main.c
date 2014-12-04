@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <string.h>
 #include <spi.h>
+#include <m41t81s_rtc.h>
 #include <mmc_sdcard.h>
 #include <stdio.h>
 
@@ -148,6 +149,7 @@ usart1_printf("End of log is at %u\n", log_end_pos);
 int main(void) {
 	xbee_init();
 	ecu_init();
+	rtc_init();
 
 	sei();										//Enable interrupt
 
