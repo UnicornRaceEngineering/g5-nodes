@@ -27,6 +27,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 
 void xbee_init(void);
-void xbee_send(const uint8_t id, const uint8_t *arr, uint16_t len);
+void xbee_send(const uint8_t *arr, uint16_t len);
 
 #endif /* XBEE_H */

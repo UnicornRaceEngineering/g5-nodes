@@ -70,12 +70,6 @@ void ecu_parse_package(void) {
 #		include "ecu_package_layout.inc"
 	};
 
-	uint8_t buff[512];
-	size_t b_i = 0;
-	struct bson_element b_pkt_document[ARR_LEN(pkt)];
-	struct bson_element b_pkt_elements[ARR_LEN(pkt)][2];
-	usart1_printf("total stack size=%d\n", sizeof(b_pkt_document) + sizeof(b_pkt_elements) + sizeof(pkt));
-
 	// We loop over the package and extract the number of bytes element contains
 	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
@@ -153,42 +147,36 @@ void ecu_parse_package(void) {
 
 		if (pkt[i].sensor.id != EMPTY) {
 			// Ready sensor for serialization
-			// Make an element that contains the value and timestamp
-			b_pkt_document[b_i].e_id 				= ID_EMBEDED_DOCUMENT;
-			b_pkt_document[b_i].key 				= (char*)pkt[i].sensor.name;
-			b_pkt_document[b_i].elements.e			= b_pkt_elements[b_i];
-			b_pkt_document[b_i].elements.n_elem		= 2;
+			struct bson_element sensor[] = {
+				{
+					.e_id 			= ID_DOUBLE,
+					.key 			= "val",
+					.floating_val 	= pkt[i].sensor.value,
+				},
+				{
+					.e_id 			= ID_UTC_DATETIME,
+					.key 			= "ts",
+					.utc_datetime 	= 0, // rtc_utc_datetime(),
+				},
+			};
 
-			// Pack the value
-			b_pkt_elements[b_i][0].e_id 			= ID_DOUBLE;
-			b_pkt_elements[b_i][0].key 				= "val";
-			b_pkt_elements[b_i][0].floating_val		= pkt[i].sensor.value;
+			// Make an element that contains the two others
+			struct bson_element sensor_doc = {
+				.e_id 				= ID_EMBEDED_DOCUMENT,
+				.key 				= (char*)pkt[i].sensor.name,
+				.elements.e			= sensor,
+				.elements.n_elem 	= ARR_LEN(sensor),
+			};
 
-			// Pack the timestamp
-			b_pkt_elements[b_i][1].e_id 			= ID_32_INTEGER; //ID_UTC_DATETIME;
-			b_pkt_elements[b_i][1].key 				= "ts";
-			b_pkt_elements[b_i][1].utc_datetime		= 0; //rtc_utc_datetime();
-			b_i++;
+			uint8_t bson[128];
+			int32_t bson_len = serialize(bson, &sensor_doc, 1, ARR_LEN(bson));
+			unsigned bytes_written = 0;
+			if (bson_len > 0) {
+				pf_write(bson, bson_len, &bytes_written);
+				xbee_send(bson, bson_len);
+			}
 		}
 	}
-
-	struct bson_element e = {
-		.e_id=ID_EMBEDED_DOCUMENT, .key="ecu", .elements.e=b_pkt_document,
-		.elements.n_elem=--b_i
-	};
-
-	unsigned bytes_written = 0;
-	int32_t btw = serialize(buff, &e, 1, ARR_LEN(buff));
-	if (btw > 0) pf_write(buff, btw, &bytes_written);
-	if ((int32_t)bytes_written != btw) {
-		// Handle error
-	}
-
-	if (btw > 0)
-		xbee_send(0, buff, (btw > 0) ? btw : 0);
-	else
-		usart1_printf("btw=%ld\n", btw);
-
 }
 
 void ecu_init(void) {

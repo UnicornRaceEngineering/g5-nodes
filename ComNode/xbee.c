@@ -37,16 +37,16 @@ void xbee_init(void) {
 	usart1_init(XBEE_BAUD);
 }
 
-void xbee_send(const uint8_t id, const uint8_t *arr, uint16_t len) {
+void xbee_send(const uint8_t *arr, uint16_t len) {
+	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
+	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
 
-	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6};
-	for (int i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
-
-	xbee_putc(id);
-	xbee_putc(HIGH_BYTE(len));
-	xbee_putc(LOW_BYTE(len));
-
-	for (int i = 0; i < len; ++i) xbee_putc(arr[i]);
+	uint8_t chksum = 0;
+	for (int i = 0; i < len; ++i) {
+		xbee_putc(arr[i]);
+		chksum ^= arr[i];
+	}
+	xbee_putc(chksum);
 }
 
 
