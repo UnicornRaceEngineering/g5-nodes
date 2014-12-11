@@ -37,6 +37,12 @@ volatile bool paddle_up_pressed = false;
 volatile bool paddle_down_pressed = false;
 
 void paddle_init(void) {
+	/**
+	 * @bug For some reason the paddle down interrupt keeps firing by it self
+	 * while paddle up is working as intended
+	 */
+	// DDRD = 0xFF; // Debugging
+
 	// init paddle up
 	SET_PIN_MODE(PADDLE_UP_PORT, PADDLE_UP_PIN, INPUT);
 	// Generate async interrupt on rising edge
@@ -68,8 +74,10 @@ bool paddle_down_status(void) {
 
 ISR(PADDLE_UP_ISR_VECT) {
 	paddle_up_pressed = (bool)DIGITAL_READ(PADDLE_UP_PORT, PADDLE_UP_PIN);
+	// PORTD ^= 0xFF; // Debugging
 }
 
 ISR(PADDLE_DOWN_ISR_VECT) {
 	paddle_down_pressed = (bool)DIGITAL_READ(PADDLE_DOWN_PORT, PADDLE_DOWN_PIN);
+	// PORTD ^= 0xFF; // Debugging
 }

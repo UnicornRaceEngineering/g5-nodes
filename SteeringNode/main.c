@@ -102,7 +102,7 @@ int main(void) {
 	CAN_EN_TX_INT();
 
 	usart1_init(115200);
-	paddle_init();
+	// paddle_init(); //!< @bug causes interrupt to fire unexpectedly
 	statuslight_init();
 
 	seg7_init();
@@ -125,7 +125,7 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
-	while(1){
+	while(1) {
 		// Main work loop
 
 		// First lets store the current status of the paddleshifters
