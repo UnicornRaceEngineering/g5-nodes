@@ -32,24 +32,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <stdbool.h>
 
-/**
- * @name Pin layout
- * @{
- */
-#define PADDLE_UP_PORT			PORTE
-#define PADDLE_UP_PIN			PIN7
-#define PADDLE_UP_INT			INT7
-#define PADDLE_UP_ISR_VECT		INT7_vect
-#define PADDLE_UP_ISC1			ISC71
-#define PADDLE_UP_ISC0			ISC70
-
-#define PADDLE_DOWN_PORT		PORTE
-#define PADDLE_DOWN_PIN			PIN6
-#define PADDLE_DOWN_INT			INT6
-#define PADDLE_DOWN_ISR_VECT	INT6_vect
-#define PADDLE_DOWN_ISC1		ISC61
-#define PADDLE_DOWN_ISC0		ISC60
-/** @} */
 
 /**
  * @name Function prototypes

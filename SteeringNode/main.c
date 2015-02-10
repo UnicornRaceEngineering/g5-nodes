@@ -102,7 +102,7 @@ int main(void) {
 	CAN_EN_TX_INT();
 
 	usart1_init(115200);
-	// paddle_init(); //!< @bug causes interrupt to fire unexpectedly
+	paddle_init();
 	statuslight_init();
 
 	seg7_init();
@@ -118,8 +118,12 @@ int main(void) {
 	}
 
 	// Shift light RGB LED
-	SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B, OUTPUT);
-	IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+	{
+		SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B, OUTPUT);
+		SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R, OUTPUT);
+		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
+	}
 
 	usart1_printf("\n\n\nSTARTING\n");
 
@@ -135,8 +139,10 @@ int main(void) {
 
 			if (paddle_up_is_pressed) {
 				//!< @TODO: broadcast this event on the can.
+				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 			} else if (paddle_down_is_pressed) {
 				//!< @TODO: broadcast this event on the can.
+				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
 #if 1
@@ -149,7 +155,7 @@ int main(void) {
 					seg7_disp_char(digit, ascii_num, (num%2 == 0) ?
 						true : false);
 				}
-					_delay_us(5000);
+					_delay_ms(125);
 			}
 
 			// Test the high level display string with dot
@@ -157,7 +163,7 @@ int main(void) {
 				char buff[3+1+1] = {'\0'}; // 3 digits 1 dot and 1 \0
 				snprintf(buff, ARR_LEN(buff), "%d.", i);
 				seg7_disp_str(buff, 0, 2);
-				_delay_us(2500);
+				_delay_ms(25);
 			}
 		}
 
@@ -185,16 +191,16 @@ int main(void) {
 				seg7_disp_char(3, i+'0', false);
 
 				{
-					set_rgb_color(RED); 		_delay_us(2500);
-					set_rgb_color(GREEN); 		_delay_us(2500);
-					set_rgb_color(BLUE); 		_delay_us(2500);
+					set_rgb_color(RED); 		_delay_ms(50);
+					set_rgb_color(GREEN); 		_delay_ms(50);
+					set_rgb_color(BLUE); 		_delay_ms(50);
 
-					set_rgb_color(YELLOW); 		_delay_us(2500);
-					set_rgb_color(MAGENTA); 	_delay_us(2500);
-					set_rgb_color(CYAN); 		_delay_us(2500);
+					set_rgb_color(YELLOW); 		_delay_ms(50);
+					set_rgb_color(MAGENTA); 	_delay_ms(50);
+					set_rgb_color(CYAN); 		_delay_ms(50);
 
-					set_rgb_color(WHITE); 		_delay_us(2500);
-					set_rgb_color(COLOR_OFF); 	_delay_us(2500);
+					set_rgb_color(WHITE); 		_delay_ms(50);
+					set_rgb_color(COLOR_OFF); 	_delay_ms(50);
 				}
 			}
 		}
@@ -210,16 +216,16 @@ int main(void) {
 
 				snprintf(buff, ARR_LEN(buff), "%d.", rpm/100);
 				seg7_disp_str(buff, 4, 6);
-				_delay_us(2500);
+				_delay_ms(25);
 			}
-			_delay_us(5000);
+			_delay_ms(100);
 			// Rev Down
 			for (int16_t rpm = RPM_MAX_VALUE; rpm >= 0; rpm -= 100) {
 				set_rpm(rpm);
 
 				snprintf(buff, ARR_LEN(buff), "%d.", rpm/100);
 				seg7_disp_str(buff, 4, 6);
-				_delay_us(2500);
+				_delay_ms(25);
 			}
 		}
 #endif
