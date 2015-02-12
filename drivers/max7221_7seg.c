@@ -134,20 +134,9 @@ void seg7_init(void) {
 }
 
 void seg7_clear_disp(void) {
-#if 0
-	for (int digit = REG_DIGIT_0; digit <= REG_DIGIT_7; ++digit) {
+	for (int digit = REG_DIGIT_0; digit < REG_DIGIT_7+1; ++digit) {
 		write_reg(digit, 0x00);
 	}
-#else
-	write_reg(REG_DIGIT_0, 0x00);
-	write_reg(REG_DIGIT_1, 0x00);
-	write_reg(REG_DIGIT_2, 0x00);
-	write_reg(REG_DIGIT_3, 0x00);
-	write_reg(REG_DIGIT_4, 0x00);
-	write_reg(REG_DIGIT_5, 0x00);
-	write_reg(REG_DIGIT_6, 0x00);
-	write_reg(REG_DIGIT_7, 0x00);
-#endif
 }
 
 void seg7_disp_char(int8_t digit, const char c, const bool decimal_point) {
@@ -170,18 +159,13 @@ void seg7_disp_char(int8_t digit, const char c, const bool decimal_point) {
 
 	case '-': patteren = (SEG_G); 										break;
 
-
 	//!< @TODO add support for letters
 
 	case ' ':
 	default: patteren = 0x00;											break;
 	}
 
-	if (decimal_point) {
-		BITMASK_SET(patteren, SEG_DP);
-	}
-
-	write_reg(digit, patteren);
+	write_reg(digit, ((decimal_point) ? (patteren | SEG_DP) : patteren));
 }
 
 void seg7_disp_str(char *str, int8_t start, int8_t end) {
