@@ -231,6 +231,8 @@ typedef struct can_msg_t {
 	CANCDMOB &= (~(1<<IDE)); \
 } while (0)
 
+#define MOB_GET_STD_ID() (CANIDT1 << 3) + (CANIDT2 >> 5)
+
 #define MOB_SET_STD_MASK_FILTER(mask) do { \
 	CANIDM1 = MOB_SET_STD_ID_10_4(mask); \
 	CANIDM2 = MOB_SET_STD_ID_3_0( mask); \
