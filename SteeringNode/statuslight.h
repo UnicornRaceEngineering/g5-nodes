@@ -29,24 +29,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/io.h>
 
-#define STATUS_LED_PORT	PORTB
-#define STATUS_LED_R	PIN6 // The schematic mixes red and green
-#define STATUS_LED_G	PIN5
-#define STATUS_LED_B	PIN7
+#define STATUS_LED_PORT PORTB
+#define STATUS_LED_R    PIN6 // The schematic mixes red and green
+#define STATUS_LED_G    PIN5
+#define STATUS_LED_B    PIN7
 #define STATUS_LED_MASK ((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B))
 
 enum color_masks {
-	COLOR_OFF 	= 0x00,
+	COLOR_OFF   = 0x00,
 
-	RED 		= 1<<STATUS_LED_R,
-	GREEN 		= 1<<STATUS_LED_G,
-	BLUE 		= 1<<STATUS_LED_B,
+	RED         = 1 << STATUS_LED_R,
+	GREEN       = 1 << STATUS_LED_G,
+	BLUE        = 1 << STATUS_LED_B,
 
-	YELLOW 		= RED|GREEN,
-	CYAN 		= GREEN|BLUE,
-	MAGENTA 	= RED|BLUE,
+	YELLOW      = RED | GREEN,
+	CYAN        = GREEN | BLUE,
+	MAGENTA     = RED | BLUE,
 
-	WHITE 		= RED|GREEN|BLUE,
+	WHITE       = RED | GREEN | BLUE,
 };
 
 void statuslight_init(void);

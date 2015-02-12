@@ -40,14 +40,14 @@ enum status_indication {
 
 void status_set(enum status_indication st, enum color_masks color) {
 	switch (st) {
-		case BATTERY_VOLTAGE: 	dmux_set_y_low(DMUX_Y0); break;
-		case WATER_TEMP: 		dmux_set_y_low(DMUX_Y1); break;
-		case OIL_TEMP: 			dmux_set_y_low(DMUX_Y2); break;
-		case OIL_PRESSURE: 		dmux_set_y_low(DMUX_Y3); break;
-		case AIR_TEMP: 			dmux_set_y_low(DMUX_Y4); break;
-		case AIR_PRESSURE: 		dmux_set_y_low(DMUX_Y5); break;
-		case FUEL: 				dmux_set_y_low(DMUX_Y6); break;
-		case LAUNCH_CONTROL: 	dmux_set_y_low(DMUX_Y7); break;
+	case BATTERY_VOLTAGE:   dmux_set_y_low(DMUX_Y0); break;
+	case WATER_TEMP:        dmux_set_y_low(DMUX_Y1); break;
+	case OIL_TEMP:          dmux_set_y_low(DMUX_Y2); break;
+	case OIL_PRESSURE:      dmux_set_y_low(DMUX_Y3); break;
+	case AIR_TEMP:          dmux_set_y_low(DMUX_Y4); break;
+	case AIR_PRESSURE:      dmux_set_y_low(DMUX_Y5); break;
+	case FUEL:              dmux_set_y_low(DMUX_Y6); break;
+	case LAUNCH_CONTROL:    dmux_set_y_low(DMUX_Y7); break;
 	}
 	set_rgb_color(color);
 }
