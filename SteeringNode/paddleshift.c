@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 #include <bitwise.h>
 #include <io.h>
+#include <util/delay.h>
 
 #include "paddleshift.h"
 
@@ -88,8 +89,10 @@ bool paddle_down_status(void) {
 
 ISR(PADDLE_UP_ISR_VECT) {
 	paddle_up_pressed = true;
+	_delay_us(500); // Debounce
 }
 
 ISR(PADDLE_DOWN_ISR_VECT) {
 	paddle_down_pressed = true;
+	_delay_us(500); // Debounce
 }

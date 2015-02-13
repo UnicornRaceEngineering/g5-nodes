@@ -111,7 +111,8 @@ int main(void) {
 	{
 		RPM_TCCR |= (1 << RPM_WGM1) | (1 << RPM_WGM0); // Fast PWM mode
 		RPM_TCCR |= (1 << RPM_CS1) | (1 << RPM_CS1); // F_CPU/64 prescalar
-		RPM_TCCR |= (1 << RPM_COMA1) | (0 << RPM_COMA0); // Clear RPM_OCR on compare match. Set RPM_OCR at TOP.
+		// Clear RPM_OCR on compare match. Set RPM_OCR at TOP.
+		RPM_TCCR |= (1 << RPM_COMA1) | (0 <<  RPM_COMA0);
 
 		set_rpm(0);
 		SET_PIN_MODE(RPM_PORT, RPM_PIN, OUTPUT);
@@ -137,15 +138,34 @@ int main(void) {
 			const bool paddle_up_is_pressed = paddle_up_status();
 			const bool paddle_down_is_pressed = paddle_down_status();
 
+			can_msg_t paddle_status_msg = {
+				.mob = 10,
+				.id = 4,
+				.data = {'\0'},
+				.dlc = 7,
+				.mode = MOB_TRANSMIT
+			};
+
 			if (paddle_up_is_pressed) {
-				//!< @TODO: broadcast this event on the can.
+				paddle_status_msg.data[0] = 'U';
+				paddle_status_msg.data[1] = 'p';
+				paddle_status_msg.data[2] = '\n';
+				paddle_status_msg.dlc = 2;
+				can_send(&paddle_status_msg);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+
 			} else if (paddle_down_is_pressed) {
-				//!< @TODO: broadcast this event on the can.
+				paddle_status_msg.data[0] = 'D';
+				paddle_status_msg.data[1] = 'o';
+				paddle_status_msg.data[2] = 'w';
+				paddle_status_msg.data[3] = 'n';
+				paddle_status_msg.data[4] = '\n';
+				paddle_status_msg.dlc = 4;
+				can_send(&paddle_status_msg);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
-#if 1
+#if 0
 		// Test the 7seg
 		{
 			// Test the raw diplay
@@ -169,7 +189,7 @@ int main(void) {
 
 #endif
 
-#if 1
+#if 0
 		// Test the status LEDS
 		{
 			const enum dmux_y_values leds[] = {
@@ -206,7 +226,7 @@ int main(void) {
 		}
 #endif
 
-#if 1
+#if 0
 		// Test the RPM meter
 		{
 			char buff[14] = {'\0'};
