@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <avr/sfr_defs.h>
 
 #include <can.h>
 #include <usart.h>
@@ -68,6 +69,9 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
+static void can_ack_error(uint8_t mob);
+
+volatile uint8_t err_mob = 0;
 
 static int32_t map(int32_t x,
                    const int32_t from_low, const int32_t from_high,
@@ -95,12 +99,24 @@ int main(void) {
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
 
+
+	set_canit_callback(CANIT_FORM_ERROR, can_ack_error);
+	set_canit_callback(CANIT_CRC_ERROR, can_ack_error);
+	set_canit_callback(CANIT_STUFF_ERROR, can_ack_error);
+	set_canit_callback(CANIT_BIT_ERROR, can_ack_error);
+
+	CANGIE |= 1 << ENERG;
+	CANGIE |= 1 << ENIT;
+
+
 	can_init();
+
 
 	CAN_SEI();
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
 
+	CANGIE = 0xFE;
 	usart1_init(115200);
 	paddle_init();
 	statuslight_init();
@@ -152,6 +168,7 @@ int main(void) {
 				paddle_status_msg.data[2] = '\n';
 				paddle_status_msg.dlc = 2;
 				can_send(&paddle_status_msg);
+				loop_until_bit_is_clear(CANGSTA, TXBSY);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 			} else if (paddle_down_is_pressed) {
@@ -162,9 +179,21 @@ int main(void) {
 				paddle_status_msg.data[4] = '\n';
 				paddle_status_msg.dlc = 4;
 				can_send(&paddle_status_msg);
+				loop_until_bit_is_clear(CANGSTA, TXBSY);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
+
+		// Print the values of relevant can register to the 7seg display
+		{
+			char buff[7] = {'\0'};
+			snprintf(buff, ARR_LEN(buff), "%d", CANGSTA);
+			seg7_disp_str(buff, 0, 2);
+			// snprintf(buff, ARR_LEN(buff), "%d", err_mob);
+			snprintf(buff, ARR_LEN(buff), "%d", CANGIT);
+			seg7_disp_str(buff, 4, 6);
+		}
+
 #if 0
 		// Test the 7seg
 		{
@@ -279,5 +308,10 @@ static void tx_complete(uint8_t mob) {
 }
 
 static void can_default(uint8_t mob) {
+	err_mob = mob;
 	MOB_CLEAR_INT_STATUS();         // and reset MOb status
+}
+
+static void can_ack_error(uint8_t mob) {
+	err_mob = mob;
 }

@@ -90,6 +90,8 @@ bool paddle_down_status(void) {
 ISR(PADDLE_UP_ISR_VECT) {
 	paddle_up_pressed = true;
 	_delay_us(500); // Debounce
+	//!< @TODO maybe we can use a timer/counter that we know is running, such as
+	//! TCNT2 used for the RPM, and use it to debounce
 }
 
 ISR(PADDLE_DOWN_ISR_VECT) {
