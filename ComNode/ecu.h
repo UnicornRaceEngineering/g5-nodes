@@ -79,13 +79,53 @@ enum ecu_id {
 	TIME,
 };
 
+#define ECU_ID_NAME(ecu_id) ((char const* const[]) { \
+	[EMPTY] = "", \
+	[FUEL_PRESSURE] = "Fuel Press.", \
+	[STATUS_LAP_COUNT] = "Status Lap Counter", \
+	[STATUS_INJ_SUM] = "Status Injection Sum", \
+	[LAST_GEAR_SHIFT] = "Last Gear Shift", \
+	[MOTOR_OILTEMP] = "Motor Oil Temp", \
+	[OIL_PRESSURE] = "Oil Pressure", \
+	[STATUS_TIME] = "Status Time", \
+	[STATUS_LAP_TIME] = "Status Lap Time", \
+	[GEAR_OIL_TEMP] = "Gear Oil Temp", \
+	[STATUS_TRACTION] = "Status Traction", \
+	[STATUS_GAS]  = "Status Gas", \
+	[STATUS_LAMBDA_V2] = "Status LambdaV2", \
+	[STATUS_CAM_TRIG_P1] = "Status Cam Trig P1", \
+	[STATUS_CAM_TRIG_P2] = "Status Cam Trig P2", \
+	[STATUS_CHOKER_ADD] = "Status Choker Add", \
+	[STATUS_LAMBDA_PWM] = "Status Lambda PWM", \
+	[WATER_TEMP] = "WaterMotor temp", \
+	[MANIFOLD_AIR_TEMP] = "ManifoldAir temp", \
+	[POTMETER] = "Potmeter (0-100%)", \
+	[RPM] = "RPM", \
+	[TRIGGER_ERR] = "Trigger Err", \
+	[CAM_ANGLE1] = "Cam Angle1", \
+	[CAM_ANGLE2] = "Cam Angle2", \
+	[ROAD_SPEED] = "RoadSpeed (km/h)", \
+	[MAP_SENSOR] = "Manifold press. (mBar)", \
+	[BATTERY_V] = "Batt. volt", \
+	[LAMBDA_V] = "Lambda (<1 => Rich)", \
+	[LOAD] = "Load", \
+	[INJECTOR_TIME] = "Injector Time", \
+	[IGNITION_TIME] = "Ignition Time", \
+	[DWELL_TIME] = "Dwell Time", \
+	[GX] = "GX", \
+	[GY] = "GY", \
+	[GZ] = "GZ", \
+	[MOTOR_FLAGS] = "Motor Flags", \
+	[OUT_BITS] = "Out Bits", \
+	[TIME] = "Time", \
+}[ecu_id])
+
 struct sensor {
-	const char *name;			// Human readable name
 	enum ecu_id id;				// ID
 
 	//!< @TODO is all sensor data really of type double? perhabs we should use
 	//!< a union here instead with a double and int field
-	double value; 				// Value of the sensor
+	float value; 				// Value of the sensor
 };
 
 void ecu_init(void);

@@ -140,7 +140,7 @@ void ecu_parse_package(void) {
 			case EMPTY:
 			default:
 				// No conversion
-				pkt[i].sensor.value = (double)pkt[i].raw_value;
+				pkt[i].sensor.value = (float)pkt[i].raw_value;
 				break;
 			}
 		}
@@ -163,7 +163,7 @@ void ecu_parse_package(void) {
 			// Make an element that contains the two others
 			struct bson_element sensor_doc = {
 				.e_id 				= ID_EMBEDED_DOCUMENT,
-				.key 				= (char*)pkt[i].sensor.name,
+				.key 				= (char*)ECU_ID_NAME(pkt[i].sensor.id),
 				.elements.e			= sensor,
 				.elements.n_elem 	= ARR_LEN(sensor),
 			};
