@@ -74,10 +74,12 @@ void ecu_parse_package(void) {
 	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = usart0_getc_unbuffered();
-			if (pkt[i].sensor.id == EMPTY ) continue;
+			if (pkt[i].sensor.id == EMPTY) continue;
 
 			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
 		}
+
+		bool is_float = true;
 
 		// Convert the raw data to usable data
 		{
@@ -140,7 +142,8 @@ void ecu_parse_package(void) {
 			case EMPTY:
 			default:
 				// No conversion
-				pkt[i].sensor.value = (float)pkt[i].raw_value;
+				pkt[i].sensor.int_val = pkt[i].raw_value;
+				is_float = false;
 				break;
 			}
 		}
@@ -153,13 +156,13 @@ void ecu_parse_package(void) {
 				.key                = (char *)ECU_ID_NAME(pkt[i].sensor.id),
 				.elements.e         = (struct bson_element [2]) {
 					{
-						.e_id           = ID_DOUBLE,
-						.key            = "val",
-						.floating_val   = pkt[i].sensor.value,
+						.e_id         = (is_float) ? ID_DOUBLE : ID_32_INTEGER,
+						.key          = "val",
+						.int32        = pkt[i].sensor.int_val,
 					}, {
-						.e_id           = ID_UTC_DATETIME,
-						.key            = "ts",
-						.utc_datetime   = rtc_utc_datetime(),
+						.e_id         = ID_UTC_DATETIME,
+						.key          = "ts",
+						.utc_datetime = rtc_utc_datetime(),
 					},
 				},
 				.elements.n_elem    = 2,

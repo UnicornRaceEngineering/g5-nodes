@@ -38,6 +38,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef ECU_H
 #define ECU_H
 
+#include <stdint.h>
+
 enum ecu_id {
 	EMPTY,
 	FUEL_PRESSURE,
@@ -125,7 +127,10 @@ struct sensor {
 
 	//!< @TODO is all sensor data really of type double? perhabs we should use
 	//!< a union here instead with a double and int field
-	float value; 				// Value of the sensor
+	union {
+		float value;
+		int32_t int_val;
+	};
 };
 
 void ecu_init(void);

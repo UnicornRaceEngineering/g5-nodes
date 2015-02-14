@@ -43,6 +43,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define PUT_RC(func) usart1_printf("rc=%d at line %d\n", func, __LINE__)
 
+#if 0
 static FRESULT scan_files (char* path) {
     FRESULT res;
     FILINFO fno;
@@ -69,6 +70,7 @@ static FRESULT scan_files (char* path) {
 
     return res;
 }
+#endif
 #if 0
 
 static void test_fs(void) {
@@ -115,7 +117,7 @@ static void test_fs(void) {
 	}
 }
 #endif
-
+#if 0
 int seek_to_log_end(FATFS *fs) {
 	int32_t document_size = 0;
 	uint8_t buff[sizeof(document_size)];
@@ -145,6 +147,7 @@ usart1_printf("fptr=%u\n", fs->fptr);
 usart1_printf("End of log is at %u\n", log_end_pos);
 	return log_end_pos;
 }
+#endif
 
 int main(void) {
 	xbee_init();
@@ -153,13 +156,13 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\r');
+	// usart1_putc_unbuffered('\n');
+	// usart1_putc_unbuffered('\n');
+	// usart1_putc_unbuffered('\n');
+	// usart1_putc_unbuffered('\r');
 
-	usart1_printf("Starting\n\n\n");
-
+	// usart1_printf("Starting\n\n\n");
+#if 0
 	FATFS fs;
 	{
 		if (pf_mount(&fs) != FR_OK) {
@@ -177,6 +180,7 @@ int main(void) {
 		}
 		// seek_to_log_end(&fs);
 	}
+#endif
 	// _delay_ms(1000*10);
 	while(1){
 		// Main work loop
