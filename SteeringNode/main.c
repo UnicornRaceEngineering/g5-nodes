@@ -73,6 +73,23 @@ static void can_ack_error(uint8_t mob);
 
 volatile uint8_t err_mob = 0;
 
+#if 1
+enum can_messages {PADDLE_STATUS=4,};
+enum paddle_status {PADDLE_DOWN, PADDLE_UP};
+static void broadcast_paddle_status(enum paddle_status ps) {
+	static uint8_t tx_cnt = 0;
+	can_msg_t paddle_status_msg = {
+				.mob = 10,
+				.id = PADDLE_STATUS, // 4,
+				.data = {tx_cnt++, ps,},
+				.dlc = 2,
+				.mode = MOB_TRANSMIT
+	};
+	can_send(&paddle_status_msg);
+	loop_until_bit_is_clear(CANGSTA, TXBSY);
+}
+#endif
+
 static int32_t map(int32_t x,
                    const int32_t from_low, const int32_t from_high,
                    const int32_t to_low, const int32_t to_high) {
@@ -154,32 +171,12 @@ int main(void) {
 			const bool paddle_up_is_pressed = paddle_up_status();
 			const bool paddle_down_is_pressed = paddle_down_status();
 
-			can_msg_t paddle_status_msg = {
-				.mob = 10,
-				.id = 4,
-				.data = {'\0'},
-				.dlc = 7,
-				.mode = MOB_TRANSMIT
-			};
-
 			if (paddle_up_is_pressed) {
-				paddle_status_msg.data[0] = 'U';
-				paddle_status_msg.data[1] = 'p';
-				paddle_status_msg.data[2] = '\n';
-				paddle_status_msg.dlc = 2;
-				can_send(&paddle_status_msg);
-				loop_until_bit_is_clear(CANGSTA, TXBSY);
+				broadcast_paddle_status(PADDLE_UP);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 			} else if (paddle_down_is_pressed) {
-				paddle_status_msg.data[0] = 'D';
-				paddle_status_msg.data[1] = 'o';
-				paddle_status_msg.data[2] = 'w';
-				paddle_status_msg.data[3] = 'n';
-				paddle_status_msg.data[4] = '\n';
-				paddle_status_msg.dlc = 4;
-				can_send(&paddle_status_msg);
-				loop_until_bit_is_clear(CANGSTA, TXBSY);
+				broadcast_paddle_status(PADDLE_DOWN);
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
@@ -187,11 +184,17 @@ int main(void) {
 		// Print the values of relevant can register to the 7seg display
 		{
 			char buff[7] = {'\0'};
-			snprintf(buff, ARR_LEN(buff), "%d", CANGSTA);
-			seg7_disp_str(buff, 0, 2);
+			if (CANGSTA != (1 << ENFG)) {
+				snprintf(buff, ARR_LEN(buff), "%d", CANGSTA);
+				seg7_disp_str(buff, 0, 2);
+				seg7_disp_char(3, '0', false);
+			} else {
+				seg7_disp_char(3, '1', false);
+			}
 			// snprintf(buff, ARR_LEN(buff), "%d", err_mob);
 			snprintf(buff, ARR_LEN(buff), "%d", CANGIT);
 			seg7_disp_str(buff, 4, 6);
+			// _delay_ms(500);
 		}
 
 #if 0
