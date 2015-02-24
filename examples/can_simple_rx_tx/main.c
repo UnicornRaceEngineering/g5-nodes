@@ -67,7 +67,7 @@ int main(void) {
 		// Main work loop
 		_delay_ms(250);
 
-#if 1 // this codepiece sends messages. outcomment when not in use.
+#if 0 // this codepiece sends messages. outcomment when not in use.
 		static int count = 0;
 		// send a message with id 4 on MOB 10
 		can_msg_t tx_msg = {
@@ -104,8 +104,12 @@ static void rx_complete(uint8_t mob) {
 #if 1
 	// Print out the received data. Please dont print inside can callbacks
 	// in real code as these are run inside the can ISR
-	usart1_printf("CAN Rx\t id: %d on mob %d :: ", msg.id, msg.mob);
-	usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
+	usart1_printf("CAN Rx\t id: %d on mob %d dlc: %d :: ", msg.id, msg.mob, msg.dlc);
+	//usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
+	for (int i = 0; i < msg.dlc; ++i) {
+		usart1_printf("0x%0X ", msg.data[i]);
+	}
+	usart1_printf("\n");
 #endif
 
 #if 0

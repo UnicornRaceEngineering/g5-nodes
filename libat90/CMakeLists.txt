@@ -6,7 +6,8 @@ set(SRC_FILES
 	timer.c
 	usart.c
 	spi.c
-	)
+	can_transport.c
+)
 
 add_library(libat90 ${SRC_FILES})
 

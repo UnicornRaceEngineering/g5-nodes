@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/sfr_defs.h>
 
 #include <can.h>
+#include <can_transport.h>
 #include <usart.h>
 #include <io.h>
 
@@ -66,29 +67,13 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #define RPM_MIN_VALUE   3300
 
 
-static void rx_complete(uint8_t mob);
 static void tx_complete(uint8_t mob);
 static void can_default(uint8_t mob);
 static void can_ack_error(uint8_t mob);
 
 volatile uint8_t err_mob = 0;
 
-#if 1
-enum can_messages {PADDLE_STATUS=4,};
 enum paddle_status {PADDLE_DOWN, PADDLE_UP};
-static void broadcast_paddle_status(enum paddle_status ps) {
-	static uint8_t tx_cnt = 0;
-	can_msg_t paddle_status_msg = {
-				.mob = 10,
-				.id = PADDLE_STATUS, // 4,
-				.data = {tx_cnt++, ps,},
-				.dlc = 2,
-				.mode = MOB_TRANSMIT
-	};
-	can_send(&paddle_status_msg);
-	loop_until_bit_is_clear(CANGSTA, TXBSY);
-}
-#endif
 
 static int32_t map(int32_t x,
                    const int32_t from_low, const int32_t from_high,
@@ -112,7 +97,6 @@ static void set_rpm(int16_t rpm) {
 }
 
 int main(void) {
-	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
 
@@ -128,12 +112,12 @@ int main(void) {
 
 	can_init();
 
+	init_can_node(STEERING_NODE);
 
 	CAN_SEI();
 	CAN_EN_RX_INT();
 	CAN_EN_TX_INT();
 
-	CANGIE = 0xFE;
 	usart1_init(115200);
 	paddle_init();
 	statuslight_init();
@@ -172,11 +156,15 @@ int main(void) {
 			const bool paddle_down_is_pressed = paddle_down_status();
 
 			if (paddle_up_is_pressed) {
-				broadcast_paddle_status(PADDLE_UP);
+				can_broadcast(PADDLE_STATUS, (uint8_t *) & (const enum paddle_status) {
+					PADDLE_UP
+				});
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
 
 			} else if (paddle_down_is_pressed) {
-				broadcast_paddle_status(PADDLE_DOWN);
+				can_broadcast(PADDLE_STATUS, (uint8_t *) & (const enum paddle_status) {
+					PADDLE_DOWN
+				});
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
@@ -184,6 +172,7 @@ int main(void) {
 		// Print the values of relevant can register to the 7seg display
 		{
 			char buff[7] = {'\0'};
+			seg7_disp_char(0, PADDLE_STATUS + '0', false);
 			if (CANGSTA != (1 << ENFG)) {
 				snprintf(buff, ARR_LEN(buff), "%d", CANGSTA);
 				seg7_disp_str(buff, 0, 2);
@@ -284,24 +273,6 @@ int main(void) {
 	}
 
 	return 0;
-}
-
-static void rx_complete(uint8_t mob) {
-	can_msg_t msg = {
-		.mob = mob
-	};
-	can_receive(&msg);
-	usart1_printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
-#if 0
-	// Print ascii data
-	usart1_putn(msg.dlc, msg.data);
-#else
-	// Print binary data as hex
-	for (int i = 0; i < msg.dlc; ++i) {
-		usart1_printf("0x%02x ", msg.data[i]);
-	}
-#endif
-	usart1_putc('\n');
 }
 
 static void tx_complete(uint8_t mob) {
