@@ -66,9 +66,6 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #define RPM_MAX_VALUE   13000
 #define RPM_MIN_VALUE   3300
 
-
-static void tx_complete(uint8_t mob);
-static void can_default(uint8_t mob);
 static void can_ack_error(uint8_t mob);
 
 volatile uint8_t err_mob = 0;
@@ -97,10 +94,6 @@ static void set_rpm(int16_t rpm) {
 }
 
 int main(void) {
-	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
-	set_canit_callback(CANIT_DEFAULT, can_default);
-
-
 	set_canit_callback(CANIT_FORM_ERROR, can_ack_error);
 	set_canit_callback(CANIT_CRC_ERROR, can_ack_error);
 	set_canit_callback(CANIT_STUFF_ERROR, can_ack_error);
@@ -110,13 +103,7 @@ int main(void) {
 	CANGIE |= 1 << ENIT;
 
 
-	can_init();
-
 	init_can_node(STEERING_NODE);
-
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
 
 	usart1_init(115200);
 	paddle_init();
@@ -273,17 +260,6 @@ int main(void) {
 	}
 
 	return 0;
-}
-
-static void tx_complete(uint8_t mob) {
-	MOB_ABORT();                    // Freed the MOB
-	MOB_CLEAR_INT_STATUS();         // and reset MOb status
-	CAN_DISABLE_MOB_INTERRUPT(mob); // Unset interrupt
-}
-
-static void can_default(uint8_t mob) {
-	err_mob = mob;
-	MOB_CLEAR_INT_STATUS();         // and reset MOb status
 }
 
 static void can_ack_error(uint8_t mob) {
