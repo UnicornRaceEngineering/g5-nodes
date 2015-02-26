@@ -103,7 +103,7 @@ int main(void) {
 	CANGIE |= 1 << ENIT;
 
 
-	init_can_node(STEERING_NODE);
+	struct can_node *node = init_can_node(STEERING_NODE);
 
 	usart1_init(115200);
 	paddle_init();
@@ -153,6 +153,22 @@ int main(void) {
 					PADDLE_DOWN
 				});
 				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
+			}
+		}
+
+		for (size_t n_msg = 0; n_msg < node->n_msg_subscriped; ++n_msg) {
+			if (node->msg_subscriped[n_msg].complete) {
+				struct can_message *msg = &node->msg_subscriped[n_msg];
+				msg->complete = false;
+
+				switch (msg->id) {
+				case ENGINE_RPM: set_rpm((int16_t) * (int16_t *)msg->payload.data); break;
+				/**
+				 * @TODO The steering wheel should recv a lot of other
+				 * values that should handled here
+				 */
+				default: break;
+				}
 			}
 		}
 

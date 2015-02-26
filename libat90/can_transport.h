@@ -47,6 +47,8 @@ enum message_id {
 	PADDLE_STATUS,
 	TRANSPORT_TEST_MSG,
 
+	ENGINE_RPM,
+
 	NUMBER_OF_MESSAGES,
 	NO_MESSAGE,
 };
@@ -56,6 +58,7 @@ enum message_id {
 		[NO_MESSAGE] = MSG_INIT_VALS(NO_MESSAGE, 1), \
 		[PADDLE_STATUS] = MSG_INIT_VALS(PADDLE_STATUS, 1), \
 		[TRANSPORT_TEST_MSG] = MSG_INIT_VALS(TRANSPORT_TEST_MSG, 15), \
+		[ENGINE_RPM] = MSG_INIT_VALS(ENGINE_RPM, sizeof(int16_t)), \
 	}[msg_id])
 
 
@@ -75,6 +78,7 @@ enum message_id {
 #define MAX_SUBSCRIPEABLE_MSGS 3
 #define SUBSCRIPEABLE_MESSEGES(node_id) ((const struct can_message[NUMBER_OF_NODES][MAX_SUBSCRIPEABLE_MSGS]) { \
 		[STEERING_NODE] = { \
+			MESSAGE(ENGINE_RPM), \
 			MESSAGE(NO_MESSAGE), \
 		}, \
 		[CAN_TRANSPORT_EXAMPLE_NODE] = { \
