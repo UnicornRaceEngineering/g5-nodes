@@ -58,24 +58,43 @@ static uint64_t repr_double(double v) {
 	}
 
 	// We have to manually do the cast
-    uint32_t f;
-    memcpy(&f, &v, sizeof(f));
-    uint32_t s = f>>31; // get sign
-    uint32_t e = ((f&0x7f800000)>>FLOAT_FRACTION_S) - 128 + 1024; // get exponent and convert its bias from 128 to 1024
-    uint32_t m = f&0x007fffff; // get mantisa (the exponant)
+	uint32_t f;
+	memcpy(&f, &v, sizeof(f));
 
-    uint64_t d = s; // store sign (in lowest bit)
+	if (!(f&0x7fffffff)) return (uint64_t)f<<32;
 
-    d <<= DOUBLE_EXPONENT_S; // make space for exponent
-    d |= e;   // store exponent
+	uint32_t s = f>>31; // get sign
+	uint32_t e = ((f&0x7f800000)>>FLOAT_FRACTION_S) - 128; // get exponent and unbias from 128
+	uint32_t m = f&0x007fffff; // get mantisa (the exponant)
 
-    d <<= FLOAT_FRACTION_S; // add space for 23 most significant bits of mantisa
-    d |= m;   // store 23 bits of mantisa
+	if (e == -128) {
+		// handle denormals
+		while (!(m&0x00800000)) {
+			m <<= 1;
+			e--;
+		}
 
-    d <<= DOUBLE_FRACTION_S-FLOAT_FRACTION_S; // trail zeros in place of lower significant bit of mantisa
+		// remove implicit 1
+		m &= 0x007fffff;
+		e++;
+	} else if (e == 127) {
+		// +/-infinity
+		e = 1023;
+	}
 
-    return d;
+	uint64_t d = s; // store sign (in lowest bit)
+
+	d <<= DOUBLE_EXPONENT_S; // make space for exponent
+	d |= e + 1024;   // store rebiased exponent
+
+	d <<= FLOAT_FRACTION_S; // add space for 23 most significant bits of mantisa
+	d |= m;   // store 23 bits of mantisa
+
+	d <<= DOUBLE_FRACTION_S-FLOAT_FRACTION_S; // trail zeros in place of lower significant bit of mantisa
+
+	return d;
 }
+
 
 int32_t serialize_element(uint8_t *buff, struct bson_element *e, size_t len) {
 	if (buff == NULL || e == NULL || len < 1) return -1;
