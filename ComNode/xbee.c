@@ -30,7 +30,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
 static void xbee_putc(uint8_t c) {
+#if 1
 	usart1_putc_unbuffered(c);
+#else
+	// usart1_putc(c);
+#endif
 }
 
 void xbee_init(void) {
