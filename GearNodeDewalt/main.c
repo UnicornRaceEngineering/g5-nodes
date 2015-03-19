@@ -28,14 +28,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <stdbool.h>
 
-#include <can.h>
 #include <usart.h>
 #include <io.h>
 #include <bitwise.h>
 
-static void rx_complete(uint8_t mob);
-static void tx_complete(uint8_t mob);
-static void can_default(uint8_t mob);
 
 #define PRESCALAR	(64)
 
@@ -215,18 +211,8 @@ static int shift_gear(int gear_dir) {
 }
 
 int main(void) {
-	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
-	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
-	set_canit_callback(CANIT_DEFAULT, can_default);
-
 	//Initialise the Gear node
 	usart1_init(115200);
-
-	can_init();
-
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
 
 	// (F_CPU / (Prescalar * ( 1+2047)) =
 	// (11059200 Hz / (64 * (1+2047))) 	=
@@ -321,21 +307,4 @@ ISR(INT7_vect) {
 				break;
 		}
 	}
-}
-
-static void rx_complete(uint8_t mob) {
-	can_msg_t msg = {
-		.mob = mob
-	};
-	can_receive(&msg);
-}
-
-static void tx_complete(uint8_t mob) {
-	MOB_ABORT();					// Freed the MOB
-	MOB_CLEAR_INT_STATUS();			// and reset MOb status
-	CAN_DISABLE_MOB_INTERRUPT(mob);	// Unset interrupt
-}
-
-static void can_default(uint8_t mob) {
-	MOB_CLEAR_INT_STATUS(); 		// and reset MOb status
 }

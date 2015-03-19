@@ -22,24 +22,32 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
+ * @files spi.h
+ * Low level interface for SPI
  */
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
+#ifndef SPI_H
+#define SPI_H
 
-#include <avr/io.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <avr/io.h>
+
+#define SPI_PORT	PORTB
+#define MISO_PIN	PIN3
+#define MOSI_PIN	PIN2
+#define SCK_PIN		PIN1
+#define SS_PIN		PIN0
+
+enum spi_prescaler {
+	SPI_PRESCALER_4 	= (0<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_16 	= (0<<SPR1)|(1<<SPR0),
+	SPI_PRESCALER_64 	= (1<<SPR1)|(0<<SPR0),
+	SPI_PRESCALER_128 	= (1<<SPR1)|(1<<SPR0),
+};
+
+void spi_init_master(const bool enable_interrupts, const enum spi_prescaler);
+uint8_t spi_tranceive(const uint8_t data);
 
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */
+#endif /* SPI_H */

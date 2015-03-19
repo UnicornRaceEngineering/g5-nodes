@@ -30,28 +30,49 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 #include <bitwise.h>
 #include <io.h>
+#include <util/delay.h>
 
 #include "paddleshift.h"
+
+/**
+ * @name Pin layout
+ * @{
+ */
+#define PADDLE_UP_PORT          PORTE
+#define PADDLE_UP_PIN           PIN7
+#define PADDLE_UP_INT           INT7
+#define PADDLE_UP_ISR_VECT      INT7_vect
+#define PADDLE_UP_ISC1          ISC71
+#define PADDLE_UP_ISC0          ISC70
+
+#define PADDLE_DOWN_PORT        PORTE
+#define PADDLE_DOWN_PIN         PIN6
+#define PADDLE_DOWN_INT         INT6
+#define PADDLE_DOWN_ISR_VECT    INT6_vect
+#define PADDLE_DOWN_ISC1        ISC61
+#define PADDLE_DOWN_ISC0        ISC60
+/** @} */
 
 volatile bool paddle_up_pressed = false;
 volatile bool paddle_down_pressed = false;
 
 void paddle_init(void) {
+
 	// init paddle up
-	SET_PIN_MODE(PADDLE_UP_PORT, PADDLE_UP_PIN, INPUT);
-	// Generate async interrupt on rising edge
-	SET_REGISTER_BITS(EICRA,
-		(1<<PADDLE_UP_ISC1|1<<PADDLE_UP_ISC0),
-		(1<<PADDLE_UP_ISC1|1<<PADDLE_UP_ISC0));
-	BIT_SET(EIMSK, PADDLE_UP_INT); // Interrupt enable Paddle up
+	{
+		SET_PIN_MODE(PADDLE_UP_PORT, PADDLE_UP_PIN, INPUT);
+		// Generate synchronous interrupt on rising edge
+		EICRB |= ((1 << PADDLE_UP_ISC1) | (1 << PADDLE_UP_ISC0));
+		BIT_SET(EIMSK, PADDLE_UP_INT); // Interrupt enable Paddle up
+	}
 
 	// init paddle down
-	SET_PIN_MODE(PADDLE_DOWN_PORT, PADDLE_DOWN_PIN, INPUT);
-	// Generate async interrupt on rising edge
-	SET_REGISTER_BITS(EICRA,
-		(1<<PADDLE_DOWN_ISC1|1<<PADDLE_DOWN_ISC0),
-		(1<<PADDLE_DOWN_ISC1|1<<PADDLE_DOWN_ISC0));
-	BIT_SET(EIMSK, PADDLE_DOWN_INT); // Interrupt enable Paddle down
+	{
+		SET_PIN_MODE(PADDLE_DOWN_PORT, PADDLE_DOWN_PIN, INPUT);
+		// Generate synchronous interrupt on rising edge
+		EICRB |= ((1 << PADDLE_DOWN_ISC1) | (1 << PADDLE_DOWN_ISC0));
+		BIT_SET(EIMSK, PADDLE_DOWN_INT); // Interrupt enable Paddle down
+	}
 }
 
 bool paddle_up_status(void) {
@@ -67,9 +88,13 @@ bool paddle_down_status(void) {
 }
 
 ISR(PADDLE_UP_ISR_VECT) {
-	paddle_up_pressed = (bool)DIGITAL_READ(PADDLE_UP_PORT, PADDLE_UP_PIN);
+	paddle_up_pressed = true;
+	_delay_us(500); // Debounce
+	//!< @TODO maybe we can use a timer/counter that we know is running, such as
+	//! TCNT2 used for the RPM, and use it to debounce
 }
 
 ISR(PADDLE_DOWN_ISR_VECT) {
-	paddle_down_pressed = (bool)DIGITAL_READ(PADDLE_DOWN_PORT, PADDLE_DOWN_PIN);
+	paddle_down_pressed = true;
+	_delay_us(500); // Debounce
 }

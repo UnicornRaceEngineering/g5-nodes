@@ -21,68 +21,39 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <avr/interrupt.h> // sei()
+#include <util/delay.h>
+#include <stdbool.h>
+
+#include "ecu.h"
+#include "xbee.h"
+#include "bson.h"
+
+#include <usart.h>
+#include <string.h>
+#include <spi.h>
+#include <m41t81s_rtc.h>
+#include <mmc_sdcard.h>
 #include <stdio.h>
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
-
-#include <can.h>
-#include <usart.h>
-
-static void rx_complete(uint8_t mob);
-static void tx_complete(uint8_t mob);
-static void can_default(uint8_t mob);
-
-
 int main(void) {
-	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
-	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
-	set_canit_callback(CANIT_DEFAULT, can_default);
-
-	can_init();
-
-	CAN_INIT_ALL();
-
-	usart1_init(115200);
+	xbee_init();
+	ecu_init();
+	rtc_init();
 
 	sei();										//Enable interrupt
 
+	usart1_putc_unbuffered('\n');
+	usart1_putc_unbuffered('\n');
+	usart1_putc_unbuffered('\n');
+	usart1_putc_unbuffered('\r');
 
-	usart1_printf("\n\n\nSTARTING\n");
+	usart1_printf("Starting\n\n\n");
 
 	while(1){
 		// Main work loop
+		ecu_parse_package();
 	}
 
     return 0;
-}
-
-static void rx_complete(uint8_t mob) {
-	can_msg_t msg = {
-		.mob = mob
-	};
-	can_receive(&msg);
-	usart1_printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
-#if 0
-	// Print ascii data
-	usart1_putn(msg.dlc, msg.data);
-#else
-	// Print binary data as hex
-	for (int i = 0; i < msg.dlc; ++i) {
-		usart1_printf("0x%02x ", msg.data[i]);
-	}
-#endif
-	usart1_putc('\n');
-}
-
-static void tx_complete(uint8_t mob) {
-	MOB_ABORT();					// Freed the MOB
-	MOB_CLEAR_INT_STATUS();			// and reset MOb status
-	CAN_DISABLE_MOB_INTERRUPT(mob);	// Unset interrupt
-}
-
-static void can_default(uint8_t mob) {
-	MOB_CLEAR_INT_STATUS(); 		// and reset MOb status
 }

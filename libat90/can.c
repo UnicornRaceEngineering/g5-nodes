@@ -294,7 +294,7 @@ void set_canrec_callback(canrec_callback_t callback) {
 	canrec_callback = callback;
 }
 
-uint8_t can_init(void) {
+uint8_t can_init(uint16_t mask) {
 	CAN_RESET();
 
 	/*
@@ -331,7 +331,7 @@ uint8_t can_init(void) {
 	return 0;
 }
 
-void can_send(const uint16_t id, const uint16_t len, void * const msg) {
+uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	int8_t mob = find_me_a_mob();
 	BIT_SET(mob_on_job, mob);
 	msg_list[mob] = (can_msg_t*)malloc_(sizeof(can_msg_t));
@@ -348,6 +348,7 @@ void can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	// single message (type 0). When sending longer messages is send multiple
 	// frames are needed and the first of these messages will be of type 1. 
 	can_transmit(mob, (len > 7));
+	return 0;
 }
 
 
@@ -426,7 +427,8 @@ static void can_transmit (uint8_t mob, uint8_t type) {
 
 	if (msg_list[mob]->len == msg_list[mob]->idx) {
 		CAN_DISABLE_MOB_INTERRUPT(mob);
-		free_((uint8_t *)msg_list[mob]);
+		free_((void *)msg_list[mob]->data);
+		free_((void *)msg_list[mob]);
 		msg_list[mob] = 0;
 		BIT_CLEAR(mob_on_job, mob);
 		return;
@@ -555,7 +557,6 @@ static void finnish_receive(uint8_t mob) {
 		(*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
 							(uint8_t*)&msg_list[mob]->data[0]);
 
-	free_((void *)msg_list[mob]->data);
 	free_((void *)msg_list[mob]);
 	msg_list[mob] = 0;
 	BIT_CLEAR(mob_on_job, mob);
@@ -566,9 +567,6 @@ static void can_get(uint8_t mob) {
 	MOB_RX_DATA(msg);
 	
 	const uint8_t type = msg[0] & 0x07;
-
-	if (msg_list[mob]->len == msg_list[mob]->idx && type != 3)
-		finnish_receive(mob);
 
 	switch (type) {
 		case 0:
@@ -604,17 +602,17 @@ static void can_get(uint8_t mob) {
 			uint8_t i = 1;
 			while ( (msg_list[mob]->idx < msg_list[mob]->len) && (i < 8))
 				msg_list[mob]->data[msg_list[mob]->idx++] = msg[i++];
-			
+
+			if (msg_list[mob]->len == msg_list[mob]->idx && type != 3) {
+				finnish_receive(mob);
+				return;
+			}
+
 			if (msg_list[mob]->len != msg_list[mob]->idx) {
 				receive_on_mob(mob, (can_msg_t*)msg_list[mob]);
 
 				msg_list[mob] = 0;
 				BIT_CLEAR(mob_on_job, mob);
-			}
-
-			if (msg_list[mob]->len == msg_list[mob]->idx && type != 3) {
-				finnish_receive(mob);
-				return;
 			}
 			return;
 

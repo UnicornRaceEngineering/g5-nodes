@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2014 UnicornRaceEngineering
+Copyright (c) 2015 UnicornRaceEngineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -22,24 +22,45 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
+ * @files can_transport.h
+ * Higher level transport protocol using the CAN interface
  */
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
+#ifndef CAN_TRANSPORT_H
+#define CAN_TRANSPORT_H
 
-#include <avr/io.h>
-#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+enum node_id {
+	COM_NODE,
+	GEAR_NODE,
+	STEERING_NODE,
+	GPS_NODE,
+};
+
+enum message_id {
+	PADDLE_STATUS,
+	TRANSPORT_TEST_MSG,
+	ENGINE_RPM,
+	GPS_DATA,
+};
+
+struct message_detail {
+	uint16_t id;
+	uint16_t len;
+};
+
+struct can_message {
+	struct message_detail info;
+	uint8_t *data;
+};
 
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
+int init_can_node(const enum node_id id);
+int can_broadcast(const enum message_id id, void * const data);
+struct can_message* read_inbox(void);
+uint8_t get_queue_length(void);
+void can_free(struct can_message*);
 
-#endif /* PADDLESHIFT_H */
+#endif /* CAN_TRANSPORT_H */

@@ -21,25 +21,35 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
+#ifndef STATUSLIGHT_H
+#define STATUSLIGHT_H
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
-
-#include <avr/io.h>
+#include <stdint.h>
 #include <stdbool.h>
 
+#include <avr/io.h>
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
+#define STATUS_LED_PORT PORTB
+#define STATUS_LED_R    PIN6 // The schematic mixes red and green
+#define STATUS_LED_G    PIN5
+#define STATUS_LED_B    PIN7
+#define STATUS_LED_MASK ((1<<STATUS_LED_R)|(1<<STATUS_LED_G)|(1<<STATUS_LED_B))
 
-#endif /* PADDLESHIFT_H */
+enum color_masks {
+	COLOR_OFF   = 0x00,
+
+	RED         = 1 << STATUS_LED_R,
+	GREEN       = 1 << STATUS_LED_G,
+	BLUE        = 1 << STATUS_LED_B,
+
+	YELLOW      = RED | GREEN,
+	CYAN        = GREEN | BLUE,
+	MAGENTA     = RED | BLUE,
+
+	WHITE       = RED | GREEN | BLUE,
+};
+
+void statuslight_init(void);
+void set_rgb_color(enum color_masks color);
+
+#endif /* STATUSLIGHT_H */

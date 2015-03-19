@@ -22,24 +22,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
+ * @file mmc_sdcard.c
+ * Low level driver for reading and writing SD cards using SPI. Information on
+ * the specification can be found at:
+ * https://www.sdcard.org/downloads/pls/simplified_specs/
+ * In the "Physical Layer Simplified Specification" document.
  */
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
+#ifndef MMC_SDCARD_H
+#define MMC_SDCARD_H
 
-#include <avr/io.h>
-#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 
+#define SD_BLOCKSIZE 512
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */
+int8_t sd_init(void);
+int8_t sd_read_block(uint8_t *buff, uint32_t sector, int16_t offset,
+					 int16_t n);
+int8_t sd_write_block(uint8_t *data, uint32_t sector, size_t n);
+#endif /* MMC_SDCARD_H */

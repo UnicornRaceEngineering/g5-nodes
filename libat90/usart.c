@@ -166,6 +166,15 @@ bool usart0_hasData(void){
 #endif
 
 /**
+ * Same as usart0_getc but is not interrupt driven.
+ * @return  Byte received via usart0
+ */
+uint8_t usart0_getc_unbuffered(void) {
+	while (USART0_RX_IS_BUSY());
+	return UDR0;
+}
+
+/**
  * Get a byte from USART. This call is alway blocking. if input buffer is
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
@@ -179,6 +188,15 @@ uint8_t usart0_getc(void) {
 	while (rb_pop((ringbuffer_t*)&usart0_inBuff, &data) != 0);
 	return data;
 #endif
+}
+
+/**
+ * Same as usart0_putc but is not interrupt driven.
+ * @param  c Byte to transmit
+ */
+void usart0_putc_unbuffered(const uint8_t c) {
+	while (USART0_TX_IS_BUSY());
+	UDR0 = c;
 }
 
 /**
@@ -364,6 +382,15 @@ bool usart1_hasData(void){
 #endif
 
 /**
+ * Same as usart1_getc but is not interrupt driven
+ * @return  Byte received via usart1
+ */
+uint8_t usart1_getc_unbuffered(void) {
+	while (USART1_RX_IS_BUSY());
+	return UDR1;
+}
+
+/**
  * Get a byte from USART. This call is alway blocking. if input buffer is
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
@@ -377,6 +404,15 @@ uint8_t usart1_getc(void) {
 	while (rb_pop((ringbuffer_t*)&usart1_inBuff, &data) != 0);
 	return data;
 #endif
+}
+
+/**
+ * Same as usart1_putc but is not interrupt driven.
+ * @param c Byte to send via usart1
+ */
+void usart1_putc_unbuffered(const uint8_t c) {
+	while (USART1_TX_IS_BUSY());
+	UDR1 = c;
 }
 
 /**

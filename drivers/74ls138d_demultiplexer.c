@@ -21,25 +21,25 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
-
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
-
 #include <avr/io.h>
-#include <stdbool.h>
+#include <io.h>
+#include <bitwise.h>
+
+#include "74ls138d_demultiplexer.h"
+
+#define PORT	PORTC
+
+#define A_PORT	PORT
+#define B_PORT	PORT
+#define C_PORT	PORT
 
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
+void dmux_init(void) {
+	SET_PIN_MODE(A_PORT, DMUX_A_PIN, OUTPUT);
+	SET_PIN_MODE(B_PORT, DMUX_B_PIN, OUTPUT);
+	SET_PIN_MODE(C_PORT, DMUX_C_PIN, OUTPUT);
+}
 
-#endif /* PADDLESHIFT_H */
+void dmux_set_y_low(enum dmux_y_values mask) {
+	SET_REGISTER_BITS(PORT, mask, DMUX_MASK);
+}

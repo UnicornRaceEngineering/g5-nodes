@@ -41,11 +41,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param len	Length of incomming message.
  * @param *msg	Pointer to message on the heap.
  */
+
 typedef void (*canrec_callback_t)(uint16_t id, uint16_t len, uint8_t *msg);
 
 
-uint8_t can_init(void);
-void can_send(const uint16_t id, const uint16_t len, void * const msg);
+uint8_t can_init(uint16_t mask);
+uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg);
 void set_canrec_callback(canrec_callback_t callback);
 
 #endif /* CAN_H */

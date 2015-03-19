@@ -34,28 +34,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <can.h>
+#include <heap.h>
+#include <can_transport.h>
 #include <usart.h>
 #include <bitwise.h>
 #include "gps.h"
 
-static void rx_complete(uint8_t mob);
-static void tx_complete(uint8_t mob);
-static void can_default(uint8_t mob);
-
 int main(void) {
-	set_canit_callback(CANIT_RX_COMPLETED, rx_complete);
-	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
-	set_canit_callback(CANIT_DEFAULT, can_default);
-
 	gps_set_getc(usart1_getc);
 	usart1_init(GPS_BAUDRATE);
 
-	can_init();
-	CAN_SEI();
-	CAN_EN_RX_INT();
-	CAN_EN_TX_INT();
-
+	init_can_node(GPS_NODE);
 	sei();	//Enable interrupt
 
 	struct gps_fix fix;
@@ -67,58 +56,27 @@ int main(void) {
 			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
 											 // to split it up into 4 bytes
 
-			can_msg_t lat = {
-				.mob = 1,
-				.id = 4,
-				.data = {
-					1,
-					*(dd_ptr + 0),
-					*(dd_ptr + 1),
-					*(dd_ptr + 2),
-					*(dd_ptr + 3),
-					fix.valid
-				},
-				.dlc = 5,
-				.mode = MOB_TRANSMIT
-			};
+			uint8_t *data = (uint8_t*)malloc_(13);
+			data[0] = 1;
+			data[1] = *(dd_ptr + 0);
+			data[2] = *(dd_ptr + 1);
+			data[3] = *(dd_ptr + 2);
+			data[4] = *(dd_ptr + 3);
+			data[5] = fix.valid;
 
 			dd = GPS_DMS_TO_DD(&(fix.longitude));
-			can_msg_t lon = {
-				.mob = 2,
-				.id = 4,
-				.data = {
-					2,
-					*(dd_ptr + 0),
-					*(dd_ptr + 1),
-					*(dd_ptr + 2),
-					*(dd_ptr + 3),
-					HIGH_BYTE(fix.speed),
-					LOW_BYTE(fix.speed)
-				},
-				.dlc = 6,
-				.mode = MOB_TRANSMIT
-			};
-			can_send(&lat);
-			can_send(&lon);
+
+			data[6] = 2;
+			data[7] = *(dd_ptr + 0);
+			data[8] = *(dd_ptr + 1);
+			data[9] = *(dd_ptr + 2);
+			data[10] = *(dd_ptr + 3);
+			data[11] = HIGH_BYTE(fix.speed);
+			data[12] = LOW_BYTE(fix.speed);
+
+			can_broadcast(GPS_DATA, &data[0]);
 		}
 	}
 
     return 0;
-}
-
-static void rx_complete(uint8_t mob) {
-	can_msg_t msg = {
-		.mob = mob
-	};
-	can_receive(&msg);
-}
-
-static void tx_complete(uint8_t mob) {
-	MOB_ABORT();					// Freed the MOB
-	MOB_CLEAR_INT_STATUS();			// and reset MOb status
-	CAN_DISABLE_MOB_INTERRUPT(mob);	// Unset interrupt
-}
-
-static void can_default(uint8_t mob) {
-	MOB_CLEAR_INT_STATUS(); 		// and reset MOb status
 }

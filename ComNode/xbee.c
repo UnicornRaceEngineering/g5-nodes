@@ -21,25 +21,36 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
+#include <stdint.h>
+#include <usart.h>
+#include <bitwise.h>
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
+#define XBEE_BAUD 	(115200)
 
-#include <avr/io.h>
-#include <stdbool.h>
+#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
+
+static void xbee_putc(uint8_t c) {
+#if 1
+	usart1_putc_unbuffered(c);
+#else
+	// usart1_putc(c);
+#endif
+}
+
+void xbee_init(void) {
+	usart1_init(XBEE_BAUD);
+}
+
+void xbee_send(const uint8_t *arr, uint16_t len) {
+	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
+	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
+
+	uint8_t chksum = 0;
+	for (int i = 0; i < len; ++i) {
+		xbee_putc(arr[i]);
+		chksum ^= arr[i];
+	}
+	xbee_putc(chksum);
+}
 
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */

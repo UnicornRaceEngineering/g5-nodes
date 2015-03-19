@@ -51,7 +51,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #define BITMASK_SET(x,y) 	( (x) |= (y)	)
 #define BITMASK_CLEAR(x,y) 	( (x) &= (~(y))	)
-#define BITMASK_FLIP(x,y) 	( (x) ^= (y)	)
+#define BITMASK_FLIP(x,y) 	( (x) ^= (y)	) // Use: ( (x) = ~(y)	) instead?
 #define BITMASK_CHECK(x,y) 	( (x) & (y)		)
 
 /**

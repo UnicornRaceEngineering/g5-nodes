@@ -21,60 +21,49 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/interrupt.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
+
 #include <can.h>
-#include <usart.h>
-#include <bitwise.h>
-#include <heap.h>
 #include <string.h>
-
-
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+#include <heap.h>
+#include <can_transport.h>
+#include <usart.h>
 
 int main(void) {
-	set_canrec_callback(rx_complete);
-
 	usart1_init(115200);
 	init_heap();
-	can_init(1);
-	sei();
+	init_can_node(STEERING_NODE);
+
+	sei();                                      //Enable interrupt
 
 	usart1_printf("\n\n\nSTARTING\n");
 
-#if 0 // If sending messages
-	uint8_t *storage1 = (uint8_t*)malloc_(28);
-	char str1[28] = "Has anyone really been far\n";
-	strncpy((char*)&storage1[0], str1, 28);
-
-	uint8_t *storage2 = (uint8_t*)malloc_(29);
-	char str2[29] = "even as decided to use even\n";
-	strncpy((char*)&storage2[0], str2, 29);
-
-	uint8_t *storage3 = (uint8_t*)malloc_(33);
-	char str3[33] = "go want to do look more like?\n\n";
-	strncpy((char*)&storage3[0], str3, 33);
-#endif
-
-	_delay_ms(2000);
-	while(1) {
-#if 0 // If sending messages
-		can_send(1, 28, &storage1[0]);
-		can_send(2, 29, &storage2[0]);
-		can_send(3, 33, &storage3[0]);
-#endif
-
-		//usart1_printf("There is %d bytes allocated.\n", count_heap());
+	_delay_ms(5000);
+	while (1) {
+#if 0
+		uint8_t *storage = (uint8_t*)malloc_(27);
+		char str[27] = "HAS anyone really been far\n";
+		strncpy((char*)&storage[0], str, 27);
+		can_broadcast(PADDLE_STATUS, storage);
 		_delay_ms(1000);
-
+#else
+		while(get_queue_length()) {
+			struct can_message *message = read_inbox();
+			usart1_printf("message of id %d and length %d : ", message->info.id, message->info.len);
+			for (int i = 0; i < message->info.len; ++i)
+				usart1_putc(message->data[i]);
+			can_free(message);
+		}
+		usart1_putc('\n');
+		_delay_ms(1000);
+#endif
 	}
-    return 0;
-}
 
-// Callback to be run when rx comletes on the CAN
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
-	usart1_printf("id: %d len: %d\n", id, len);
-	//for (uint8_t i = 0; i < len; i++)
-	//	usart1_putc(msg[i]);
+	return 0;
 }

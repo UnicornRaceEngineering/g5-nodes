@@ -21,25 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
+#ifndef XBEE_H
+#define XBEE_H
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
+#include <stdint.h>
 
-#include <avr/io.h>
-#include <stdbool.h>
+void xbee_init(void);
+void xbee_send(const uint8_t *arr, uint16_t len);
 
-
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-bool paddle_up_status(void);
-bool paddle_down_status(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */
+#endif /* XBEE_H */

@@ -87,6 +87,6 @@ void rtc_set_year(uint8_t year);
 int16_t rtc_init(void);
 void rtc_set_time(struct rtc_time *t);
 int16_t rtc_get_time(struct rtc_time *t);
-
+int64_t rtc_utc_datetime(void);
 
 #endif /* M41T81S_RTC_H */

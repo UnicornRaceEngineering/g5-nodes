@@ -1,7 +1,8 @@
-set(NODE_NAME TemplateNode)
+set(NODE_NAME can_transport_rxtx)
 
 set(SRC_FILES
-	main.c)
+	main.c
+)
 
 add_executable(${NODE_NAME} ${SRC_FILES})
 

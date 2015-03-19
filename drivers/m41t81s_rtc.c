@@ -33,6 +33,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <twi.h>
 #include "m41t81s_rtc.h"
 
+#define MS_IN_HUNDRETH_SEC	(10L)
+#define MS_IN_SEC 			(1000L)
+#define MS_IN_MINUTE		(MS_IN_SEC    * 60L)
+#define MS_IN_HOUR			(MS_IN_MINUTE * 60L)
+#define MS_IN_DAY			(MS_IN_HOUR   * 24L)
+
+#define ISLEAP(y) (((y) % 4) == 0 && (((y) % 100) != 0 || (((y)+1900) % 400) == 0))
+#define DAYS_IN_YEAR(year) (ISLEAP(year) ? 366 : 365)
+
+#define DAYS_IN_MONTH(month) ((const int [12]) \
+	{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}[(month)])
+
+
 #define HIGH	1
 #define LOW		0
 
@@ -454,4 +467,33 @@ int16_t rtc_get_time(struct rtc_time *t) {
 	t->year 			 = bcd2dec(register_map[YEAR_REG] & YEAR_MASK);
 
 	return rc;
+}
+
+int64_t rtc_utc_datetime(void) {
+	struct rtc_time t;
+	rtc_get_time(&t); //!< @TOOD check for error code and handle error
+
+	int64_t utc_datetime;
+
+	// Compute hours, minutes, seconds, hundreth_seconds
+	utc_datetime = (t.hundredth_seconds * MS_IN_HUNDRETH_SEC) + (t.seconds * MS_IN_SEC)
+			+ (t.minutes * MS_IN_MINUTE) + (t.hours * MS_IN_HOUR);
+
+	int16_t days = (t.day_of_month-1) + DAYS_IN_MONTH(t.month);
+
+	// Compute days in the year with the unix epoch in mind
+	if (t.year > 70) {
+		for (int year = 70; year < t.year; ++year) {
+			days += DAYS_IN_YEAR(year);
+		}
+	} else if (t.year < 70) {
+		int year;
+		for (year = 69; year > t.year; --year) {
+			days -= DAYS_IN_YEAR(year);
+		}
+		days -= DAYS_IN_YEAR(year);
+	}
+
+	utc_datetime += (days * MS_IN_DAY);
+	return utc_datetime;
 }
