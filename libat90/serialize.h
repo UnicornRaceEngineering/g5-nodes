@@ -21,40 +21,44 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef SERIALIZE_H
+#define SERIALIZE_H
+
 #include <stdint.h>
-#include <usart.h>
-#include <bitwise.h>
+#include <stdlib.h>
 
-#include "xbee.h"
+enum datatype {
+	DT_BOOLEAN,
 
-#define XBEE_BAUD 	(115200)
+	DT_UINT8,
+	DT_INT8,
+	DT_UINT16,
+	DT_INT16,
+	DT_UINT32,
+	DT_INT32,
+	DT_UINT64,
+	DT_INT64,
 
-#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
+	DT_FLOAT32,
+	DT_FLOAT64,
 
-static void xbee_putc(uint8_t c) {
-#if 1
-	usart1_putc_unbuffered(c);
-#else
-	// usart1_putc(c);
+	DT_CSTRING, // Nullterminated C string
+
+	DT_UTC_DATETIME, // int64 containing the offset from unix epoch in ms
+
+	DT_SCHEMA, // Nested schema
+	DT_SCHEMA_END,
+};
+
+enum schemas {
+	ECU_DATA,
+
+	SCHEMA_DEFENITION,
+	TEST_SCHEMA,
+};
+
+#if 0
+int add_to_schema(uint8_t *schema, char* key, enum datatype dt, size_t n);
 #endif
-}
 
-void xbee_init(void) {
-	usart1_init(XBEE_BAUD);
-}
-
-void xbee_send(const uint8_t *arr, uint8_t len) {
-	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
-	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
-
-	xbee_putc(len+1);
-
-	uint8_t chksum = 0;
-	for (int i = 0; i < len; ++i) {
-		xbee_putc(arr[i]);
-		chksum ^= arr[i];
-	}
-	xbee_putc(chksum);
-}
-
-
+#endif /* SERIALIZE_H */

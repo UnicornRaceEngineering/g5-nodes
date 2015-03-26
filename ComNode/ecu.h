@@ -79,6 +79,8 @@ enum ecu_id {
 	MOTOR_FLAGS,
 	OUT_BITS,
 	TIME,
+
+	N_ECU_IDS
 };
 
 #define ECU_ID_NAME(ecu_id) ((char const* const[]) { \
@@ -135,5 +137,6 @@ struct sensor {
 
 void ecu_init(void);
 void ecu_parse_package(void);
+void ecu_send_schema(void);
 
 #endif /* ECU_H */

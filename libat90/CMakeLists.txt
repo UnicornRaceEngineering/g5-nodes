@@ -7,6 +7,7 @@ set(SRC_FILES
 	usart.c
 	spi.c
 	can_transport.c
+	serialize.c
 )
 
 add_library(libat90 ${SRC_FILES})
