@@ -42,7 +42,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h> // size_t
-#include <stdarg.h> // va args
+#include <stdio.h>
 #include <avr/io.h>
 #include "bitwise.h"
 
@@ -95,20 +95,19 @@ enum usart_charSelect_t {
 		UCSR0C |= (size << UCSZ0); \
 	} while (0)
 
+
 	void usart0_init(uint32_t baudrate);
 	void usart0_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
-#ifndef NO_USART1_BUFFERED_INPUT
-	bool usart0_hasData(void);
-#endif
-	uint8_t usart0_getc(void);
-	uint8_t usart0_getc_unbuffered(void);
-	int usart0_putc(const uint8_t c);
-	void usart0_putc_unbuffered(const uint8_t c);
-	int usart0_puts(const char *str);
-	int usart0_putn(size_t n, const uint8_t *str);
-	int usart0_printf(const char *str, ...);
 
+	bool usart0_has_data(void);
+	char usart0_getc(FILE *stream);
+	void usart0_putbyte(uint8_t c, FILE *stream);
+	void usart0_putc(char c, FILE *stream);
+
+	extern FILE usart0_output;
+	extern FILE usart0_byte_output;
+	extern FILE usart0_input;
 #endif
 /** @} */
 
@@ -151,17 +150,15 @@ enum usart_charSelect_t {
 	void usart1_init(uint32_t baudrate);
 	void usart1_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
-#ifndef NO_USART1_BUFFERED_INPUT
-	bool usart1_hasData(void);
-#endif
-	uint8_t usart1_getc(void);
-	uint8_t usart1_getc_unbuffered(void);
-	int usart1_putc(const uint8_t c);
-	void usart1_putc_unbuffered(const uint8_t c);
-	int usart1_puts(const char *str);
-	int usart1_putn(size_t n, const uint8_t *str);
-	int usart1_printf(const char *str, ...);
 
+	bool usart1_has_data(void);
+	char usart1_getc(FILE *stream);
+	void usart1_putbyte(uint8_t b, FILE *stream);
+	void usart1_putc(char c, FILE *stream);
+
+	extern FILE usart1_output;
+	extern FILE usart1_byte_output;
+	extern FILE usart1_input;
 #endif
 /** @} */
 
