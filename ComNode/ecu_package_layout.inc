@@ -69,7 +69,7 @@
 {.sensor = {.id = GY,}, .raw_value = 0, 					.length = 2,},
 {.sensor = {.id = GZ,}, .raw_value = 0, 					.length = 2,},
 
-{.sensor = {.id = EMPTY,}, .raw_value = 0, 					.length = 9,},
+{.sensor = {.id = EMPTY,}, .raw_value = 0, 					.length = 8,},
 
 {.sensor = {.id = MOTOR_FLAGS,}, .raw_value = 0, 			.length = 1,},
 
