@@ -36,18 +36,18 @@ int main(void) {
 	sei();										//Enable interrupt
 	rtc_init();
 
-	usart0_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	while (1) {
 		int16_t rc;
 
 		struct rtc_time t;
 		if (!((rc = rtc_get_time(&t)) < 0)) {
-			usart0_printf("Got time: ");
+			printf("Got time: ");
 		} else {
-			usart0_printf("failed to get fix rc: %x ", rc);
+			printf("failed to get fix rc: %x ", rc);
 		}
-		usart0_printf("%u/%u/%u %u:%u:%u.%u         \n",
+		printf("%u/%u/%u %u:%u:%u.%u         \n",
 				t.year, t.month, t.day_of_month,
 				t.hours, t.minutes, t.seconds, t.hundredth_seconds);
 

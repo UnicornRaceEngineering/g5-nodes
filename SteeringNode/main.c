@@ -106,6 +106,7 @@ int main(void) {
 	struct can_node *node = init_can_node(STEERING_NODE);
 
 	usart1_init(115200);
+
 	paddle_init();
 	statuslight_init();
 
@@ -130,7 +131,7 @@ int main(void) {
 		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 	}
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	sei();                                      //Enable interrupt
 

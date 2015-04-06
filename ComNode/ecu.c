@@ -59,6 +59,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
 
+FILE *ecu_out = &usart0_byte_output;
+FILE *ecu_in = &usart0_input;
+
 static inline uint32_t clamp(uint32_t value) {
 	return (value > (1 << 15)) ? -(0xFFFF - value) : value;
 }
@@ -76,7 +79,7 @@ void ecu_parse_package(void) {
 	// We loop over the package and extract the number of bytes element contains
 	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
-			const uint8_t ecu_byte = usart0_getc_unbuffered();
+			const uint8_t ecu_byte = fgetc(ecu_in);
 			if (pkt[i].sensor.id == EMPTY) continue;
 
 			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
@@ -247,7 +250,7 @@ ISR(ECU_HEARTBEAT_ISR_VECT) {
 	if (!delay--) {
 		const uint8_t heart_beat[] = {0x12, 0x34, 0x56, 0x78, 0x17, 0x08, 0, 0, 0, 0};
 		for (size_t i = 0; i < ARR_LEN(heart_beat); ++i) {
-			usart0_putc_unbuffered(heart_beat[i]);
+			fputc(heart_beat[i], ecu_out);
 		}
 		delay = HEARTBEAT_DELAY_LENGTH; // Reset the delay
 	}

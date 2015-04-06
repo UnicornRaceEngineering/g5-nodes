@@ -50,7 +50,7 @@ int main(void) {
 	sei();										//Enable interrupt
 
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	while(1){
 		// Main work loop
@@ -64,17 +64,17 @@ static void rx_complete(uint8_t mob) {
 		.mob = mob
 	};
 	can_receive(&msg);
-	usart1_printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
+	printf("Received id: %d on mob %d :: ", msg.id, msg.mob);
 #if 0
 	// Print ascii data
 	usart1_putn(msg.dlc, msg.data);
 #else
 	// Print binary data as hex
 	for (int i = 0; i < msg.dlc; ++i) {
-		usart1_printf("0x%02x ", msg.data[i]);
+		printf("0x%02x ", msg.data[i]);
 	}
 #endif
-	usart1_putc('\n');
+	putchar('\n');
 }
 
 static void tx_complete(uint8_t mob) {

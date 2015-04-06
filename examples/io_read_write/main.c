@@ -35,7 +35,7 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	SET_PIN_MODE(PORTF, PIN0, OUTPUT);
 	SET_PIN_MODE(PORTF, PIN1, OUTPUT);
@@ -65,10 +65,9 @@ int main(void) {
 		int pin;
 		for (pin = 0; pin < NUM_PINS; ++pin){
 			int pinVal = DIGITAL_READ(PORTF, pin);
-			usart1_printf("pin %d is logical %d\n", pin, pinVal);
+			printf("pin %d is logical %d\n", pin, pinVal);
 		}
-		usart1_printf("\n");
-		//usart1_putc('\n');
+		printf("\n");
 
 		if(++i == NUM_PINS){
 			i = 0;

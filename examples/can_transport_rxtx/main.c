@@ -38,7 +38,7 @@ int main(void) {
 
 	sei();                                      //Enable interrupt
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	while (1) {
 #if 1
@@ -48,11 +48,11 @@ int main(void) {
 				struct can_message *msg = &node->msg_subscriped[n_msg];
 				msg->complete = false;
 
-				usart1_printf("recv id %d: ", msg->id);
+				printf("recv id %d: ", msg->id);
 				for (size_t i = 0; i < msg->payload.len; ++i) {
-					usart1_printf("0x%02X ", msg->payload.data[i]);
+					printf("0x%02X ", msg->payload.data[i]);
 				}
-				usart1_printf("\n");
+				printf("\n");
 			}
 		}
 #else

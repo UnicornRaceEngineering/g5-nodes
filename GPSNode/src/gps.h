@@ -33,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define GPS_BAUDRATE	(4800)
 
@@ -50,12 +51,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 											? 1 : -1))
 
 
-/**
- * Callback that should return a new byte from the GPS module when run.
- * @return      The next byte from the GPS module.
- */
-typedef uint8_t (*gps_getc_t)(void);
-
 //!< A geographic coordinate in DMS (Degrees, Minutes Seconds) format.
 struct gps_coordinate {
 	char direction; //!< 'N'/'S' or 'E'/'W'
@@ -71,7 +66,7 @@ struct gps_fix {
 	bool valid; //!< if valid the fix quality is within international standards.
 };
 
-void gps_set_getc(gps_getc_t getc);
+void gps_set_getc(FILE *stream);
 int gps_get_fix(struct gps_fix *fix);
 
 #endif /* GPS_H */

@@ -48,7 +48,7 @@ int main(void) {
 	set_canit_callback(CANIT_TX_COMPLETED, tx_complete);
 	set_canit_callback(CANIT_DEFAULT, can_default);
 
-	gps_set_getc(usart1_getc);
+	gps_set_getc(&usart1_input);
 	usart1_init(GPS_BAUDRATE);
 
 	can_init();

@@ -45,7 +45,7 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	// Set MOB 8 to listen for messeges with id 4 and length 7
 	can_msg_t rx_msg = {
@@ -57,7 +57,7 @@ int main(void) {
 	can_setup(&rx_msg);
 
 
-	usart1_printf("Listning for id %d on mob %d with a msg length %d\n",
+	printf("Listning for id %d on mob %d with a msg length %d\n",
 		rx_msg.id,
 		rx_msg.mob,
 		rx_msg.dlc
@@ -104,12 +104,12 @@ static void rx_complete(uint8_t mob) {
 #if 1
 	// Print out the received data. Please dont print inside can callbacks
 	// in real code as these are run inside the can ISR
-	usart1_printf("CAN Rx\t id: %d on mob %d dlc: %d :: ", msg.id, msg.mob, msg.dlc);
+	printf("CAN Rx\t id: %d on mob %d dlc: %d :: ", msg.id, msg.mob, msg.dlc);
 	//usart1_putn(msg.dlc, msg.data); usart1_putc('\n');
 	for (int i = 0; i < msg.dlc; ++i) {
-		usart1_printf("0x%0X ", msg.data[i]);
+		printf("0x%0X ", msg.data[i]);
 	}
-	usart1_printf("\n");
+	printf("\n");
 #endif
 
 #if 0

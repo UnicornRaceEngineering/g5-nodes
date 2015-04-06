@@ -31,13 +31,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
-static void xbee_putc(uint8_t c) {
-#if 1
-	usart1_putc_unbuffered(c);
-#else
-	// usart1_putc(c);
-#endif
-}
+FILE *xbee_out = &usart1_byte_output;
+FILE *xbee_in = &usart1_input;
 
 void xbee_init(void) {
 	usart1_init(XBEE_BAUD);
@@ -45,16 +40,16 @@ void xbee_init(void) {
 
 void xbee_send(const uint8_t *arr, uint8_t len) {
 	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
-	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) xbee_putc(start_seq[i]);
+	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) fputc(start_seq[i], xbee_out);
 
-	xbee_putc(len+1);
+	fputc(len+1, xbee_out);
 
 	uint8_t chksum = 0;
 	for (int i = 0; i < len; ++i) {
-		xbee_putc(arr[i]);
+		fputc(arr[i], xbee_out);
 		chksum ^= arr[i];
 	}
-	xbee_putc(chksum);
+	fputc(chksum, xbee_out);
 }
 
 

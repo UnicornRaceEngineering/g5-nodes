@@ -47,8 +47,7 @@ struct sentence {
 };
 
 
-//!< Pointer to the function that returns a new byte from the GPS module.
-gps_getc_t gps_getc = NULL;
+FILE *gps_input = NULL;
 
 
 /**
@@ -159,17 +158,15 @@ static int from_rmc(struct sentence *s, struct gps_fix *fix) {
  * @return   0 if success 1 if error
  */
 static int build_sentence(struct sentence *s) {
-	if (gps_getc == NULL) return 1;
-
 	char c;
-	while ((c = gps_getc()) != '$'); // Wait for start sentence;
+	while ((c = fgetc(gps_input)) != '$'); // Wait for start sentence;
 
 	int i = 0;
 
 	do {
 		if (i > MAX_SENTENCE_LEN) return 1;
 		s->str[i++] = c;
-	} while ((c = gps_getc()) != '\n');
+	} while ((c = fgetc(gps_input)) != '\n');
 
 	s->str[i++] = c;
 	s->str[i] = '\0';
@@ -199,8 +196,8 @@ static bool valid_sentence(struct sentence *s) {
  * Set the function that is used to get a character from the GPS module
  * @param getc The gps getc function pointer.
  */
-void gps_set_getc(gps_getc_t getc) {
-	gps_getc = getc;
+void gps_set_getc(FILE *stream) {
+	gps_input = stream;
 }
 
 /**
