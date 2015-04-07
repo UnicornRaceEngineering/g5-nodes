@@ -47,6 +47,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"
 #include "bson.h"
 
+#include <serialize.h>
+#include <string.h>
+
 #define ECU_BAUD    (19200)
 
 #define ECU_HEARTBEAT_ISR_VECT  TIMER0_COMP_vect
@@ -149,35 +152,78 @@ void ecu_parse_package(void) {
 		}
 
 		if (pkt[i].sensor.id != EMPTY) {
-			// Ready sensor for serialization by making an document that that
-			// contains the value and timestamp.
-			struct bson_element sensor_doc = {
-				.e_id               = ID_EMBEDED_DOCUMENT,
-				.key                = (char *)ECU_ID_NAME(pkt[i].sensor.id),
-				.elements.e         = (struct bson_element [2]) {
-					{
-						.e_id         = (is_float) ? ID_DOUBLE : ID_32_INTEGER,
-						.key          = "val",
-						.int32        = pkt[i].sensor.int_val,
-					}, {
-						.e_id         = ID_UTC_DATETIME,
-						.key          = "ts",
-						.utc_datetime = rtc_utc_datetime(),
-					},
-				},
-				.elements.n_elem    = 2,
-			};
+			uint8_t buff[4 + 1 + 4 + 1 + 8];
+			int s = 0;
 
-			uint8_t bson[128];
-			int32_t bson_len = serialize(bson, &sensor_doc, 1, ARR_LEN(bson));
-			unsigned bytes_written = 0;
-			if (bson_len > 0) {
-				pf_write(bson, bson_len, &bytes_written);
-				xbee_send(bson, bson_len);
+			// The first 4 byte in the buffer
+			buff[s++] = DT_INT8;
+			buff[s++] = ECU_DATA;
+			buff[s++] = DT_INT8;
+			buff[s++] = pkt[i].sensor.id;
+
+			// next 1 + 4 bytes
+			int len;
+			if (is_float) {
+				buff[s++] = DT_FLOAT32;
+				len = sizeof(pkt[i].sensor.value);
+				memcpy(buff + s, &pkt[i].sensor.value, len);
+			} else {
+				buff[s++] = DT_INT32;
+				len = sizeof(pkt[i].sensor.int_val);
+				memcpy(buff + s, &pkt[i].sensor.int_val, len);
 			}
+			s += len;
+
+			// 1 + 8 bytes
+			buff[s++] = DT_UTC_DATETIME;
+			const int64_t ts = rtc_utc_datetime();
+			len = sizeof(ts);
+			memcpy(buff + s, &ts, len);
+			s += len;
+
+			xbee_send(buff, s);
 		}
 	}
 }
+
+#if 0
+void ecu_send_schema(void) {
+	uint8_t schema[1024 / 2] = {'\0'};
+	int s = 0;
+	schema[s++] = ECU_DATA;
+	s += add_to_schema(schema + s, "ECU data", DT_SCHEMA, 512 - s);
+	for (int i = 0; i < 2; ++i) {
+		s += add_to_schema(schema + s, (char*)ECU_ID_NAME(i), DT_SCHEMA, 512 - s);
+		enum datatype dt;
+		switch (i) {
+		case STATUS_LAMBDA_V2:
+		case WATER_TEMP:
+		case MANIFOLD_AIR_TEMP:
+		case POTMETER:
+		case RPM:
+		case MAP_SENSOR:
+		case BATTERY_V:
+		case LAMBDA_V:
+		case INJECTOR_TIME:
+		case IGNITION_TIME:
+		case GX:
+		case GY:
+		case GZ:
+			dt = DT_FLOAT32;
+			break;
+		default:
+			dt = DT_INT32;
+			break;
+		}
+
+		s += add_to_schema(schema + s, "value", dt, 512 - s);
+		s += add_to_schema(schema + s, "timestamp", DT_UTC_DATETIME, 512 - s);
+		s += add_to_schema(schema + s, "", DT_SCHEMA_END, 512 - s);
+	}
+	s += add_to_schema(schema + s, "", DT_SCHEMA_END, 512 - s);
+	xbee_send(schema, s);
+}
+#endif
 
 void ecu_init(void) {
 	usart0_init(ECU_BAUD);  // ECU
