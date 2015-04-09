@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2015 UnicornRaceEngineering
+Copyright (c) 2014 UnicornRaceEngineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -22,28 +22,37 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @files can_transport.h
- * Higher level transport protocol using the CAN interface
+ * @files can_messages.h
+ * Defines the message types for the high-level can transmission.
  */
 
-#ifndef CAN_TRANSPORT_H
-#define CAN_TRANSPORT_H
+#ifndef CAN_MESSAGES_H
+#define CAN_MESSAGES_H
 
-#include <stdint.h>
-#include <stdlib.h>
-#include "can_messages.h"
-
-
-struct can_message {
-	struct message_detail info;
-	uint8_t *data;
+enum node_id {
+	COM_NODE,
+	GEAR_NODE,
+	STEERING_NODE,
+	GPS_NODE,
 };
 
+enum message_id {
+	PADDLE_STATUS,
+	TRANSPORT_TEST_MSG,
+	ENGINE_RPM,
+	GPS_DATA,
+};
 
-int init_can_node(const enum node_id id);
-int can_broadcast(const enum message_id id, void * const data);
-struct can_message* read_inbox(void);
-uint8_t get_queue_length(void);
-void can_free(struct can_message*);
+struct message_detail {
+	uint16_t id;
+	uint16_t len;
+};
+
+#define message_info(type) ((const struct message_detail []) { \
+	[PADDLE_STATUS] 	 = {.id =  1, .len = 27}, \
+	[TRANSPORT_TEST_MSG] = {.id =  2, .len =  4}, \
+	[ENGINE_RPM] 	 	 = {.id = 28, .len =  1}, \
+	[GPS_DATA]			 = {.id =  4, .len = 13}, \
+}[type])
 
 #endif /* CAN_TRANSPORT_H */

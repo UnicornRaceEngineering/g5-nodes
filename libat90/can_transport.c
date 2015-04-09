@@ -36,14 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "heap.h"
 #include "can.h"
 #include "can_transport.h"
+#include "can_messages.h"
 
-
-#define message_info(type) ((const struct message_detail []) { \
-	[PADDLE_STATUS] 	 = {.id =  1, .len = 27}, \
-	[TRANSPORT_TEST_MSG] = {.id =  2, .len =  4}, \
-	[ENGINE_RPM] 	 	 = {.id = 28, .len =  1}, \
-	[GPS_DATA]			 = {.id =  4, .len = 13}, \
-}[type])
 
 struct message_list {
 	struct can_message *message;
