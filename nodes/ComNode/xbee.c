@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
 FILE *xbee_out = &usart1_byte_output;
-FILE *xbee_in = &usart1_input;
+FILE *xbee_in = &usart1_io;
 
 void xbee_init(void) {
 	usart1_init(XBEE_BAUD);

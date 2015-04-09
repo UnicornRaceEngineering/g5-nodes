@@ -33,7 +33,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * compile time.
  */
 
-#include "usart.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h> // size_t
@@ -43,15 +42,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "bitwise.h"
+#include "usart.h"
+
+enum usart_charSelect_t {
+	USART_CHAR_5BIT = 0x00,
+	USART_CHAR_6BIT = 0x01,
+	USART_CHAR_7BIT = 0x02,
+	USART_CHAR_8BIT = 0x03,
+	USART_CHAR_9BIT = 0x07
+};
 
 #ifndef NO_USART0_SUPPORT
 #	include "ringbuffer.h"
 	static volatile ringbuffer_t usart0_inBuff = {{0}};
 	static volatile ringbuffer_t usart0_outBuff = {{0}};
 
-	FILE usart0_output = FDEV_SETUP_STREAM(usart0_putc, NULL, _FDEV_SETUP_WRITE);
+	FILE usart0_io = FDEV_SETUP_STREAM(usart0_putc, usart0_getc, _FDEV_SETUP_RW);
 	FILE usart0_byte_output = FDEV_SETUP_STREAM(usart0_putbyte, NULL, _FDEV_SETUP_WRITE);
-	FILE usart0_input = FDEV_SETUP_STREAM(NULL, usart0_getc, _FDEV_SETUP_READ);
 #endif
 
 #ifndef NO_USART1_SUPPORT
@@ -59,9 +66,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	static volatile ringbuffer_t usart1_inBuff = {{0}};
 	static volatile ringbuffer_t usart1_outBuff = {{0}};
 
-	FILE usart1_output = FDEV_SETUP_STREAM(usart1_putc, NULL, _FDEV_SETUP_WRITE);
+	FILE usart1_io = FDEV_SETUP_STREAM(usart1_putc, usart1_getc, _FDEV_SETUP_RW);
 	FILE usart1_byte_output = FDEV_SETUP_STREAM(usart1_putbyte, NULL, _FDEV_SETUP_WRITE);
-	FILE usart1_input = FDEV_SETUP_STREAM(NULL, usart1_getc, _FDEV_SETUP_READ);
 #endif
 
 
@@ -123,8 +129,7 @@ void usart0_init(uint32_t baudrate) {
 	// Baud rate
 	usart0_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 
-	stdout = &usart0_output;
-	stdin = &usart0_input;
+	stdout = stdin = &usart0_io;
 }
 
 /**
@@ -244,8 +249,7 @@ void usart1_init(uint32_t baudrate) {
 	// Baud rate
 	usart1_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 
-	stdout = &usart1_output;
-	stdin = &usart1_input;
+	stdout = stdin = &usart1_io;
 }
 
 /**

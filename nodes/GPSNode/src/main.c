@@ -41,7 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "gps.h"
 
 int main(void) {
-	gps_set_getc(&usart1_input);
+	gps_set_getc(&usart1_io);
 	usart1_init(GPS_BAUDRATE);
 
 	init_can_node(GPS_NODE);

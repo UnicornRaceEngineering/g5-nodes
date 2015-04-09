@@ -52,14 +52,6 @@ enum usart_operationModes_t {
 	USART_MODE_SYNC_MASTER
 };
 
-enum usart_charSelect_t {
-	USART_CHAR_5BIT = 0x00,
-	USART_CHAR_6BIT = 0x01,
-	USART_CHAR_7BIT = 0x02,
-	USART_CHAR_8BIT = 0x03,
-	USART_CHAR_9BIT = 0x07
-};
-
 /**
  * @name USART0
  * Functions for sending and receiving on USART0
@@ -105,9 +97,8 @@ enum usart_charSelect_t {
 	void usart0_putbyte(uint8_t c, FILE *stream);
 	void usart0_putc(char c, FILE *stream);
 
-	extern FILE usart0_output;
+	extern FILE usart0_io;
 	extern FILE usart0_byte_output;
-	extern FILE usart0_input;
 #endif
 /** @} */
 
@@ -156,9 +147,8 @@ enum usart_charSelect_t {
 	void usart1_putbyte(uint8_t b, FILE *stream);
 	void usart1_putc(char c, FILE *stream);
 
-	extern FILE usart1_output;
+	extern FILE usart1_io;
 	extern FILE usart1_byte_output;
-	extern FILE usart1_input;
 #endif
 /** @} */
 
