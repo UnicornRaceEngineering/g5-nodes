@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h> // sei()
 #include <util/delay.h>
 #include <stdbool.h>
+#include <avr/pgmspace.h>
 
 #include "ecu.h"
 #include "xbee.h"
@@ -36,14 +37,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mmc_sdcard.h>
 #include <stdio.h>
 
-int main(void) {
-	xbee_init();
-	ecu_init();
+static void init(void) {
 	rtc_init();
+	ecu_init();
+	xbee_init();
 
-	sei();										//Enable interrupt
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
 
-	printf("Starting\n\n\n");
+int main(void) {
+	init();
 
 	while(1){
 		// Main work loop

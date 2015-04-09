@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/sfr_defs.h>
+#include <avr/pgmspace.h>
 
 #include <can_transport.h>
 #include <usart.h>
@@ -75,12 +76,10 @@ static void set_rpm(int16_t rpm) {
 	RPM_OCR = map(rpm, RPM_MIN_VALUE, RPM_MAX_VALUE, 0, 0xFF - calibration);
 }
 
-int main(void) {
+static void init(void) {
 	usart1_init(115200);
-
 	paddle_init();
 	statuslight_init();
-
 	seg7_init();
 
 	// init Timer0 PWM PB4 for the RPM-counter
@@ -102,9 +101,12 @@ int main(void) {
 		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 	}
 
-	printf("\n\n\nSTARTING\n");
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
 
-	sei();                                      //Enable interrupt
+int main(void) {
+	init();
 
 	while (1) {
 		// Main work loop

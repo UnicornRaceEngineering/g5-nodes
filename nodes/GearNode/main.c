@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdbool.h>
+#include <avr/pgmspace.h>
 
 #include <usart.h>
 #include <io.h>
@@ -127,23 +128,21 @@ static int shift_gear(int gear_dir) {
 	return !err ? current_gear : -current_gear;
 }
 
-int main(void) {
-	//Initialise the Gear node
+static void init(void) {
 	usart1_init(115200);
-
 	pwm_PE5_init();
-
 	init_neutral_gear_sensor();
 
 	// Set ignition cut pin to output
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
-
 	IGNITION_CUT_OFF();
-	sei();										//Enable interrupt
 
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
 
-	printf("\n\n\nSTARTING\n");
-
+int main(void) {
+	init();
 
 	while(1){
 #if 0
