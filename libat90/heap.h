@@ -32,6 +32,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef HEAP_H
 #define HEAP_H
 
+#include <stdint.h>
+
 /**
  * Defines the total size of the heap in number of bytes.
  */

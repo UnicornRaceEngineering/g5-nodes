@@ -30,7 +30,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_TRANSPORT_H
 
 #include <stdint.h>
-#include <stdlib.h>
 #include "can_messages.h"
 
 

@@ -31,8 +31,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <stdint.h>
-#include <stdlib.h>
-
 #include "heap.h"
 #include "can.h"
 #include "can_transport.h"
