@@ -334,7 +334,7 @@ uint8_t can_init(uint16_t mask) {
 uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	int8_t mob = find_me_a_mob();
 	BIT_SET(mob_on_job, mob);
-	msg_list[mob] = (can_msg_t*)malloc_(sizeof(can_msg_t));
+	msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
 	msg_list[mob]->data = (uint8_t*)msg;
 	msg_list[mob]->id = id;
 	msg_list[mob]->len = len;
@@ -408,7 +408,7 @@ static void send_response(enum FC_flag flag, uint8_t block_size,
 	int8_t mob = find_me_a_mob();
 	BIT_SET(mob_on_job, mob);
 	
-	msg_list[mob] = (can_msg_t*)malloc_(sizeof(can_msg_t));
+	msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
 	msg_list[mob]->idx = 3;
 	msg_list[mob]->len = 3;
 	msg_list[mob]->waiting = 0;
@@ -427,8 +427,8 @@ static void can_transmit (uint8_t mob, uint8_t type) {
 
 	if (msg_list[mob]->len == msg_list[mob]->idx) {
 		CAN_DISABLE_MOB_INTERRUPT(mob);
-		free_((void *)msg_list[mob]->data);
-		free_((void *)msg_list[mob]);
+		sfree((void *)msg_list[mob]->data);
+		sfree((void *)msg_list[mob]);
 		msg_list[mob] = 0;
 		BIT_CLEAR(mob_on_job, mob);
 		return;
@@ -557,7 +557,7 @@ static void finnish_receive(uint8_t mob) {
 		(*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
 							(uint8_t*)&msg_list[mob]->data[0]);
 
-	free_((void *)msg_list[mob]);
+	sfree((void *)msg_list[mob]);
 	msg_list[mob] = 0;
 	BIT_CLEAR(mob_on_job, mob);
 }
@@ -570,9 +570,9 @@ static void can_get(uint8_t mob) {
 
 	switch (type) {
 		case 0:
-			msg_list[mob] = (can_msg_t*)malloc_(sizeof(can_msg_t));
+			msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
 			msg_list[mob]->len = ((msg[0] & 0xF8) >> 3);
-			msg_list[mob]->data = (uint8_t*)malloc_(msg_list[mob]->len);
+			msg_list[mob]->data = (uint8_t*)smalloc(msg_list[mob]->len);
 			msg_list[mob]->id = MOB_GET_STD_ID();
 			msg_list[mob]->msg_num = 0;
 			msg_list[mob]->idx = msg_list[mob]->len;
@@ -582,9 +582,9 @@ static void can_get(uint8_t mob) {
 			break;
 
 		case 1:
-			msg_list[mob] = (can_msg_t*)malloc_(sizeof(can_msg_t));
+			msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
 			msg_list[mob]->len = ((msg[0] & 0xF8) >> 3) + ((msg[1] * 256) >> 3);
-			msg_list[mob]->data = (uint8_t*)malloc_(msg_list[mob]->len);
+			msg_list[mob]->data = (uint8_t*)smalloc(msg_list[mob]->len);
 			msg_list[mob]->id = MOB_GET_STD_ID();
 			msg_list[mob]->msg_num = 0;
 			msg_list[mob]->idx = 6;

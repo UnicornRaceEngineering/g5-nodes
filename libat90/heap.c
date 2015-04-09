@@ -61,7 +61,7 @@ void init_heap (void) {
  * @return		A void pointer to the first place in the allocated space on
  * 				success otherwise NULL.
  */
-void* malloc_(uint8_t size) {
+void* smalloc(uint8_t size) {
 	uint8_t heap_ptr = 0;
 	uint8_t next_blk;
 	uint8_t blk_size;
@@ -87,7 +87,7 @@ void* malloc_(uint8_t size) {
  * @param *heap_ptr Pointer to the allocated space.
  * @return   		0 if success otherwise 1
  */
-uint8_t free_(void *heap_ptr)
+uint8_t sfree(void *heap_ptr)
 {
 	uint8_t target = (heap_ptr - header) - (void*)&heap[0];
 	uint8_t pointer = 0;

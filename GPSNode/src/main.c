@@ -56,7 +56,7 @@ int main(void) {
 			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
 											 // to split it up into 4 bytes
 
-			uint8_t *data = (uint8_t*)malloc_(13);
+			uint8_t *data = (uint8_t*)smalloc(13);
 			data[0] = 1;
 			data[1] = *(dd_ptr + 0);
 			data[2] = *(dd_ptr + 1);

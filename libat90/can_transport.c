@@ -82,8 +82,8 @@ int can_broadcast(const enum message_id type, void * const data) {
 static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	if (queue_length) {
 		struct message_list *temp = newest_message;
-		newest_message = (struct message_list*)malloc_(sizeof(struct message_list));
-		newest_message->message = (struct can_message*)malloc_(sizeof(struct can_message));
+		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
+		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
 		newest_message->message->info.id = id;
 		newest_message->message->info.len = len;
 		newest_message->message->data = msg;
@@ -91,9 +91,9 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 		newest_message->newer_message = 0;
 		temp->newer_message = newest_message;
 	} else {
-		newest_message = (struct message_list*)malloc_(sizeof(struct message_list));
+		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
 		oldest_message = newest_message;
-		newest_message->message = (struct can_message*)malloc_(sizeof(struct can_message));
+		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
 		newest_message->message->info.id = id;
 		newest_message->message->info.len = len;
 		newest_message->message->data = msg;
@@ -109,7 +109,7 @@ struct can_message* read_inbox(void) {
 		oldest_message = temp->newer_message;
 		oldest_message->older_message = 0;
 		struct can_message *return_message = temp->message;
-		free_((void *)temp);
+		sfree((void *)temp);
 		--queue_length;
 		return return_message;
 	} else {
@@ -122,6 +122,6 @@ uint8_t get_queue_length(void) {
 }
 
 void can_free(struct can_message* message) {
-	free_((void *) message->data);
-	free_((void *) message);
+	sfree((void *) message->data);
+	sfree((void *) message);
 }

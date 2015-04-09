@@ -39,8 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 void init_heap (void);
-void * malloc_(uint8_t size);
-uint8_t free_(void *heap_ptr);
+void * smalloc(uint8_t size);
+uint8_t sfree(void *heap_ptr);
 uint8_t count_heap(void);
 uint8_t count_fragmentation(void);
 
