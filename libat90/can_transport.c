@@ -45,9 +45,9 @@ struct message_list {
 	struct message_list *newer_message;
 };
 
-struct message_list *oldest_message;
-struct message_list *newest_message;
-uint8_t queue_length;
+static struct message_list *oldest_message;
+static struct message_list *newest_message;
+static volatile uint8_t queue_length;
 
 static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
