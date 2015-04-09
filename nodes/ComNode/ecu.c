@@ -40,7 +40,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <timer.h>
 #include <m41t81s_rtc.h>
-#include <serialize.h>
 #include <string.h>
 #include <utils.h>
 
@@ -153,7 +152,7 @@ void ecu_parse_package(void) {
 
 			// The first 4 byte in the buffer
 			buff[s++] = DT_INT8;
-			buff[s++] = ECU_DATA;
+			buff[s++] = XBEE_ECU;
 			buff[s++] = DT_INT8;
 			buff[s++] = pkt[i].sensor.id;
 
@@ -181,45 +180,6 @@ void ecu_parse_package(void) {
 		}
 	}
 }
-
-#if 0
-void ecu_send_schema(void) {
-	uint8_t schema[1024 / 2] = {'\0'};
-	int s = 0;
-	schema[s++] = ECU_DATA;
-	s += add_to_schema(schema + s, "ECU data", DT_SCHEMA, 512 - s);
-	for (int i = 0; i < 2; ++i) {
-		s += add_to_schema(schema + s, (char*)ECU_ID_NAME(i), DT_SCHEMA, 512 - s);
-		enum datatype dt;
-		switch (i) {
-		case STATUS_LAMBDA_V2:
-		case WATER_TEMP:
-		case MANIFOLD_AIR_TEMP:
-		case POTMETER:
-		case RPM:
-		case MAP_SENSOR:
-		case BATTERY_V:
-		case LAMBDA_V:
-		case INJECTOR_TIME:
-		case IGNITION_TIME:
-		case GX:
-		case GY:
-		case GZ:
-			dt = DT_FLOAT32;
-			break;
-		default:
-			dt = DT_INT32;
-			break;
-		}
-
-		s += add_to_schema(schema + s, "value", dt, 512 - s);
-		s += add_to_schema(schema + s, "timestamp", DT_UTC_DATETIME, 512 - s);
-		s += add_to_schema(schema + s, "", DT_SCHEMA_END, 512 - s);
-	}
-	s += add_to_schema(schema + s, "", DT_SCHEMA_END, 512 - s);
-	xbee_send(schema, s);
-}
-#endif
 
 void ecu_init(void) {
 	usart0_init(ECU_BAUD);  // ECU

@@ -26,6 +26,31 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 
+enum datatype {
+	DT_BOOLEAN,
+
+	DT_UINT8,
+	DT_INT8,
+	DT_UINT16,
+	DT_INT16,
+	DT_UINT32,
+	DT_INT32,
+	DT_UINT64,
+	DT_INT64,
+
+	DT_FLOAT32,
+	DT_FLOAT64,
+
+	DT_CSTRING, // Nullterminated C string
+
+	DT_UTC_DATETIME, // int64 containing the offset from unix epoch in ms
+
+};
+
+enum xbee_packages {
+	XBEE_ECU,
+};
+
 void xbee_init(void);
 void xbee_send(const uint8_t *arr, uint8_t len);
 

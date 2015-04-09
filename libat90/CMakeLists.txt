@@ -8,7 +8,6 @@ set(SRC_FILES
 	heap.c
 	spi.c
 	can_transport.c
-	serialize.c
 	utils.c
 )
 
