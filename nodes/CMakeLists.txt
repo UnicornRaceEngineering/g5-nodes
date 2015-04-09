@@ -1,0 +1,5 @@
+add_subdirectory(ComNode)
+add_subdirectory(GearNode)
+add_subdirectory(GearNodeDewalt)
+add_subdirectory(GPSNode)
+add_subdirectory(SteeringNode)
