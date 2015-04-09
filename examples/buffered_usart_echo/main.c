@@ -23,32 +23,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdlib.h> // size_t
 #include <avr/interrupt.h> // sei()
+#include <util/delay.h>
 #include <usart.h>
-
-#define BUFF_SIZE	(256)
-
-char buf[BUFF_SIZE] = {'\0'};
-size_t bufIndex = 0;
 
 int main(void) {
 	usart1_init(115200);						//Serial communication
 
 	sei();										//Enable interrupt
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	while(1){
 		// Main work loop
-		if (usart1_hasData()) {
-			char c = usart1_getc();
-			buf[bufIndex++] = c;
-			usart1_putc(c);
-			if (c == '\n' || c == '\r' || bufIndex >= BUFF_SIZE) {
-				buf[bufIndex] = '\0';
-				bufIndex = 0;
-				usart1_putc('\n');
-			}
-		}
+		char c = getchar();
+		putchar(c);
 	}
 
     return 0;

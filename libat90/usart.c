@@ -29,10 +29,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * By default functions for using both USART0 and USART1 is available with
  * buffered input and output. Each USART can be disabled by defining
- * NO_USART[n]_SUPPORT where n is either 0 or one 1. Furthermore either buffered
- * input or buffered output can be disabled for each USART by defining
- * NO_USART[n]_BUFFERED_INPUT or NO_USART[n]_BUFFERED_OUTPUT. These must be
- * defined at compile time
+ * NO_USART[n]_SUPPORT where n is either 0 or one 1. These must be defined at
+ * compile time.
  */
 
 #include "usart.h"
@@ -47,28 +45,25 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bitwise.h"
 
 #ifndef NO_USART0_SUPPORT
-	#ifndef NO_USART0_BUFFERED_INPUT
-		#include "ringbuffer.h"
-		static volatile ringbuffer_t usart0_inBuff = {{0}};
-	#endif
+#	include "ringbuffer.h"
+	static volatile ringbuffer_t usart0_inBuff = {{0}};
+	static volatile ringbuffer_t usart0_outBuff = {{0}};
 
-	#ifndef NO_USART0_BUFFERED_OUTPUT
-		#include "ringbuffer.h"
-		static volatile ringbuffer_t usart0_outBuff = {{0}};
-	#endif
+	FILE usart0_output = FDEV_SETUP_STREAM(usart0_putc, NULL, _FDEV_SETUP_WRITE);
+	FILE usart0_byte_output = FDEV_SETUP_STREAM(usart0_putbyte, NULL, _FDEV_SETUP_WRITE);
+	FILE usart0_input = FDEV_SETUP_STREAM(NULL, usart0_getc, _FDEV_SETUP_READ);
 #endif
 
 #ifndef NO_USART1_SUPPORT
-	#ifndef NO_USART1_BUFFERED_INPUT
-		#include "ringbuffer.h"
-		static volatile ringbuffer_t usart1_inBuff = {{0}};
-	#endif
+#	include "ringbuffer.h"
+	static volatile ringbuffer_t usart1_inBuff = {{0}};
+	static volatile ringbuffer_t usart1_outBuff = {{0}};
 
-	#ifndef NO_USART1_BUFFERED_OUTPUT
-		#include "ringbuffer.h"
-		static volatile ringbuffer_t usart1_outBuff = {{0}};
-	#endif
+	FILE usart1_output = FDEV_SETUP_STREAM(usart1_putc, NULL, _FDEV_SETUP_WRITE);
+	FILE usart1_byte_output = FDEV_SETUP_STREAM(usart1_putbyte, NULL, _FDEV_SETUP_WRITE);
+	FILE usart1_input = FDEV_SETUP_STREAM(NULL, usart1_getc, _FDEV_SETUP_READ);
 #endif
+
 
 /**
  * Convert a given baud-rate to UBRR prescalar.
@@ -95,9 +90,6 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operat
 	return ubrr_val;
 }
 
-
-
-
 /**
  * @name USART0
  * Functions for sending and receiving on USART0
@@ -116,14 +108,10 @@ void usart0_init(uint32_t baudrate) {
 		baudrate = 115200;
 	}
 
-#ifndef NO_USART0_BUFFERED_INPUT
 	rb_init((ringbuffer_t*)&usart0_inBuff);
 	USART0_ENABLE_RX_INTERRUPT();
-#endif
 
-#ifndef NO_USART0_BUFFERED_OUTPUT
 	rb_init((ringbuffer_t*)&usart0_outBuff);
-#endif
 
 	//Enable TXen and RXen
 	USART0_ENABLE_RX();
@@ -134,6 +122,9 @@ void usart0_init(uint32_t baudrate) {
 
 	// Baud rate
 	usart0_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
+
+	stdout = &usart0_output;
+	stdin = &usart0_input;
 }
 
 /**
@@ -155,23 +146,12 @@ void usart0_setBaudrate(const uint32_t baudrate,
 	UBRR0H = HIGH_BYTE(prescale);
 }
 
-#ifndef NO_USART0_BUFFERED_INPUT
 /**
  * Check the input buffer for new data.
  * @return  true if it as data. Else false
  */
-bool usart0_hasData(void){
+bool usart0_has_data(void){
 	return !rb_isEmpty(&usart0_inBuff);
-}
-#endif
-
-/**
- * Same as usart0_getc but is not interrupt driven.
- * @return  Byte received via usart0
- */
-uint8_t usart0_getc_unbuffered(void) {
-	while (USART0_RX_IS_BUSY());
-	return UDR0;
 }
 
 /**
@@ -179,24 +159,19 @@ uint8_t usart0_getc_unbuffered(void) {
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
  */
-uint8_t usart0_getc(void) {
-#ifdef NO_USART0_BUFFERED_INPUT
-	while (USART0_RX_IS_BUSY());
-	return UDR0;
-#else
-	uint8_t data;
-	while (rb_pop((ringbuffer_t*)&usart0_inBuff, &data) != 0);
+char usart0_getc(FILE *stream) {
+	char data;
+	while (!usart0_has_data());
+	rb_pop((ringbuffer_t*)&usart0_inBuff, (uint8_t*)&data);
 	return data;
-#endif
 }
 
-/**
- * Same as usart0_putc but is not interrupt driven.
- * @param  c Byte to transmit
- */
-void usart0_putc_unbuffered(const uint8_t c) {
-	while (USART0_TX_IS_BUSY());
-	UDR0 = c;
+void usart0_putbyte(uint8_t c, FILE *stream) {
+	// Wait for free space in buffer
+	while (rb_isFull(&usart0_outBuff));
+	rb_push((ringbuffer_t*)&usart0_outBuff, c);
+
+	USART0_ENABLE_UDRE_INTERRUPT();
 }
 
 /**
@@ -205,98 +180,21 @@ void usart0_putc_unbuffered(const uint8_t c) {
  * @param  c Byte to transmit
  * @return   positive if success
  */
-int usart0_putc(const uint8_t c) {
+void usart0_putc(char c, FILE *stream) {
 #ifndef USART0_NON_UNIX_LIKE_LINE_ENDINGS
 	if (c == '\n') {
-		usart0_putc('\r');
+		usart0_putbyte('\r', stream);
 	}
 #endif
-
-#ifdef NO_USART0_BUFFERED_OUTPUT
-	while (USART0_TX_IS_BUSY());
-	UDR0 = c;
-#else
-	// Wait for free space in buffer
-	while (rb_isFull(&usart0_outBuff));
-	rb_push((ringbuffer_t*)&usart0_outBuff, c);
-
-	USART0_ENABLE_UDRE_INTERRUPT();
-#endif
-
-	return c;
+	usart0_putbyte(c, stream);
 }
 
-/**
- * Writes a null terminated c-string to the USART.
- * @param  str String that is written
- * @return     Number of bytes written
- */
-int usart0_puts(const char *str) {
-	if (str == NULL) return -1;
-	int i = 0;
-
-	while(str[i] != '\0'){
-		usart0_putc(str[i++]);
-	}
-
-	return i;
-}
-
-/**
- * Writes an array of bytes with the length n.
- * @param  n      Number of bytes to write
- * @param  array  Array of bytes to be written
- * @return        Number of bytes written
- */
-int usart0_putn(size_t n, const uint8_t *array) {
-	if (array == NULL) return -1;
-
-	int i;
-	for (i = 0; i < n; ++i){
-		usart0_putc(array[i]);
-	}
-
-	return i;
-}
-
-/**
- * Writes a formatted c string. Works like printf is expected to work except it
- * uses a static buffer of size UART[n]_PRNT_BUFF_SIZE to store the intermediate
- * string in.
- */
-int usart0_printf(const char *str, ...){
-	if (str == NULL) return -1;
-
-	// Warning this might overflow on long str
-	char buffer[USART0_PRNT_BUFF_SIZE] = {'\0'};
-	va_list args;
-	int rc_vsprintf;
-	int rc_tx;
-
-	va_start(args, str);
-	if((rc_vsprintf = vsnprintf(buffer, USART0_PRNT_BUFF_SIZE, str, args)) < 0){
-		return rc_vsprintf; // vsprintf return a negative value on err
-	}
-	va_end(args);
-
-	if ((rc_tx = usart0_puts(buffer)) != rc_vsprintf ||
-			rc_tx > USART0_PRNT_BUFF_SIZE) {
-		// We haven't send the same amount as sprintf wrote the the buffer
-		return -rc_tx;
-	}
-
-	return rc_tx;
-}
-
-#ifndef NO_USART0_BUFFERED_INPUT
 ISR(USART0_RX_vect){
 	uint8_t data = UDR0;
-
+	//!< @TODO should we not check if the rb is full here!?
 	rb_push((ringbuffer_t*)&usart0_inBuff, data);
 }
-#endif
 
-#ifndef NO_USART0_BUFFERED_OUTPUT
 ISR(USART0_UDRE_vect){
 	uint8_t data;
 	if (rb_pop((ringbuffer_t*)&usart0_outBuff, &data) == 0) {
@@ -306,7 +204,6 @@ ISR(USART0_UDRE_vect){
 		USART0_DISABLE_UDRE_INTERRUPT();
 	}
 }
-#endif
 
 #endif /* NO_USART0_SUPPORT */
 /** @} */
@@ -332,14 +229,10 @@ void usart1_init(uint32_t baudrate) {
 		baudrate = 115200;
 	}
 
-#ifndef NO_USART1_BUFFERED_INPUT
 	rb_init((ringbuffer_t*)&usart1_inBuff);
 	USART1_ENABLE_RX_INTERRUPT();
-#endif
 
-#ifndef NO_USART1_BUFFERED_OUTPUT
 	rb_init((ringbuffer_t*)&usart1_outBuff);
-#endif
 
 	//Enable TXen and RXen
 	USART1_ENABLE_RX();
@@ -350,6 +243,9 @@ void usart1_init(uint32_t baudrate) {
 
 	// Baud rate
 	usart1_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
+
+	stdout = &usart1_output;
+	stdin = &usart1_input;
 }
 
 /**
@@ -371,23 +267,12 @@ void usart1_setBaudrate(const uint32_t baudrate,
 	UBRR1H = HIGH_BYTE(prescale);
 }
 
-#ifndef NO_USART1_BUFFERED_INPUT
 /**
  * Check the input buffer for new data.
  * @return  true if it as data. Else false
  */
-bool usart1_hasData(void){
+bool usart1_has_data(void){
 	return !rb_isEmpty(&usart1_inBuff);
-}
-#endif
-
-/**
- * Same as usart1_getc but is not interrupt driven
- * @return  Byte received via usart1
- */
-uint8_t usart1_getc_unbuffered(void) {
-	while (USART1_RX_IS_BUSY());
-	return UDR1;
 }
 
 /**
@@ -395,24 +280,19 @@ uint8_t usart1_getc_unbuffered(void) {
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
  */
-uint8_t usart1_getc(void) {
-#ifdef NO_USART1_BUFFERED_INPUT
-	while (USART1_RX_IS_BUSY());
-	return UDR1;
-#else
-	uint8_t data;
-	while (rb_pop((ringbuffer_t*)&usart1_inBuff, &data) != 0);
+char usart1_getc(FILE *stream) {
+	char data = 0;
+	while (!usart1_has_data());
+	rb_pop((ringbuffer_t*)&usart1_inBuff, (uint8_t*)&data);
 	return data;
-#endif
 }
 
-/**
- * Same as usart1_putc but is not interrupt driven.
- * @param c Byte to send via usart1
- */
-void usart1_putc_unbuffered(const uint8_t c) {
-	while (USART1_TX_IS_BUSY());
-	UDR1 = c;
+void usart1_putbyte(uint8_t b, FILE *stream) {
+	// Wait for free space in buffer
+	while (rb_isFull(&usart1_outBuff));
+	rb_push((ringbuffer_t*)&usart1_outBuff, b);
+
+	USART1_ENABLE_UDRE_INTERRUPT();
 }
 
 /**
@@ -421,98 +301,18 @@ void usart1_putc_unbuffered(const uint8_t c) {
  * @param  c Byte to transmit
  * @return   positive if success
  */
-int usart1_putc(const uint8_t c) {
-#ifndef USART1_NON_UNIX_LIKE_LINE_ENDINGS
+void usart1_putc(char c, FILE *stream) {
 	if (c == '\n') {
-		usart1_putc('\r');
+		usart1_putbyte('\r', stream);
 	}
-#endif
-
-#ifdef NO_USART1_BUFFERED_OUTPUT
-	while (USART1_TX_IS_BUSY());
-	UDR1 = c;
-#else
-	// Wait for free space in buffer
-	while (rb_isFull(&usart1_outBuff));
-	rb_push((ringbuffer_t*)&usart1_outBuff, c);
-
-	USART1_ENABLE_UDRE_INTERRUPT();
-#endif
-
-	return c;
+	usart1_putbyte(c, stream);
 }
 
-/**
- * Writes a null terminated c-string to the USART.
- * @param  str String that is written
- * @return     Number of bytes written
- */
-int usart1_puts(const char *str) {
-	if (str == NULL) return -1;
-	int i = 0;
-
-	while (str[i] != '\0'){
-		usart1_putc(str[i++]);
-	}
-
-	return i;
-}
-
-/**
- * Writes an array of bytes with the length n.
- * @param  n      Number of bytes to write
- * @param  array  Array of bytes to be written
- * @return        Number of bytes written
- */
-int usart1_putn(size_t n, const uint8_t *array) {
-	if (array == NULL) return -1;
-
-	int i;
-	for (i = 0; i < n; ++i){
-		usart1_putc(array[i]);
-	}
-
-	return i;
-}
-
-/**
- * Writes a formatted c string. Works like printf is expected to work except it
- * uses a static buffer of size UART[n]_PRNT_BUFF_SIZE to store the intermediate
- * string in.
- */
-int usart1_printf(const char *str, ...){
-	if (str == NULL) return -1;
-
-	// Warning this might overflow on long str
-	char buffer[USART1_PRNT_BUFF_SIZE] = {'\0'};
-	va_list args;
-	int rc_vsprintf;
-	int rc_tx;
-
-	va_start(args, str);
-	if((rc_vsprintf = vsnprintf(buffer, USART1_PRNT_BUFF_SIZE, str, args)) < 0){
-		return rc_vsprintf; // vsprintf return a negative value on err
-	}
-	va_end(args);
-
-	if ((rc_tx = usart1_puts(buffer)) != rc_vsprintf ||
-			rc_tx > USART1_PRNT_BUFF_SIZE) {
-		// We haven't send the same amount as sprintf wrote the the buffer
-		return -rc_tx;
-	}
-
-	return rc_tx;
-}
-
-#ifndef NO_USART1_BUFFERED_INPUT
 ISR(USART1_RX_vect){
 	uint8_t data = UDR1;
-
 	rb_push((ringbuffer_t*)&usart1_inBuff, data);
 }
-#endif
 
-#ifndef NO_USART1_BUFFERED_OUTPUT
 ISR(USART1_UDRE_vect){
 	uint8_t data;
 	if (rb_pop((ringbuffer_t*)&usart1_outBuff, &data) == 0) {
@@ -522,7 +322,6 @@ ISR(USART1_UDRE_vect){
 		USART1_DISABLE_UDRE_INTERRUPT();
 	}
 }
-#endif
 
 #endif /* NO_USART1_SUPPORT */
 /** @} */

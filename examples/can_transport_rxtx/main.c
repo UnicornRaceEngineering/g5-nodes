@@ -42,7 +42,7 @@ int main(void) {
 
 	sei();                                      //Enable interrupt
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 	_delay_ms(5000);
 	while (1) {
@@ -55,12 +55,12 @@ int main(void) {
 #else
 		while(get_queue_length()) {
 			struct can_message *message = read_inbox();
-			usart1_printf("message of id %d and length %d : ", message->info.id, message->info.len);
+			printf("message of id %d and length %d : ", message->info.id, message->info.len);
 			for (int i = 0; i < message->info.len; ++i)
-				usart1_putc(message->data[i]);
+				putchar(message->data[i]);
 			can_free(message);
 		}
-		usart1_putc('\n');
+		putchar('\n');
 		_delay_ms(1000);
 #endif
 	}

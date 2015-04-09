@@ -41,7 +41,7 @@ int main(void) {
 	can_init(1);
 	sei();
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 #if 0 // If sending messages
 	uint8_t *storage1 = (uint8_t*)malloc_(28);
@@ -65,7 +65,7 @@ int main(void) {
 		can_send(3, 33, &storage3[0]);
 #endif
 
-		//usart1_printf("There is %d bytes allocated.\n", count_heap());
+		// printf("There is %d bytes allocated.\n", count_heap());
 		_delay_ms(1000);
 
 	}
@@ -74,7 +74,6 @@ int main(void) {
 
 // Callback to be run when rx comletes on the CAN
 static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
-	usart1_printf("id: %d len: %d\n", id, len);
-	//for (uint8_t i = 0; i < len; i++)
-	//	usart1_putc(msg[i]);
+	printf("id: %d len: %d\n", id, len);
+	// for (uint8_t i = 0; i < len; i++) putchar(msg[i]);
 }

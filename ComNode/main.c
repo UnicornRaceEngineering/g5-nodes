@@ -43,12 +43,7 @@ int main(void) {
 
 	sei();										//Enable interrupt
 
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\n');
-	usart1_putc_unbuffered('\r');
-
-	usart1_printf("Starting\n\n\n");
+	printf("Starting\n\n\n");
 
 	while(1){
 		// Main work loop

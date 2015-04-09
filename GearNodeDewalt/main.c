@@ -231,13 +231,13 @@ int main(void) {
 	sei();										//Enable interrupt
 
 
-	usart1_printf("\n\n\nSTARTING\n");
+	printf("\n\n\nSTARTING\n");
 
 
 	while(1){
 #if 1
-		if (usart1_hasData()) {
-			char c = usart1_getc();
+		if (usart1_has_data()) {
+			char c = getchar();
 			switch (c) {
 				case 'q':
 					shift_gear(GEAR_DOWN);
@@ -249,7 +249,7 @@ int main(void) {
 					shift_gear(GEAR_UP);
 					break;
 			}
-			usart1_printf("Gear: %d Neutral: %d\n", current_gear, GEAR_IS_NEUTRAL());
+			printf("Gear: %d Neutral: %d\n", current_gear, GEAR_IS_NEUTRAL());
 		}
 #else
 		while (shift_gear(GEAR_UP) <= 6){
