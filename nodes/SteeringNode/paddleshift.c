@@ -28,7 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <stdbool.h>
-#include <bitwise.h>
+#include <utils.h>
 #include <io.h>
 #include <util/delay.h>
 

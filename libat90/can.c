@@ -33,7 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <stdint.h>
-#include "bitwise.h"
+#include "utils.h"
 #include "can.h"
 #include "heap.h"
 
@@ -346,7 +346,7 @@ uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	// are the two initializing message type according to ISO_15765-2).
 	// If the payload length is 7 or less the payload can be transmitted in a
 	// single message (type 0). When sending longer messages is send multiple
-	// frames are needed and the first of these messages will be of type 1. 
+	// frames are needed and the first of these messages will be of type 1.
 	can_transmit(mob, (len > 7));
 	return 0;
 }
@@ -407,7 +407,7 @@ static void send_response(enum FC_flag flag, uint8_t block_size,
 
 	int8_t mob = find_me_a_mob();
 	BIT_SET(mob_on_job, mob);
-	
+
 	msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
 	msg_list[mob]->idx = 3;
 	msg_list[mob]->len = 3;
@@ -478,7 +478,7 @@ static void can_transmit (uint8_t mob, uint8_t type) {
 			return;
 	}
 
-	
+
 	// If message is at the end with sending the mesage,
 	// the length will be ajusted
 	msg_length = (msg_list[mob]->len >= (msg_list[mob]->idx + (8 - header)))
@@ -565,7 +565,7 @@ static void finnish_receive(uint8_t mob) {
 static void can_get(uint8_t mob) {
 	uint8_t msg[8];
 	MOB_RX_DATA(msg);
-	
+
 	const uint8_t type = msg[0] & 0x07;
 
 	switch (type) {

@@ -26,7 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <can.h>
 #include <usart.h>
-#include <bitwise.h>
+#include <utils.h>
 #include <heap.h>
 #include <string.h>
 

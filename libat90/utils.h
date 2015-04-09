@@ -21,16 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
-* @file bitwise.h
-* @brief
-*	Provides some abstraction for
-*	some bitwise operations.
-*	Useage should help code readability.
-*/
+#ifndef UTILS_H
+#define UTILS_H
 
-#ifndef BITWISE_H
-#define BITWISE_H
+#include <stdint.h>
+
+#define ARR_LEN(arr)    (sizeof(arr) / sizeof(arr[0]))
 
 /** @name Bit operations
 * Does operation on the specified bit
@@ -113,4 +109,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #define Hard_reset()    { WDTCR |= 1<<WDE;  while(1); }
 
-#endif /* BITWISE_H */
+
+int32_t map(int32_t x,
+            const int32_t from_low, const int32_t from_high,
+            const int32_t to_low, const int32_t to_high);
+
+#endif /* UTILS_H */

@@ -37,7 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
-#include <bitwise.h>
+#include <utils.h>
 #include "gps.h"
 
 int main(void) {

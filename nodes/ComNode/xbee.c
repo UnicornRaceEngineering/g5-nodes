@@ -23,13 +23,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <usart.h>
-#include <bitwise.h>
+#include <utils.h>
 
 #include "xbee.h"
 
 #define XBEE_BAUD 	(115200)
-
-#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
 
 FILE *xbee_out = &usart1_byte_output;
 FILE *xbee_in = &usart1_io;

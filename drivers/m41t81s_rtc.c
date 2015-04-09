@@ -29,7 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <util/delay.h>
-#include <bitwise.h>
+#include <utils.h>
 #include <twi.h>
 #include "m41t81s_rtc.h"
 

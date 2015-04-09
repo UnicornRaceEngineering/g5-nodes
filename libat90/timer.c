@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "timer.h"
 #include <avr/io.h>
 #include <stdint.h>
-#include "bitwise.h"
+#include "utils.h"
 
 
 /**

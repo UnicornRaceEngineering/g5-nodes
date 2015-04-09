@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <usart.h>
 #include <io.h>
-#include <bitwise.h>
+#include <utils.h>
 
 
 #define PRESCALAR	(64)

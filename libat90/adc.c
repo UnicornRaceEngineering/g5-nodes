@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "adc.h"
 #include <stdint.h>
 #include <avr/io.h>
-#include "bitwise.h"
+#include "utils.h"
 
 /**
 * @brief

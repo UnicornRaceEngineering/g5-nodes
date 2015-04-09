@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <can_transport.h>
 #include <usart.h>
 #include <io.h>
+#include <utils.h>
 
 // Drivers
 #include <74ls138d_demultiplexer.h>
@@ -44,8 +45,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/fuse.h>
 FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #endif
-
-#define ARR_LEN(arr)    (sizeof(arr) / sizeof(arr[0]))
 
 #define SHIFT_LIGHT_PORT    PORTE
 #define SHIFT_LIGHT_R       PIN4 // Red rgb light
@@ -66,18 +65,6 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #define RPM_MIN_VALUE   3300
 
 enum paddle_status {PADDLE_DOWN, PADDLE_UP};
-
-static int32_t map(int32_t x,
-                   const int32_t from_low, const int32_t from_high,
-                   const int32_t to_low, const int32_t to_high) {
-	if (x < from_low) {
-		x = from_low;
-	} else if (x > from_high) {
-		x = from_high;
-	}
-
-	return (x - from_low) * (to_high - to_low) / (from_high - from_low) + to_low;
-}
 
 static void set_rpm(int16_t rpm) {
 	// Because the PWM signal goes through a low pass filter we loose some

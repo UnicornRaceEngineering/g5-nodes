@@ -36,7 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/twi.h> // avr libc twi bit mask definitions
 
 #include "usart.h"
-#include "bitwise.h"
+#include "utils.h"
 #include "io.h"
 #include "twi.h"
 

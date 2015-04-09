@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <avr/io.h>
-#include "bitwise.h"
+#include "utils.h"
 
 #ifndef PWM_PRESCALAR
 #	define PWM_PRESCALAR	(64)

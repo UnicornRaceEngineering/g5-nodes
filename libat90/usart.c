@@ -41,7 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "bitwise.h"
+#include "utils.h"
 #include "usart.h"
 
 enum usart_charSelect_t {

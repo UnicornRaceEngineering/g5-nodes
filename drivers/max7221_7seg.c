@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 #include <string.h> // strlen
 #include <spi.h>
-#include <bitwise.h>
+#include <utils.h>
 
 #include <io.h>
 #include <avr/io.h>

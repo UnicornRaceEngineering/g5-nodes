@@ -40,24 +40,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <timer.h>
 #include <m41t81s_rtc.h>
-
-#include <pff.h>
-
-#include "ecu.h"
-#include "xbee.h"
-#include "bson.h"
-
 #include <serialize.h>
 #include <string.h>
+#include <utils.h>
+
+#include "xbee.h"
+#include "bson.h"
+#include "ecu.h"
 
 #define ECU_BAUD    (19200)
 
 #define ECU_HEARTBEAT_ISR_VECT  TIMER0_COMP_vect
-
 #define HEARTBEAT_DELAY_LENGTH  8 // How many times we delay the heartbeat timer
-
-#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
-
 
 FILE *ecu = &usart0_io;
 

@@ -23,7 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/io.h>
 #include <io.h>
-#include <bitwise.h>
+#include <utils.h>
 
 #include "74ls138d_demultiplexer.h"
 

@@ -34,8 +34,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "bson.h"
 
-#define ARR_LEN(x)  (sizeof(x) / sizeof(x[0]))
-
 #define MAX_KEY_LEN	32
 
 

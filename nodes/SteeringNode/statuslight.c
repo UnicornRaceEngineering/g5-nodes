@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <74ls138d_demultiplexer.h>
-#include <bitwise.h>
+#include <utils.h>
 #include <avr/io.h>
 #include <io.h>
 #include "statuslight.h"
