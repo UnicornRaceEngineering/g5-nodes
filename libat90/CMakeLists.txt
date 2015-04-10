@@ -10,6 +10,7 @@ set(SRC_FILES
 	can_transport.c
 	serialize.c
 	utils.c
+	tick.c
 )
 
 add_library(libat90 ${SRC_FILES})
