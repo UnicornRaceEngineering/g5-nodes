@@ -26,7 +26,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "tick.h"
-#include <stdio.h>
 
 
 static volatile uint32_t tick;
