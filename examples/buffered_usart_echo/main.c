@@ -21,24 +21,27 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h> // size_t
-#include <avr/interrupt.h> // sei()
-#include <util/delay.h>
+
+#include <stdio.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 #include <usart.h>
 
+
+static void init(void) {
+	usart1_init(115200);
+
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
+
 int main(void) {
-	usart1_init(115200);						//Serial communication
-
-	sei();										//Enable interrupt
-
-	printf("\n\n\nSTARTING\n");
+	init();
 
 	while(1){
-		// Main work loop
 		char c = getchar();
 		putchar(c);
 	}
 
     return 0;
 }
-

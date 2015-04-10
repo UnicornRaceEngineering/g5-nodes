@@ -21,27 +21,31 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 #include <avr/interrupt.h>
-#include <stdint.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <stdint.h>
+#include <string.h>
 #include <can.h>
 #include <usart.h>
-#include <utils.h>
 #include <heap.h>
-#include <string.h>
 
 
 static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
-int main(void) {
-	set_canrec_callback(rx_complete);
-
+static void init(void) {
 	usart1_init(115200);
 	init_heap();
 	can_init(1);
+	set_canrec_callback(rx_complete);
+	
 	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
 
-	printf("\n\n\nSTARTING\n");
+int main(void) {
+	init();
 
 #if 0 // If sending messages
 	uint8_t *storage1 = (uint8_t*)malloc_(28);

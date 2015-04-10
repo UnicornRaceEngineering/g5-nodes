@@ -21,22 +21,26 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 #include <stdint.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
-
+#include <avr/pgmspace.h>
 #include <usart.h>
 #include <m41t81s_rtc.h>
 #include <io.h>
 
 
-int main(void) {
-	usart0_init(115200);						//Serial communication
-
-	sei();										//Enable interrupt
+static void init(void) {
+	usart1_init(115200);
 	rtc_init();
 
-	printf("\n\n\nSTARTING\n");
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
+
+int main(void) {
+	init();
 
 	while (1) {
 		int16_t rc;

@@ -21,28 +21,29 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
-
-#include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
-
-#include <can.h>
 #include <string.h>
 #include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 
-int main(void) {
+
+static void init(void) {
 	usart1_init(115200);
 	init_heap();
 	init_can_node(STEERING_NODE);
 
-	sei();                                      //Enable interrupt
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
 
-	printf("\n\n\nSTARTING\n");
+int main(void) {
+	init();
 
 	_delay_ms(5000);
 	while (1) {
