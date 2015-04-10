@@ -21,14 +21,24 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "tick.h"
+#include <stdio.h>
+
 
 static volatile uint32_t tick;
+static volatile tick_callback_t callback;
+
+static void default_tick_tock(uint32_t milliseconds) {
+}
 
 void tick_init(void) {
+	tick = 0;
+	callback = default_tick_tock;
+
 	// control regiters set to Mode 12 (CTC) and no prescaling.
 	TCCR1A = 0;
 	TCCR1B = (1 << WGM12) + (1 << CS10);
@@ -44,7 +54,10 @@ void tick_init(void) {
 
 	// Set to interrupt on output compare match A.
 	TIMSK1 = 1 << OCIE1A;
-	tick = 0;
+}
+
+void set_tick_callback(tick_callback_t func) {
+	callback = func;
 }
 
 uint32_t get_tick(void) {
@@ -52,5 +65,5 @@ uint32_t get_tick(void) {
 }
 
 ISR(TIMER1_COMPA_vect) {
-	++tick;
+	(*callback)(++tick);
 }
