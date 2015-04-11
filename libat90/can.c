@@ -44,16 +44,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_DISABLE()     ( CANGCON &= ~(1<<ENASTB))
 #define CAN_FULL_ABORT()  { CANGCON |=  (1<<ABRQ); CANGCON &= ~(1<<ABRQ); }
 
-#define NB_CANIT_CB (9) //!< Number of canit callbacks.
-
 #define NB_MOB          ( 15        ) //!< Number of MOB's
 #define NB_DATA_MAX     ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB     ( NB_MOB-1  ) //!< Index of the last MOB. This is useful when looping over all MOB's
 #define NO_MOB          ( 0xFF      )
-
-#define MOB_Tx_ENA      ( 1 << CONMOB0 ) //!< Mask for Enabling Tx on the current MOB
-#define MOB_Rx_ENA      ( 2 << CONMOB0 ) //!< Mask for Enabling Rx on the current MOB
-#define MOB_Rx_BENA     ( 3 << CONMOB0 ) //!< Mask for Enabling Rx with buffer enabled for the current MOB
 
 #define DLC_MSK         ( (1<<DLC3)|(1<<DLC2)|(1<<DLC1)|(1<<DLC0)   ) //!< Mask for Data Length Coding bits in CANCDMOB
 #define MOB_CONMOB_MSK  ( (1 << CONMOB1) | (1 << CONMOB0)           ) //!< Mask for Configuration MOB bits in CANCDMOB
@@ -62,61 +56,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // This function is currently not fully implemented and tested.
 #define MAX_BLOCK_SIZE 15
 
-enum can_int_t {
-	CANIT_RX_COMPLETED_DLCW =   0,  //!< Data length code warning.
-	CANIT_RX_COMPLETED =        1,  //!< Receive completed.
-	CANIT_TX_COMPLETED =        2,  //!< Transmit completed.
-	CANIT_ACK_ERROR =           3,  //!< No detection of the dominant bit in the acknowledge slot.
-
-	/**
-	* @brief
-	*   The form error results from one or more violations of the fixed
-	*   form in the following bit fields:
-	*   + CRC delimiter
-	*   + Acknowledgment delimiter
-	*   + EOF
-	*/
-	CANIT_FORM_ERROR =          4,
-
-	/**
-	* @brief
-	*   The receiver performs a CRC check on every de-stuffed received message
-	*   from the start of frame up to the data field.
-	*   If this checking does not match with the de-stuffed CRC field, a CRC error is set.
-	*/
-	CANIT_CRC_ERROR =           5,
-	CANIT_STUFF_ERROR =         6,  //!< Detection of more than five consecutive bits with same value.
-	CANIT_BIT_ERROR =           7,  //!< Bit Error (Only in Transmission).
-	CANIT_DEFAULT =             8   //!< This is hopefully temporarily. Should not be possible! Needs testing.
-};
 
 enum FC_flag {
 	CLEAR_TO_SEND = 0,
 	WAIT =          1,
 	ABORT =         2
-};
-
-enum mob_mode_t {
-	MOB_DISABLED,   //!< In this mode, the MOb is disabled.
-	MOB_TRANSMIT,   //!< The mob is set in Transmit mode.
-	MOB_RECIEVE,    //!< The mob is set in Receive mode.
-
-	/**
-	* @brief
-	*   A reply (data frame) to a remote frame can be automatically
-	*   sent after reception of the expected remote frame.
-	*/
-	MOB_AUTOMATIC_REPLY,
-
-	/**
-	* @brief
-	*   This mode is useful to receive multi frames. The priority between MObs offers a management for
-	*   these incoming frames. One set MObs (including non-consecutive MObs) is created when the
-	*   MObs are set in this mode. Due to the mode setting, only one set is possible. A frame buffer
-	*   completed flag (or interrupt) - BXOK - will rise only when all the MObs of the set will have
-	*   received their dedicated CAN frame.
-	*/
-	MOB_FRAME_BUFF_RECEIVE
 };
 
 /**
@@ -126,7 +70,6 @@ enum mob_mode_t {
 *   switch on the given status of the MOB
 */
 enum mob_status_t {
-	MOB_NOT_COMPLETED       = ( 0x00 ),                                                 //!< 0x00
 	MOB_TX_COMPLETED        = ( 1<<TXOK ),                                              //!< 0x40
 	MOB_RX_COMPLETED        = ( 1<<RXOK ),                                              //!< 0x20
 	MOB_RX_COMPLETED_DLCW   = ( (1<<RXOK)|(1<<DLCW) ),                                  //!< 0xA0
@@ -135,9 +78,6 @@ enum mob_status_t {
 	MOB_CRC_ERROR           = ( 1<<CERR ),                                              //!< 0x04
 	MOB_STUFF_ERROR         = ( 1<<SERR ),                                              //!< 0x08
 	MOB_BIT_ERROR           = ( 1<<BERR ),                                              //!< 0x10
-	MOB_PENDING             = ( (1<<RXOK)|(1<<TXOK) ),                                  //!< 0x60
-	MOB_NOT_REACHED         = ( (1<<AERR)|(1<<FERR)|(1<<CERR)|(1<<SERR)|(1<<BERR) ),    //!< 0x1F
-	MOB_DISABLE             = ( 0xFF )                                                  //!< 0xFF
  };
 
 typedef struct can_msg_t can_msg_t;
