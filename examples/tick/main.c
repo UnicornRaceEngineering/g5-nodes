@@ -37,6 +37,7 @@ static void init(void) {
 	usart1_init(115200);
 	tick_init();
 
+	set_tick_callback(tick_tock);
 	seconds = 0;
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
