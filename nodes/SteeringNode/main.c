@@ -45,15 +45,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "paddleshift.h"
 #include "statuslight.h"
 #include "rpm.h"
+#include "shiftlight.h"
 
 #if 0
 #include <avr/fuse.h>
 FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #endif
-
-#define SHIFT_LIGHT_PORT    PORTE
-#define SHIFT_LIGHT_R       PIN4 // Red rgb light
-#define SHIFT_LIGHT_B       PIN3 // Blue rgb light
 
 enum paddle_status {PADDLE_DOWN, PADDLE_UP};
 
@@ -87,14 +84,7 @@ static void init(void) {
 	statuslight_init();
 	seg7_init();
 	rpm_init();
-
-	// Shift light RGB LED
-	{
-		SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B, OUTPUT);
-		SET_PIN_MODE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R, OUTPUT);
-		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
-		IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
-	}
+	shiftlight_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -135,16 +125,14 @@ int main(void) {
 				*paddle_status = PADDLE_UP;
 				can_broadcast(PADDLE_STATUS, paddle_status);
 
-				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
-				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
+				shiftlight_off();
 
 			} else if (paddle_down_is_pressed) {
 				int8_t *paddle_status = smalloc(sizeof(int8_t));
 				*paddle_status = PADDLE_DOWN;
 				can_broadcast(PADDLE_STATUS, paddle_status);
 
-				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
-				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
+				shiftlight_off();
 			}
 		}
 

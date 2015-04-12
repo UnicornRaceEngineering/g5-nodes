@@ -5,6 +5,7 @@ set(SRC_FILES
 	paddleshift.c
 	statuslight.c
 	rpm.c
+	shiftlight.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})
