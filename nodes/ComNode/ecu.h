@@ -125,14 +125,8 @@ enum ecu_id {
 }[ecu_id])
 
 struct sensor {
-	enum ecu_id id;				// ID
-
-	//!< @TODO is all sensor data really of type double? perhabs we should use
-	//!< a union here instead with a double and int field
-	union {
-		float value;
-		int32_t int_val;
-	};
+	enum ecu_id id;
+	float value;
 };
 
 void ecu_init(void);

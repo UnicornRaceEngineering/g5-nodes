@@ -77,8 +77,6 @@ void ecu_parse_package(void) {
 			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
 		}
 
-		bool is_float = true;
-
 		// Convert the raw data to usable data
 		{
 			switch (pkt[i].sensor.id) {
@@ -113,35 +111,10 @@ void ecu_parse_package(void) {
 			case GZ:
 				pkt[i].sensor.value = (clamp(pkt[i].raw_value) * (1.0 / 16384));
 				break;
-			case FUEL_PRESSURE:
-			case STATUS_LAP_COUNT:
-			case STATUS_INJ_SUM:
-			case LAST_GEAR_SHIFT:
-			case MOTOR_OILTEMP:
-			case OIL_PRESSURE:
-			case STATUS_TIME:
-			case STATUS_LAP_TIME:
-			case GEAR_OIL_TEMP:
-			case STATUS_TRACTION:
-			case STATUS_GAS:
-			case STATUS_CAM_TRIG_P1:
-			case STATUS_CAM_TRIG_P2:
-			case STATUS_CHOKER_ADD:
-			case STATUS_LAMBDA_PWM:
-			case TRIGGER_ERR:
-			case CAM_ANGLE1:
-			case CAM_ANGLE2:
-			case ROAD_SPEED:
-			case LOAD:
-			case DWELL_TIME:
-			case MOTOR_FLAGS:
-			case OUT_BITS:
-			case TIME:
-			case EMPTY:
+
 			default:
 				// No conversion
-				pkt[i].sensor.int_val = pkt[i].raw_value;
-				is_float = false;
+				pkt[i].sensor.value = pkt[i].raw_value;
 				break;
 			}
 		}
@@ -157,24 +130,15 @@ void ecu_parse_package(void) {
 			buff[s++] = pkt[i].sensor.id;
 
 			// next 1 + 4 bytes
-			int len;
-			if (is_float) {
-				buff[s++] = DT_FLOAT32;
-				len = sizeof(pkt[i].sensor.value);
-				memcpy(buff + s, &pkt[i].sensor.value, len);
-			} else {
-				buff[s++] = DT_INT32;
-				len = sizeof(pkt[i].sensor.int_val);
-				memcpy(buff + s, &pkt[i].sensor.int_val, len);
-			}
-			s += len;
+			buff[s++] = DT_FLOAT32;
+			memcpy(buff + s, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
+			s += sizeof(pkt[i].sensor.value);
 
 			// 1 + 8 bytes
 			buff[s++] = DT_UTC_DATETIME;
 			const int64_t ts = rtc_utc_datetime();
-			len = sizeof(ts);
-			memcpy(buff + s, &ts, len);
-			s += len;
+			memcpy(buff + s, &ts, sizeof(ts));
+			s += sizeof(ts);
 
 			xbee_send(buff, s);
 		}
