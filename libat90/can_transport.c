@@ -71,8 +71,13 @@ int init_can_node(enum node_id node) {
  * @param  data a pointer to the raw data that should be send
  * @return      Non zero on error.
  */
-int can_broadcast(const enum message_id type, void * const data) {
-	return can_send(message_info(type).id, message_info(type).len, data);
+int can_broadcast(const enum message_id receiver, void * const data) {
+	uint16_t i = 0;
+	do {
+		if (message_info(i).id == receiver)
+			return can_send(message_info(i).id, message_info(i).len, data);
+	} while (message_info(++i).id);
+	return -1;
 }
 
 

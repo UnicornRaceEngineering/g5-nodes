@@ -39,22 +39,23 @@ enum node_id {
 };
 
 enum message_id {
-	PADDLE_STATUS,
-	TRANSPORT_TEST_MSG,
-	ENGINE_RPM,
-	GPS_DATA,
+	PADDLE_STATUS 		= 1,
+	TRANSPORT_TEST_MSG 	= 2,
+	ENGINE_RPM 			= 28,
+	GPS_DATA 			= 4,
 };
 
 struct message_detail {
-	uint16_t id;
+	enum message_id id;
 	uint16_t len;
 };
 
 #define message_info(type) ((const struct message_detail []) { \
-	[PADDLE_STATUS] 	 = {.id =  1, .len = 27}, \
-	[TRANSPORT_TEST_MSG] = {.id =  2, .len =  4}, \
-	[ENGINE_RPM] 	 	 = {.id = 28, .len =  1}, \
-	[GPS_DATA]			 = {.id =  4, .len = 13}, \
+	{ .id = PADDLE_STATUS			, .len = 27 }, \
+	{ .id = TRANSPORT_TEST_MSG		, .len =  4 }, \
+	{ .id = ENGINE_RPM				, .len =  1 }, \
+	{ .id = GPS_DATA				, .len = 13 }, \
+	{ .id = 0						, .len =  0 }, \
 }[type])
 
 #endif /* CAN_TRANSPORT_H */
