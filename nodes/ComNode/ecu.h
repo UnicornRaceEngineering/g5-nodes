@@ -66,7 +66,7 @@ enum ecu_id {
 	CAM_ANGLE1,
 	CAM_ANGLE2,
 	ROAD_SPEED,
-	MAP_SENSOR,
+	MAP_SENSOR, /* manifold air pressure */
 	BATTERY_V,
 	LAMBDA_V,
 	LOAD,

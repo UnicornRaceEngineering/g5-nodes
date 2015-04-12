@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
 
+#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 #include <io.h>
@@ -38,6 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Drivers
 #include <74ls138d_demultiplexer.h>
 #include <max7221_7seg.h>
+
+#include "../ComNode/ecu.h"
 
 #include "paddleshift.h"
 #include "statuslight.h"
@@ -76,11 +79,34 @@ static void set_rpm(int16_t rpm) {
 	RPM_OCR = map(rpm, RPM_MIN_VALUE, RPM_MAX_VALUE, 0, 0xFF - calibration);
 }
 
+static void handle_ecu_data(uint8_t *data) {
+	const enum ecu_id id = *data++;
+	const float val = *(float*)data;
+
+	switch (id) {
+		case RPM:
+			set_rpm((int16_t)val); break;
+
+		case BATTERY_V: set_rgb_color(0, (val < 12.7) ? GREEN : RED); break;
+		case WATER_TEMP: set_rgb_color(1, (val < 100) ? GREEN : RED); break;
+		case MOTOR_OILTEMP: set_rgb_color(2, (val < 100) ? GREEN : RED); break;
+		case OIL_PRESSURE: set_rgb_color(3, ((int)val) ? GREEN : RED); break;
+		case MANIFOLD_AIR_TEMP: set_rgb_color(4, (val < 100) ? GREEN : RED); break;
+		case MAP_SENSOR: set_rgb_color(5, (val < 100) ? GREEN : RED); break;
+		case FUEL_PRESSURE: set_rgb_color(6, ((int)val) ? GREEN : RED); break;
+		/* TODO handle lauch control */
+			break;
+
+		default: break;
+	}
+}
+
 static void init(void) {
 	usart1_init(115200);
 	paddle_init();
 	statuslight_init();
 	seg7_init();
+	init_can_node(STEERING_NODE);
 
 	// init Timer0 PWM PB4 for the RPM-counter
 	{
@@ -111,40 +137,47 @@ int main(void) {
 	while (1) {
 		// Main work loop
 
+		// Handle incomming CAN messages
+		while (get_queue_length()) {
+			struct can_message *msg = read_inbox();
+
+			switch(msg->info.id) {
+				case ECU_DATA_PKT:
+					handle_ecu_data(msg->data);
+					break;
+
+				default:
+					fprintf(stderr, "Unknown can id %d\n", msg->info.id);
+					break;
+			}
+
+			can_free(msg);
+		}
+
 		// First lets store the current status of the paddleshifters
 		{
 			const bool paddle_up_is_pressed = paddle_up_status();
 			const bool paddle_down_is_pressed = paddle_down_status();
 
+			// If any of the paddles is pressed broadcast it on the can and
+			// clear the shift light
 			if (paddle_up_is_pressed) {
-				//can_broadcast(PADDLE_STATUS, (uint8_t *) & (const enum paddle_status) {
-				//	PADDLE_UP
-				//});
-				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+				int8_t *paddle_status = smalloc(sizeof(int8_t));
+				*paddle_status = PADDLE_UP;
+				can_broadcast(PADDLE_STATUS, paddle_status);
+
+				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 
 			} else if (paddle_down_is_pressed) {
-				//can_broadcast(PADDLE_STATUS, (uint8_t *) & (const enum paddle_status) {
-				//	PADDLE_DOWN
-				//});
-				DIGITAL_TOGGLE(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
+				int8_t *paddle_status = smalloc(sizeof(int8_t));
+				*paddle_status = PADDLE_DOWN;
+				can_broadcast(PADDLE_STATUS, paddle_status);
+
+				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_B);
+				IO_SET_LOW(SHIFT_LIGHT_PORT, SHIFT_LIGHT_R);
 			}
 		}
-
-		// for (size_t n_msg = 0; n_msg < node->n_msg_subscriped; ++n_msg) {
-		// 	if (node->msg_subscriped[n_msg].complete) {
-		// 		struct can_message *msg = &node->msg_subscriped[n_msg];
-		// 		msg->complete = false;
-
-		// 		switch (msg->id) {
-		// 		case ENGINE_RPM: set_rpm((int16_t) * (int16_t *)msg->payload.data); break;
-		// 		/**
-		// 		 * @TODO The steering wheel should recv a lot of other
-		// 		 * values that should handled here
-		// 		 */
-		// 		default: break;
-		// 		}
-		// 	}
-		// }
 
 		// Print the values of relevant can register to the 7seg display
 		{
@@ -205,20 +238,19 @@ int main(void) {
 				// the LED to GND thus the LED will light up.
 				// In short LOW == ON
 
-				dmux_set_y_low(leds[i]);
 				seg7_disp_char(3, i + '0', false);
 
 				{
-					set_rgb_color(RED);         _delay_ms(50);
-					set_rgb_color(GREEN);       _delay_ms(50);
-					set_rgb_color(BLUE);        _delay_ms(50);
+					set_rgb_color(leds[i], RED);         _delay_ms(50);
+					set_rgb_color(leds[i], GREEN);       _delay_ms(50);
+					set_rgb_color(leds[i], BLUE);        _delay_ms(50);
 
-					set_rgb_color(YELLOW);      _delay_ms(50);
-					set_rgb_color(MAGENTA);     _delay_ms(50);
-					set_rgb_color(CYAN);        _delay_ms(50);
+					set_rgb_color(leds[i], YELLOW);      _delay_ms(50);
+					set_rgb_color(leds[i], MAGENTA);     _delay_ms(50);
+					set_rgb_color(leds[i], CYAN);        _delay_ms(50);
 
-					set_rgb_color(WHITE);       _delay_ms(50);
-					set_rgb_color(COLOR_OFF);   _delay_ms(50);
+					set_rgb_color(leds[i], WHITE);       _delay_ms(50);
+					set_rgb_color(leds[i], COLOR_OFF);   _delay_ms(50);
 				}
 			}
 		}

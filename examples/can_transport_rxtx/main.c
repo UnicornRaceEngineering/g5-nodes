@@ -47,7 +47,7 @@ int main(void) {
 
 	_delay_ms(5000);
 	while (1) {
-#if 0
+#if 1
 		uint8_t *storage = (uint8_t*)smalloc(27);
 		char str[27] = "HAS anyone really been far\n";
 		strncpy((char*)&storage[0], str, 27);

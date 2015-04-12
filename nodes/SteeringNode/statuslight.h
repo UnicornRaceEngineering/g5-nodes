@@ -50,6 +50,6 @@ enum color_masks {
 };
 
 void statuslight_init(void);
-void set_rgb_color(enum color_masks color);
+void set_rgb_color(int led, enum color_masks color);
 
 #endif /* STATUSLIGHT_H */

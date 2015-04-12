@@ -27,31 +27,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <io.h>
 #include "statuslight.h"
 
-enum status_indication {
-	BATTERY_VOLTAGE,
-	WATER_TEMP,
-	OIL_TEMP,
-	OIL_PRESSURE,
-	AIR_TEMP,
-	AIR_PRESSURE,
-	FUEL,
-	LAUNCH_CONTROL,
-};
-
-void status_set(enum status_indication st, enum color_masks color) {
-	switch (st) {
-	case BATTERY_VOLTAGE:   dmux_set_y_low(DMUX_Y0); break;
-	case WATER_TEMP:        dmux_set_y_low(DMUX_Y1); break;
-	case OIL_TEMP:          dmux_set_y_low(DMUX_Y2); break;
-	case OIL_PRESSURE:      dmux_set_y_low(DMUX_Y3); break;
-	case AIR_TEMP:          dmux_set_y_low(DMUX_Y4); break;
-	case AIR_PRESSURE:      dmux_set_y_low(DMUX_Y5); break;
-	case FUEL:              dmux_set_y_low(DMUX_Y6); break;
-	case LAUNCH_CONTROL:    dmux_set_y_low(DMUX_Y7); break;
-	}
-	set_rgb_color(color);
-}
-
 void statuslight_init(void) {
 	// init status LEDS
 	{
@@ -62,6 +37,7 @@ void statuslight_init(void) {
 	dmux_init();
 }
 
-void set_rgb_color(enum color_masks color) {
+void set_rgb_color(int led, enum color_masks color) {
+	dmux_set_y_low(led);
 	SET_REGISTER_BITS(STATUS_LED_PORT, color, STATUS_LED_MASK);
 }
