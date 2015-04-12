@@ -44,6 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "paddleshift.h"
 #include "statuslight.h"
+#include "rpm.h"
 
 #if 0
 #include <avr/fuse.h>
@@ -54,30 +55,8 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #define SHIFT_LIGHT_R       PIN4 // Red rgb light
 #define SHIFT_LIGHT_B       PIN3 // Blue rgb light
 
-#define RPM_PORT        PORTB
-#define RPM_PIN         PIN4
-#define RPM_TCCR        TCCR2A
-#define RPM_OCR         OCR2A
-#define RPM_WGM1        WGM21
-#define RPM_WGM0        WGM20
-#define RPM_CS1         CS21
-#define RPM_CS0         CS20
-#define RPM_COMA1       COM0A1
-#define RPM_COMA0       COM0A0
-
-#define RPM_MAX_VALUE   13000
-#define RPM_MIN_VALUE   3300
-
 enum paddle_status {PADDLE_DOWN, PADDLE_UP};
 
-static void set_rpm(int16_t rpm) {
-	// Because the PWM signal goes through a low pass filter we loose some
-	// granularity so we must lower the max value or the RPM meter will max out
-	// too soon. The value is determined by increasing the calibration value
-	// until it "looked right".
-	const int8_t calibration = 80;
-	RPM_OCR = map(rpm, RPM_MIN_VALUE, RPM_MAX_VALUE, 0, 0xFF - calibration);
-}
 
 static void handle_ecu_data(uint8_t *data) {
 	const enum ecu_id id = *data++;
@@ -102,22 +81,12 @@ static void handle_ecu_data(uint8_t *data) {
 }
 
 static void init(void) {
+	init_can_node(STEERING_NODE);
 	usart1_init(115200);
 	paddle_init();
 	statuslight_init();
 	seg7_init();
-	init_can_node(STEERING_NODE);
-
-	// init Timer0 PWM PB4 for the RPM-counter
-	{
-		RPM_TCCR |= (1 << RPM_WGM1) | (1 << RPM_WGM0); // Fast PWM mode
-		RPM_TCCR |= (1 << RPM_CS1) | (1 << RPM_CS1); // F_CPU/64 prescalar
-		// Clear RPM_OCR on compare match. Set RPM_OCR at TOP.
-		RPM_TCCR |= (1 << RPM_COMA1) | (0 <<  RPM_COMA0);
-
-		set_rpm(0);
-		SET_PIN_MODE(RPM_PORT, RPM_PIN, OUTPUT);
-	}
+	rpm_init();
 
 	// Shift light RGB LED
 	{
