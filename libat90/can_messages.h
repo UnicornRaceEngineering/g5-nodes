@@ -55,6 +55,7 @@ struct message_detail {
 	{ .id = PADDLE_STATUS			, .len = 1 }, \
 	{ .id = TRANSPORT_TEST_MSG		, .len =  4 }, \
 	{ .id = GPS_DATA				, .len = 13 }, \
+	{ .id = ECU_DATA_PKT			, .len = 5 }, \
 	{ .id = 0						, .len =  0 }, \
 }[type])
 

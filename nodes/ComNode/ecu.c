@@ -42,6 +42,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <m41t81s_rtc.h>
 #include <string.h>
 #include <utils.h>
+#include <heap.h>
+#include <can_transport.h>
 
 #include "xbee.h"
 #include "bson.h"
@@ -120,27 +122,38 @@ void ecu_parse_package(void) {
 		}
 
 		if (pkt[i].sensor.id != EMPTY) {
-			uint8_t buff[4 + 1 + 4 + 1 + 8];
-			int s = 0;
+			// Broadcast on CAN
+			{
+				uint8_t *buf = smalloc(1 + sizeof(pkt[i].sensor.value));
+				*buf++ = pkt[i].sensor.id;
+				memcpy(buf, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
+				can_broadcast(ECU_DATA_PKT, buf);
+			}
 
-			// The first 4 byte in the buffer
-			buff[s++] = DT_INT8;
-			buff[s++] = XBEE_ECU;
-			buff[s++] = DT_INT8;
-			buff[s++] = pkt[i].sensor.id;
+			// Broadcast to Xbee
+			{
+				uint8_t buff[4 + 1 + 4 + 1 + 8];
+				int s = 0;
 
-			// next 1 + 4 bytes
-			buff[s++] = DT_FLOAT32;
-			memcpy(buff + s, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
-			s += sizeof(pkt[i].sensor.value);
+				// The first 4 byte in the buffer
+				buff[s++] = DT_INT8;
+				buff[s++] = XBEE_ECU;
+				buff[s++] = DT_INT8;
+				buff[s++] = pkt[i].sensor.id;
 
-			// 1 + 8 bytes
-			buff[s++] = DT_UTC_DATETIME;
-			const int64_t ts = rtc_utc_datetime();
-			memcpy(buff + s, &ts, sizeof(ts));
-			s += sizeof(ts);
+				// next 1 + 4 bytes
+				buff[s++] = DT_FLOAT32;
+				memcpy(buff + s, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
+				s += sizeof(pkt[i].sensor.value);
 
-			xbee_send(buff, s);
+				// 1 + 8 bytes
+				buff[s++] = DT_UTC_DATETIME;
+				const int64_t ts = rtc_utc_datetime();
+				memcpy(buff + s, &ts, sizeof(ts));
+				s += sizeof(ts);
+
+				xbee_send(buff, s);
+			}
 		}
 	}
 }
