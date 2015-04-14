@@ -41,6 +41,7 @@ struct can_message {
 
 int init_can_node(const enum node_id id);
 int can_broadcast(const enum message_id receiver, void * const data);
+int can_broadcast_single(const enum message_id receiver, uint8_t data[7]);
 struct can_message* read_inbox(void);
 uint8_t get_queue_length(void);
 void can_free(struct can_message*);

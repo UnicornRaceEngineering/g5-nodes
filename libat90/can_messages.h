@@ -39,11 +39,12 @@ enum node_id {
 };
 
 enum message_id {
-	TRANSPORT_TEST_MSG 	= 2,
+	TRANSPORT_TEST_SHORT= 1,
+	TRANSPORT_TEST_LONG	= 2,
+	PADDLE_STATUS 		= 3,
 	ENGINE_RPM 			= 28,
 	GPS_DATA 			= 4,
-	PADDLE_STATUS,
-	ECU_DATA_PKT
+	ECU_DATA_PKT		= 5,
 };
 
 struct message_detail {
@@ -52,10 +53,12 @@ struct message_detail {
 };
 
 #define message_info(type) ((const struct message_detail []) { \
-	{ .id = PADDLE_STATUS			, .len = 1 }, \
-	{ .id = TRANSPORT_TEST_MSG		, .len =  4 }, \
+	{ .id = TRANSPORT_TEST_SHORT	, .len =  6 }, \
+	{ .id = TRANSPORT_TEST_LONG		, .len = 27 }, \
+	{ .id = PADDLE_STATUS			, .len =  4 }, \
+	{ .id = ENGINE_RPM				, .len =  1 }, \
 	{ .id = GPS_DATA				, .len = 13 }, \
-	{ .id = ECU_DATA_PKT			, .len = 5 }, \
+	{ .id = ECU_DATA_PKT			, .len =  5 }, \
 	{ .id = 0						, .len =  0 }, \
 }[type])
 
