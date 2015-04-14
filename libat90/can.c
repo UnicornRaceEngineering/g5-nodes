@@ -106,6 +106,7 @@ struct can_msg_t {
 } while (0)
 //!< @} ----------
 
+#define TX_BUSY() ( BIT_CHECK(CANGSTA, TXBSY) )
 
 //!< @name CAN status Interrupt register
 //!< @{
@@ -359,6 +360,27 @@ static void send_response(enum FC_flag flag, uint8_t block_size,
 	MOB_TX_DATA(msg);
 	CAN_ENABLE_MOB_INTERRUPT(mob);
 	MOB_EN_TX();
+}
+
+uint8_t can_send_single(const uint16_t id, const uint16_t len, uint8_t msg[7]) {
+	uint8_t mob = find_me_a_mob();
+	if (mob == -1)
+		return -1;
+
+	uint8_t data[8] = {0};
+	data[0] = (6 << 3) & 0xF8;
+	for (uint8_t i = 0; i < 7; ++i)
+		data[i + 1] = msg[i];
+
+	BIT_SET(mob_on_job, mob);
+	CAN_SET_MOB(mob);
+	MOB_SET_STD_ID(id);
+	MOB_SET_DLC(8);
+	MOB_TX_DATA(data);
+	MOB_EN_TX();
+	while(TX_BUSY());
+	BIT_CLEAR(mob_on_job, mob);
+	return 0;
 }
 
 static void can_transmit (uint8_t mob, uint8_t type) {

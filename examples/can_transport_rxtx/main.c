@@ -48,21 +48,31 @@ int main(void) {
 	_delay_ms(5000);
 	while (1) {
 #if 0
+	//Sending
+	#if 1
+		// Sending a short message (1 frame)
+		uint8_t msg[6] = {'H', 'e', 'l', 'l', 'o', '\n'};
+		can_broadcast_single(TRANSPORT_TEST_SHORT, msg);
+		_delay_ms(1000);
+	#else
+		// Sending a long message (4 frames)
 		uint8_t *storage = (uint8_t*)smalloc(27);
 		char str[27] = "HAS anyone really been far\n";
 		strncpy((char*)&storage[0], str, 27);
-		can_broadcast(PADDLE_STATUS, storage);
+		can_broadcast(TRANSPORT_TEST_LONG, storage);
 		_delay_ms(1000);
+	#endif
 #else
-		while(get_queue_length()) {
-			struct can_message *message = read_inbox();
-			printf("message of id %d and length %d : ", message->info.id, message->info.len);
-			for (int i = 0; i < message->info.len; ++i)
-				putchar(message->data[i]);
-			can_free(message);
-		}
-		putchar('\n');
-		_delay_ms(1000);
+	// recieving
+	while(get_queue_length()) {
+		struct can_message *message = read_inbox();
+		printf("message of id %d and length %d : ", message->info.id, message->info.len);
+		for (int i = 0; i < message->info.len; ++i)
+			putchar(message->data[i]);
+		can_free(message);
+	}
+	putchar('\n');
+	_delay_ms(1000);
 #endif
 	}
 
