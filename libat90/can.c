@@ -34,8 +34,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include "utils.h"
-#include "can.h"
 #include "heap.h"
+#include "can_baud.h"
+#include "can.h"
 
 
 //_____ D E F I N I T I O N S __________________________________________________
@@ -212,8 +213,6 @@ struct can_msg_t {
 //_____ D E C L A R A T I O N S ________________________________________________
 
 static void finnish_receive(uint8_t mob);
-static int8_t set_can_config(const uint32_t baudrate);
-static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit);
 static void can_transmit (uint8_t mob, uint8_t type);
 static int8_t find_me_a_mob(void);
 static void enable_spy_mob(uint8_t mob);
@@ -251,7 +250,9 @@ uint8_t can_init(uint16_t mask) {
 	which is set in the follow register values.
 	(because 11059200 % 204800 = 0 we get a timing error = 0)
 	 */
-	if (set_can_config(CAN_BAUDRATE) != 0) return 1;
+	CANBT1 = CANBT1_VALUE;
+	CANBT2 = CANBT2_VALUE;
+	CANBT3 = CANBT3_VALUE;
 
 	// It reset CANSTMOB, CANCDMOB, CANIDTx & CANIDMx and clears data FIFO of
 	// MOb[0] upto MOb[LAST_MOB_NB].
@@ -288,51 +289,6 @@ uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	// single message (type 0). When sending longer messages is send multiple
 	// frames are needed and the first of these messages will be of type 1.
 	can_transmit(mob, (len > 7));
-	return 0;
-}
-
-
-static int8_t set_can_config(const uint32_t baudrate) {
-	if ((F_CPU % baudrate) != 0) return 1;
-
-	const uint16_t clks_pr_bit = F_CPU / baudrate;
-
-	// As per CAN spec Tbit must be must at least from 8 to 25
-	for (uint8_t Tbit = 8; Tbit <= 25; ++Tbit) {
-
-		// Make sure the prescalar is a whole integer with no remainder
-		if ((clks_pr_bit % Tbit) != 0) continue;
-		const uint8_t prescalar = clks_pr_bit / Tbit;
-
-		// Prescalar (BRP[5..0]) is a 6 bit value so it cant be bigger than 2^6
-		if (prescalar > (1<<6)) continue;
-
-		return set_can_timings(prescalar, Tbit);
-	}
-
-	return 1;
-}
-
-static int8_t set_can_timings(const uint8_t prescalar, const uint8_t Tbit) {
-	const uint8_t Tsyns = 1; // Tsyns is always 1 TQ
-	const uint8_t Tprs = IS_ODD(Tbit)				? ((Tbit-1)/2) : (Tbit/2);
-	const uint8_t Tph1 = IS_ODD(Tbit-Tprs-Tsyns)	? ((Tprs/2)+1) : (Tprs/2);
-	const uint8_t Tph2 = Tprs/2; // We round down to nearest int
-	const uint8_t Tsjw = 1; // can vary from 1 to 4 but is 1 in all avr examples
-
-	// Sanity check
-	if (Tbit != Tsyns+Tprs+Tph1+Tph2
-		|| !(1 <= Tprs && Tprs <= 8)
-		|| !(1 <= Tph1 && Tph1 <= 8)
-		|| !(2 <= Tph2 && Tph2 <= Tph1)) return 1;
-
-	SET_REGISTER_BITS(CANBT1, (prescalar-1)<<BRP0,
-		(1<<BRP5|1<<BRP4|1<<BRP3|1<<BRP2|1<<BRP1|1<<BRP0));
-	SET_REGISTER_BITS(CANBT2, (Tprs-1)<<PRS0, (1<<PRS0|1<<PRS1|1<<PRS2));
-	SET_REGISTER_BITS(CANBT2, (Tsjw-1)<<SJW0, (1<<SJW0|1<<SJW1));
-	SET_REGISTER_BITS(CANBT3, (Tph1-1)<<PHS10, (1<<PHS10|1<<PHS11|1<<PHS12));
-	SET_REGISTER_BITS(CANBT3, (Tph2-1)<<PHS20, (1<<PHS20|1<<PHS21|1<<PHS22));
-
 	return 0;
 }
 
