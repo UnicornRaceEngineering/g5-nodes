@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <io.h>
 #include <utils.h>
+#include <tick.h>
 
 // Drivers
 #include <74ls138d_demultiplexer.h>
@@ -80,6 +81,7 @@ static void handle_ecu_data(uint8_t *data) {
 static void init(void) {
 	init_can_node(STEERING_NODE);
 	usart1_init(115200);
+	tick_init();
 	paddle_init();
 	statuslight_init();
 	seg7_init();
@@ -121,36 +123,16 @@ int main(void) {
 			// If any of the paddles is pressed broadcast it on the can and
 			// clear the shift light
 			if (paddle_up_is_pressed) {
-				int8_t *paddle_status = smalloc(sizeof(int8_t));
-				*paddle_status = PADDLE_UP;
-				can_broadcast(PADDLE_STATUS, paddle_status);
+				uint8_t buf[1] = {PADDLE_UP};
+				can_broadcast_single(PADDLE_STATUS, buf);
 
 				shiftlight_off();
-
 			} else if (paddle_down_is_pressed) {
-				int8_t *paddle_status = smalloc(sizeof(int8_t));
-				*paddle_status = PADDLE_DOWN;
-				can_broadcast(PADDLE_STATUS, paddle_status);
+				uint8_t buf[1] = {PADDLE_DOWN};
+				can_broadcast_single(PADDLE_STATUS, buf);
 
 				shiftlight_off();
 			}
-		}
-
-		// Print the values of relevant can register to the 7seg display
-		{
-			char buff[7] = {'\0'};
-			seg7_disp_char(0, PADDLE_STATUS + '0', false);
-			if (CANGSTA != (1 << ENFG)) {
-				snprintf(buff, ARR_LEN(buff), "%d", CANGSTA);
-				seg7_disp_str(buff, 0, 2);
-				seg7_disp_char(3, '0', false);
-			} else {
-				seg7_disp_char(3, '1', false);
-			}
-			// snprintf(buff, ARR_LEN(buff), "%d", err_mob);
-			snprintf(buff, ARR_LEN(buff), "%d", CANGIT);
-			seg7_disp_str(buff, 4, 6);
-			// _delay_ms(500);
 		}
 
 #if 0

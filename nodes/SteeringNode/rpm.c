@@ -31,9 +31,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "rpm.h"
 
-#define RPM_MAX_VALUE   13000
-#define RPM_MIN_VALUE   3300
-
 #define CALIBRATION 80
 
 void rpm_init(void) {
@@ -49,7 +46,7 @@ void rpm_init(void) {
 	}
 }
 
-extern void set_rpm(int16_t rpm) {
+void set_rpm(int16_t rpm) {
 	// Because the PWM signal goes through a low pass filter we loose some
 	// granularity so we must lower the max value or the RPM meter will max out
 	// too soon. The value is determined by increasing the calibration value

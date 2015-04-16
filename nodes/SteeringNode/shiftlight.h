@@ -27,9 +27,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SHIFT_LIGHT_PORT    PORTE
 #define SHIFT_LIGHT_R       PIN4 // Red rgb light
 #define SHIFT_LIGHT_B       PIN3 // Blue rgb light
+#define SHIFT_LIGHT_MSK		(SHIFT_LIGHT_R|SHIFT_LIGHT_B)
 
 void shiftlight_init(void);
 void shiftlight_off(void);
 void shiftlight_on(void);
+void shiftlight_toggle(void);
 
 #endif /* SHIFTLIGHT_H */
