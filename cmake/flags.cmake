@@ -1,4 +1,5 @@
 set(F_CPU 11059200)
+set(CAN_BAUDRATE 204800)
 
 # In relation to GCC Bugzilla – Bug 59396
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59396
@@ -25,7 +26,7 @@ set(CTUNING "-fpack-struct -fshort-enums -funsigned-bitfields -funsigned-char ${
 
 set(COPT "-Os")
 
-add_definitions(-DF_CPU=${F_CPU})
+add_definitions(-DF_CPU=${F_CPU} -DCAN_BAUDRATE=${CAN_BAUDRATE})
 set(CFLAGS "${CMCU} ${CINCS} ${CSTANDARD} ${CDEBUG} ${CWARN} ${CTUNING} ${COPT} ${CEXTRA}")
 
 # Without the "CACHE STRING "" FORCE" the CMAKE_C_FLAGS variable is empty when
