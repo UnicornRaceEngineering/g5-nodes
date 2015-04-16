@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2014 UnicornRaceEngineering
+Copyright (c) 2015 UnicornRaceEngineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -21,30 +21,16 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
- */
+#ifndef NEUTRAL_H
+#define NEUTRAL_H
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
-
-#include <avr/io.h>
 #include <stdbool.h>
+#include <avr/io.h>
 
-enum paddle_status {
-	PADDLE_DOWN 	= 1 << 0,
-	PADDLE_UP 		= 1 << 1,
+#define NEUTRAL_BTN_PORT	PORTF
+#define NEUTRAL_BTN_PIN		PIN3
 
-	NEUTRAL_ENABLE 	= 1 << 7,
-};
+void neutral_btn_init(void);
+bool neutral_btn_pressed(void);
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-uint8_t paddle_state(void);
-/** @} */
-
-#endif /* PADDLESHIFT_H */
+#endif /* NEUTRAL_H */

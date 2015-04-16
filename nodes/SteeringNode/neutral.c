@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2014 UnicornRaceEngineering
+Copyright (c) 2015 UnicornRaceEngineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -22,29 +22,26 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @file paddleshift.h
- * Implements a basic interface to paddleshift controls connected to board
+ * @file neutral.c
+ * Handles input from neutral enable button
  */
 
-#ifndef PADDLESHIFT_H
-#define PADDLESHIFT_H
-
-#include <avr/io.h>
 #include <stdbool.h>
+#include <avr/io.h>
+#include <io.h>
+#include <utils.h>
 
-enum paddle_status {
-	PADDLE_DOWN 	= 1 << 0,
-	PADDLE_UP 		= 1 << 1,
+#include "neutral.h"
 
-	NEUTRAL_ENABLE 	= 1 << 7,
-};
 
-/**
- * @name Function prototypes
- * @{
- */
-void paddle_init(void);
-uint8_t paddle_state(void);
-/** @} */
+void neutral_btn_init(void) {
+	SET_PIN_MODE(NEUTRAL_BTN_PORT, NEUTRAL_BTN_PIN, INPUT);
+}
 
-#endif /* PADDLESHIFT_H */
+bool neutral_btn_pressed(void) {
+	/**
+	 * @TODO This should really be an interrupt telling if we are changing state
+	 * otherwise we are gonna fill the CAN bus with neutral enable messages
+	 */
+	return (bool)DIGITAL_READ(NEUTRAL_BTN_PORT, NEUTRAL_BTN_PIN);
+}

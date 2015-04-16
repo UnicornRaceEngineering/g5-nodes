@@ -47,13 +47,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "statuslight.h"
 #include "rpm.h"
 #include "shiftlight.h"
+#include "neutral.h"
 
 #if 0
 #include <avr/fuse.h>
 FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #endif
 
-enum paddle_status {PADDLE_DOWN, PADDLE_UP};
 
 
 static void handle_ecu_data(uint8_t *data) {
@@ -87,6 +87,7 @@ static void init(void) {
 	seg7_init();
 	rpm_init();
 	shiftlight_init();
+	neutral_btn_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -117,18 +118,10 @@ int main(void) {
 
 		// First lets store the current status of the paddleshifters
 		{
-			const bool paddle_up_is_pressed = paddle_up_status();
-			const bool paddle_down_is_pressed = paddle_down_status();
-
-			// If any of the paddles is pressed broadcast it on the can and
-			// clear the shift light
-			if (paddle_up_is_pressed) {
-				uint8_t buf[1] = {PADDLE_UP};
-				can_broadcast_single(PADDLE_STATUS, buf);
-
-				shiftlight_off();
-			} else if (paddle_down_is_pressed) {
-				uint8_t buf[1] = {PADDLE_DOWN};
+			uint8_t state = paddle_state();
+			if (neutral_btn_pressed()) state |= NEUTRAL_ENABLE;
+			if (state) {
+				uint8_t buf[1] = {state};
 				can_broadcast_single(PADDLE_STATUS, buf);
 
 				shiftlight_off();

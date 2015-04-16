@@ -57,8 +57,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define DEBOUNCE_TIME	25
 
-static volatile bool paddle_up_pressed = false;
-static volatile bool paddle_down_pressed = false;
+static volatile uint8_t state;
 
 static volatile uint32_t last_time = 0;
 
@@ -81,28 +80,22 @@ void paddle_init(void) {
 	}
 }
 
-bool paddle_up_status(void) {
-	const bool status = paddle_up_pressed;
-	paddle_up_pressed = false; // Reset the pressed status here
-	return status;
-}
-
-bool paddle_down_status(void) {
-	const bool status = paddle_down_pressed;
-	paddle_down_pressed = false; // Reset the pressed status here
-	return status;
+uint8_t paddle_state(void) {
+	const uint8_t st = state;
+	state = 0;
+	return st;
 }
 
 ISR(PADDLE_UP_ISR_VECT) {
 	if (get_tick() - last_time >= DEBOUNCE_TIME) {
-		paddle_up_pressed = true;
+		state |= PADDLE_UP;
 		last_time = get_tick();
 	}
 }
 
 ISR(PADDLE_DOWN_ISR_VECT) {
 	if (get_tick() - last_time >= DEBOUNCE_TIME) {
-		paddle_down_pressed = true;
+		state |= PADDLE_DOWN;
 		last_time = get_tick();
 	}
 }
