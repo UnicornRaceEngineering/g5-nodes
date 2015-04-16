@@ -318,8 +318,8 @@ static void send_response(enum FC_flag flag, uint8_t block_size,
 	MOB_EN_TX();
 }
 
-uint8_t can_send_single(const uint16_t id, const uint16_t len, uint8_t msg[7]) {
-	uint8_t mob = find_me_a_mob();
+int8_t can_send_single(const uint16_t id, const uint16_t len, uint8_t msg[7]) {
+	int8_t mob = find_me_a_mob();
 	if (mob == -1)
 		return -1;
 
@@ -554,9 +554,13 @@ static void can_get(uint8_t mob) {
 
 ISR (CANIT_vect) {
 	while (PRIORITY_MOB() != 15) { /* True if mob have pending interrupt */
-		uint8_t mob = PRIORITY_MOB();
+		const uint8_t mob = PRIORITY_MOB();
 		CAN_SET_MOB(mob);
-		switch (CANSTMOB) {
+		const uint8_t canst = CANSTMOB;
+		CANSTMOB = 0;
+		sei();
+
+		switch (canst) {
 			case MOB_RX_COMPLETED_DLCW:
 				// Fall through to MOB_RX_COMPLETED on purpose.
 			case MOB_RX_COMPLETED:
@@ -582,6 +586,6 @@ ISR (CANIT_vect) {
 		// 	case MOB_BIT_ERROR:
 		// 		break;
 		}
-		CANSTMOB = 0;
+		cli();
 	}
 }
