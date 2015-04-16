@@ -65,4 +65,16 @@ static inline void pwm_PE5_set_dutycycle(uint8_t dutycycle) {
 	pwm_PE5_set_top(top);
 }
 
+void pwm_PB5_init(void);
+
+static inline void pwm_PB5_set_top(uint16_t top) {
+	OCR1AH = HIGH_BYTE(top);
+	OCR1AL = LOW_BYTE(top);
+}
+
+static inline void pwm_PB5_set_dutycycle(uint8_t dutycycle) {
+	const uint16_t top = DUTY_TO_TOP(dutycycle);
+	pwm_PB5_set_top(top);
+}
+
 #endif /* PWM_H */
