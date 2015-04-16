@@ -21,43 +21,16 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * @files hbridge_vnh2sp30.h
- * This implement the basic driver interface to the vnh2sp30 h-bridge.
- * The h-bridge has a few pins that we should concern ourselves with, namely
- * INA, INB, DIAGA DIAGB, PWM and CS.
- *
- * INA and INB:
- *  controls the direction of the connected motor.
- *
- * DIAGA and DIAGB:
- *  TODO: WRITE THIS DISCRIPTION
- *
- * PWM:
- * 	The input PWM that controls the speed of the connected motor
- *
- * CS:
- * 	Current Sense, holds an analog value of how much current the motor is using.
- */
-
-#include <avr/io.h>
-
-#define HBRIDGE_INA_PORT	(PORTA)
-#define HBRIDGE_INA_PIN		(PIN0)
-
-#define HBRIDGE_INB_PORT	(PORTA)
-#define HBRIDGE_INB_PIN		(PIN1)
-
-#define HBRIDGE_PWM_PORT	(PORTB)
-#define HBRIDGE_PWM_PIN		(PIN5)
-
-#define HBRIDGE_DIAGA_PORT	(PORTA)
-#define HBRIDGE_DIAGA_PIN	(PIN2)
-
-#define HBRIDGE_DIAGB_PORT	(PORTA)
-#define HBRIDGE_DIAGB_PIN	(PIN3)
-
-#define HBRIDGE_CS_PORT		(PORTF)
-#define HBRIDGE_CS_PIN		(PIN0)
+#ifndef DEWALT_H
+#define DEWALT_H
 
 
+#include <stdint.h>
+
+void dewalt_init(void);
+void dewalt_set_direction_A(void);
+void dewalt_set_direction_B(void);
+void dewalt_set_pwm_dutycycle(uint8_t dutycycle);
+void dewalt_kill(void);
+
+#endif /* DEWALT_H */

@@ -21,26 +21,29 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "hbridge_vnh2sp30.h"
-#include "io.h"
+#include "dewalt.h"
+#include "vnh2sp30.h"
 
-void hbridge_vnh2sp30_set_INA(void) {
-	IO_SET_HIGH(HBRIDGE_INA_PORT, HBRIDGE_INA_PIN);
+#include <stdint.h>
+
+void dewalt_init(void) {
+	vnh2sp30_init();
 }
 
-void hbridge_vnh2sp30_set_INB(void) {
-	IO_SET_HIGH(HBRIDGE_INB_PORT, HBRIDGE_INB_PIN);
+void dewalt_set_direction_A(void) {
+	vnh2sp30_clear_INB();
+	vnh2sp30_set_INA();
 }
 
-void hbridge_vnh2sp30_clear_INA(void) {
-	IO_SET_LOW(HBRIDGE_INA_PORT, HBRIDGE_INA_PIN);
+void dewalt_set_direction_B(void) {
+	vnh2sp30_clear_INA();
+	vnh2sp30_set_INB();
 }
 
-void hbridge_vnh2sp30_clear_INB(void) {
-	IO_SET_LOW(HBRIDGE_INB_PORT, HBRIDGE_INB_PIN);
+void dewalt_set_pwm_dutycycle(uint8_t dutycycle) {
+	vnh2sp30_set_PWM_dutycycle(dutycycle);
 }
 
-void hbridge_vnh2sp30_init(void) {
-	SET_PIN_MODE(HBRIDGE_INA_PORT, HBRIDGE_INA_PIN, OUTPUT);
-	SET_PIN_MODE(HBRIDGE_INB_PORT, HBRIDGE_INB_PIN, OUTPUT);
+void dewalt_kill(void) {
+	vnh2sp30_active_break_to_GND();
 }

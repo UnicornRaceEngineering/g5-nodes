@@ -24,40 +24,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdio.h>
 
+#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include <stdbool.h>
-#include <avr/pgmspace.h>
 
 #include <usart.h>
 #include <io.h>
 #include <utils.h>
-#include <pwm.h>
+
+#include "dewalt.h"
+#include "vnh2sp30.h"
+#include "neutralsensor.h"
 
 #define IGN_PORT	(PORTE)
 #define IGN_PIN		(PIN4)
-#define IGNITION_CUT_DELAY()	( _delay_ms(100) )
-#define IGNITION_CUT_ON()		( BIT_SET(IGN_PORT, IGN_PIN) )
-#define IGNITION_CUT_OFF()		( BIT_CLEAR(IGN_PORT, IGN_PIN) )
-
-
-#define NEUT_PORT	(PORTE)
-#define NEUT_PIN	(PIN7)
-#define GEAR_IS_NEUTRAL()	( !DIGITAL_READ(NEUT_PORT, NEUT_PIN) )
-
-#define SERVER_DELAY()			( _delay_ms(500) )
-
-#define SERVO_UP				(MS_TO_TOP(1))
-#define SERVO_DOWN				(MS_TO_TOP(2))
-#define SERVO_MIDT				(MS_TO_TOP(1.5))
-#define SERVO_NEUTRAL_FROM_1	(MS_TO_TOP(1.25))
-#define SERVO_NEUTRAL_FROM_2	(MS_TO_TOP(1.75))
-
-#define SERVO_SET_UP()				(pwm_PE5_set_top(SERVO_UP))
-#define SERVO_SET_DOWN()			(pwm_PE5_set_top(SERVO_DOWN))
-#define SERVO_SET_MIDT()			(pwm_PE5_set_top(SERVO_MIDT))
-#define SERVO_SET_NEUTRAL_FROM_1()	(pwm_PE5_set_top(SERVO_NEUTRAL_FROM_1))
-#define SERVO_SET_NEUTRAL_FROM_2()	(pwm_PE5_set_top(SERVO_NEUTRAL_FROM_2))
+#define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
+#define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
+#define MEASUREMENTS 300
 
 enum {
 	GEAR_DOWN = -1,
@@ -65,77 +48,96 @@ enum {
 	GEAR_UP = 1
 };
 
+static volatile uint16_t mesnumber= 0;
+static volatile uint16_t maxCS = 0;
+static volatile uint16_t time_counter = 0;
+static volatile uint16_t cslist [MEASUREMENTS] = {0};
+static volatile uint16_t poslist [MEASUREMENTS] = {0};
+static volatile uint16_t limit_time = 0;
+static volatile uint8_t on_off = 0;
 volatile int current_gear = 0;
 
-
-static void init_neutral_gear_sensor(void) {
-	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
-
-	// Interrupt on any logical change on port E pin 7
-	BIT_CLEAR(EICRA, ISC71);
-	BIT_SET(EICRA, ISC70);
-
-	BIT_SET(EIMSK, INT7); // Enables external interrupt request
-}
-
-
 static int shift_gear(int gear_dir) {
-	bool err = 0;
-
-	/**
-	 * @todo: Should this still be done outside the interrupt?
-	 */
-	if (GEAR_IS_NEUTRAL()) current_gear = 0;
-
-	IGNITION_CUT_ON();
-	IGNITION_CUT_DELAY();
-
+	//!< TODO: check the right way to slow down
 	switch (gear_dir) {
 		case GEAR_DOWN:
-			if (current_gear != 0) {
-				SERVO_SET_DOWN();
-				--current_gear;
-			}
+			dewalt_set_direction_B();
+			dewalt_set_pwm_dutycycle(100);
 			break;
 		case GEAR_NEUTRAL:
-			if (current_gear >= 2) {
-				SERVO_SET_NEUTRAL_FROM_2();
-			} else {
-				SERVO_SET_NEUTRAL_FROM_1();
-			}
-
-			current_gear = 0;
+			//!< TODO: Implement this
+			dewalt_set_pwm_dutycycle(10);
 			break;
 		case GEAR_UP:
-			if (current_gear != 0) {
-				SERVO_SET_UP();
-			} else {
-				// Special case. If we are in neutral we have to shift down to
-				// get to gear 1 as it is laid out as [1, 0, 2, 3, 4, 5, 6]
-				SERVO_SET_DOWN();
-			}
-			++current_gear;
+			dewalt_set_direction_A();
+			dewalt_set_pwm_dutycycle(100);
 			break;
-		default: err = 1; break;
 	}
-	SERVER_DELAY();
+	return 0;
+}
 
-	SERVO_SET_MIDT();
-	SERVER_DELAY();
+void timer_init(void) {
+	// setup timer 0 which periodically sends heartbeat to the ECU
+	// 1/((F_CPU/Prescaler)/n_timersteps)
+	// 1/((11059200/8)/256) = approx 0.185185 us or about 5400 Hz
+	OCR0A = 0; // Set start value
+	TIMSK0 |= 1<<OCIE0A; // Enable timer compare match interrupt
+	TCCR0A |= 0<<CS02 | 1<<CS01 | 0<<CS00; // Set prescaler 8
+}
 
-	IGNITION_CUT_OFF();
+int maxcounter;
+int numbermess;
+int done;
 
-	return !err ? current_gear : -current_gear;
+ISR (TIMER0_COMP_vect) {
+	if (on_off == 1)
+		if (mesnumber< MEASUREMENTS) {
+			// add new data to array
+			cslist[mesnumber] = vnh2sp30_read_CS();
+			poslist[mesnumber] = adc_readChannel(1);
+
+			// do ignition cut after 150 measurements. May need adjustments but
+			// this number seems to fit with observable data.
+			if (mesnumber> 150) {
+				IGNITION_CUT();
+			}
+
+			// after the 150 first measurements we expect the motor to be in a
+			// state where it's moving and it's using fewer ampere. From here we
+			// can look at out for when the ampere goes up again to 1000 where
+			// we expect that the motor will be back in a standstill.
+			if (mesnumber> 150 && cslist[mesnumber] > 1000) {
+				maxcounter++;
+			}
+
+			// Do we get the same high ampere measurement 5 times we stop the
+			// motor and assume that the gearshift has taken place.
+			if (maxcounter == 5 && done == 0) {
+				IGNITION_UNCUT();
+				done = 1;
+				numbermess = mesnumber;
+				dewalt_kill();
+			}
+
+			// counts up the number f measurements done
+			++mesnumber;
+		}
+
+	// if the maximum number of measurements have been done, stop the motor.
+	if (mesnumber== MEASUREMENTS) {
+		IGNITION_UNCUT();
+		dewalt_kill();
+	}
 }
 
 static void init(void) {
 	usart1_init(115200);
-	pwm_PE5_init();
+	timer_init();
 	init_neutral_gear_sensor();
+	adc_init(1, AVCC, 4);
 
-	// Set ignition cut pin to output
-	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
-	IGNITION_CUT_OFF();
+	dewalt_init();
+	dewalt_kill();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -143,78 +145,79 @@ static void init(void) {
 
 int main(void) {
 	init();
+	printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
-	while(1){
-#if 0
-		if (hasData()) {
-			char c = getc();
+	while (1) {
+		if (usart1_has_data()) {
+			char c = getchar();
 			switch (c) {
 				case 'q':
+					printf("\n\nGear Down\n\n");
 					shift_gear(GEAR_DOWN);
 					break;
 				case 'w':
+					printf("\n\nGear Neutral\n\n");
 					shift_gear(GEAR_NEUTRAL);
 					break;
 				case 'e':
+					printf("\n\nGear Up\n\n");
 					shift_gear(GEAR_UP);
 					break;
+				case ' ':
+				case 'z':
+					printf("\n\nKILL!\n\n");
+					dewalt_kill();
+					break;
 			}
-			printf("Gear: %d Neutral: %d\n", current_gear, GEAR_IS_NEUTRAL());
+			// Before starting measurements we have a small delay. Not for any
+			// testable reason, but it takes a while before the motor starts
+			// moving. This delay can probably be increased as it takes a while
+			// before we get any usable data.
+			_delay_us(100);
+
+			// Done being set to 1 indicates that the motor is deactivated and
+			// it's done changing gear.
+			done = 0;
+
+			// counts the number of times that the ampere reaches a set maximum.
+			maxcounter = 0;
+
+			// The timer interrupt only does something when on_off = 1;
+			on_off = 1;
+
+			// counts number of measurements executed.
+			mesnumber= 0;
 		}
-#else
-		while (shift_gear(GEAR_UP) <= 6){
-			_delay_ms(250);
-			printf("Gear: %d", current_gear);
+
+		if (mesnumber == MEASUREMENTS) {
+			IGNITION_UNCUT();
+			on_off = 0;
+			dewalt_kill();
+			printf("\nTimed out\n");
+
+			// prints put all the measured ampere data.
+			printf("current measurements\n");
+			int i;
+			for (i = 0; i < MEASUREMENTS; i++) {
+				printf("%d\n", cslist[i]);
+				cslist[i] = 0;
+			}
+
+			// prints out the position meter data.
+			printf("position measurements\n");
+			for (i = 0; i < MEASUREMENTS; i++) {
+				printf("%d\n", poslist[i]);
+				poslist[i] = 0;
+			}
+
+			// prints out diagnosis pins
+			printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
+
+			//number of measurements executed
+			printf("I done %d measurements!\n", numbermess);
+			mesnumber= 0;
 		}
-		while (shift_gear(GEAR_DOWN) != 0) {
-			_delay_ms(250);
-			printf("Gear: %d", current_gear);
-		}
-#endif
 	}
 
-    return 0;
-}
-
-// Gear neutral interrupt
-ISR(INT7_vect) {
-	if (GEAR_IS_NEUTRAL()) {
-		if (current_gear != 0) {
-			// An error has occured in the gear estimate. So lets correct it.
-			current_gear = 0;
-		}
-	} else {
-		const uint16_t servo_pos = MERGE_BYTE(OCR3CH, OCR3CL);
-		switch (servo_pos) {
-			case SERVO_UP:
-				if (current_gear != 2) {
-					// An error has occured in the gear estimate. So lets
-					// correct it.
-					current_gear = 2;
-				}
-				break;
-			case SERVO_DOWN:
-				if (current_gear != 1) {
-					// An error has occured in the gear estimate. So lets
-					// correct it.
-					current_gear = 1;
-				}
-				break;
-			case SERVO_MIDT:
-				// An error has occured in the gear estimate. So lets correct it
-				break;
-			case SERVO_NEUTRAL_FROM_1:
-				// An error has occured in the gear estimate. So lets correct it
-				current_gear = 2;
-				break;
-			case SERVO_NEUTRAL_FROM_2:
-				// An error has occured in the gear estimate. So lets correct it
-				current_gear = 1;
-				break;
-
-			default:
-				// The gear is in an unknown position. This should never happen.
-				break;
-		}
-	}
+	return 0;
 }

@@ -56,3 +56,24 @@ void pwm_PE5_init(void) {
 	SET_REGISTER_BITS(TCCR3A, (1<<COM3C1|1<<0    ), (1<<COM3C1|1<<COM3C0));
 	SET_PIN_MODE(PORTE, PIN5, OUTPUT);
 }
+
+
+void pwm_PB5_init(void) {
+#if PWM_PRESCALAR == 64
+	timer1_set_prescalar(TIMER1_PRESCALAR_64);
+#else
+#	error undefined PWM_PRESCALAR
+#endif
+
+
+	const uint16_t count_to = PWM_TOP;
+	ICR1H = HIGH_BYTE(count_to);
+	ICR1L = LOW_BYTE(count_to);
+
+	// Set Wave Generation Mode to Fast PWM counting to ICR
+	timer1_set_waveform_generation_mode(TIMER1_WGM_PWM_PHASE_CORRECT_ICR);
+
+	// Clear on Compare Match
+	SET_REGISTER_BITS(TCCR1A, (1<<COM1A1|1<<0    ), (1<<COM1A1|1<<COM1A0));
+	SET_PIN_MODE(PORTB, PIN5, OUTPUT);
+}
