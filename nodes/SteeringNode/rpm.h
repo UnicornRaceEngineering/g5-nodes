@@ -37,7 +37,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define RPM_COMA1       COM0A1
 #define RPM_COMA0       COM0A0
 
+#define RPM_MAX_VALUE   13000
+#define RPM_MIN_VALUE   3300
+
 void rpm_init(void);
-extern void set_rpm(int16_t rpm);
+void set_rpm(int16_t rpm);
 
 #endif /* RPM_H */
