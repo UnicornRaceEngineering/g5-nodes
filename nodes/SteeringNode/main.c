@@ -127,12 +127,17 @@ int main(void) {
 
 		// First lets store the current status of the paddleshifters
 		{
-			uint8_t state = paddle_state();
-			if (neutral_btn_pressed()) state |= NEUTRAL_ENABLE;
+			const uint8_t state = paddle_state();
 			if (state) {
 				can_broadcast_single(PADDLE_STATUS, (uint8_t [1]) {state} );
 				shiftlight_off();
 			}
+		}
+
+		// Check if neutral enable button has changed state and broadcast the
+		// current state
+		if (neutral_state_has_changed()) {
+			can_broadcast_single(NEUTRAL_ENABLED, (uint8_t [1]) {neutral_is_enabled()});
 		}
 
 #if 0

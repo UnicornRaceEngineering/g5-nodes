@@ -45,6 +45,7 @@ enum message_id {
 	GPS_DATA 			= 4,
 	ECU_DATA_PKT		= 5,
 	CURRENT_GEAR		= 6,
+	NEUTRAL_ENABLED		= 7,
 };
 
 struct message_detail {
@@ -58,6 +59,7 @@ struct message_detail {
 	{ .id = PADDLE_STATUS			, .len =  1 }, \
 	{ .id = GPS_DATA				, .len = 13 }, \
 	{ .id = ECU_DATA_PKT			, .len =  5 }, \
+	{ .id = NEUTRAL_ENABLED			, .len =  1 }, \
 	{ .id = 0						, .len =  0 }, \
 }[type])
 

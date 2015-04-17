@@ -33,15 +33,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "neutral.h"
 
+static bool state;
 
 void neutral_btn_init(void) {
 	SET_PIN_MODE(NEUTRAL_BTN_PORT, NEUTRAL_BTN_PIN, INPUT);
 }
 
-bool neutral_btn_pressed(void) {
-	/**
-	 * @TODO This should really be an interrupt telling if we are changing state
-	 * otherwise we are gonna fill the CAN bus with neutral enable messages
-	 */
-	return (bool)DIGITAL_READ(NEUTRAL_BTN_PORT, NEUTRAL_BTN_PIN);
+// @TODO should we add some debouncing here?
+bool neutral_state_has_changed(void) {
+	static bool last_state = false;
+
+	state = (bool)DIGITAL_READ(NEUTRAL_BTN_PORT, NEUTRAL_BTN_PIN);
+	const bool state_has_changed = (state != last_state);
+	last_state = state;
+	return state_has_changed;
+}
+
+bool neutral_is_enabled(void) {
+	return state;
 }
