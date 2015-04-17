@@ -44,6 +44,7 @@ enum message_id {
 	PADDLE_STATUS 		= 3,
 	GPS_DATA 			= 4,
 	ECU_DATA_PKT		= 5,
+	CURRENT_GEAR		= 6,
 };
 
 struct message_detail {

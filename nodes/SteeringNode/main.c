@@ -48,6 +48,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rpm.h"
 #include "shiftlight.h"
 #include "neutral.h"
+#include <heap.h>
 
 #if 0
 #include <avr/fuse.h>
@@ -78,8 +79,13 @@ static void handle_ecu_data(uint8_t *data) {
 	}
 }
 
+static void display_gear(uint8_t gear) {
+	seg7_disp_char(3, (gear != 0) ? ('0' + gear) : 'n', false);
+}
+
 static void init(void) {
 	init_can_node(STEERING_NODE);
+	init_heap();
 	usart1_init(115200);
 	tick_init();
 	paddle_init();
@@ -107,6 +113,9 @@ int main(void) {
 				case ECU_DATA_PKT:
 					handle_ecu_data(msg->data);
 					break;
+				case CURRENT_GEAR:
+					display_gear(*(uint8_t*)msg->data);
+					break;
 
 				default:
 					fprintf(stderr, "Unknown can id %d\n", msg->info.id);
@@ -121,9 +130,7 @@ int main(void) {
 			uint8_t state = paddle_state();
 			if (neutral_btn_pressed()) state |= NEUTRAL_ENABLE;
 			if (state) {
-				uint8_t buf[1] = {state};
-				can_broadcast_single(PADDLE_STATUS, buf);
-
+				can_broadcast_single(PADDLE_STATUS, (uint8_t [1]) {state} );
 				shiftlight_off();
 			}
 		}
