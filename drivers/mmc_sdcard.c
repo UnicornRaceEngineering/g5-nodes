@@ -73,11 +73,14 @@ enum command {
 	GO_IDLE_STATE 		= CMD(0),  //!< arg: None 				, Respone: R1
 
 	SEND_IF_COND		= CMD(8),  //!< arg: 32-bit [11:8] Voltage supplied (VHS) [7:0] Check pattern, Response R7
-	SET_BLOCKLEN 		= CMD(16), //!< arg: 32-bit block length, Respone: R1
-	READ_SINGLE_BLOCK	= CMD(17), //!< arg: 32-bit block adress, Respone: R1
-	WRITE_BLOCK			= CMD(24), //!< arg: 32-bit block adress, Respone: R1
-	SEND_ACMD			= CMD(55), //!< arg: None 				, Respone: R1
-	READ_OCR			= CMD(58), //!< arg: None 				, Respone: R3
+	STOP_TRANSMISSION	= CMD(12), //!< arg: 32-bit stuff bits,	  Response: R1b
+	SET_BLOCKLEN 		= CMD(16), //!< arg: 32-bit block length, Response: R1
+	READ_SINGLE_BLOCK	= CMD(17), //!< arg: 32-bit block adress, Response: R1
+	READ_MULTIPLE_BLOCK	= CMD(18), //!< arg: 32-bit block adress, Response: R1
+	WRITE_BLOCK			= CMD(24), //!< arg: 32-bit block adress, Response: R1
+	WRITE_MULTIPLE_BLOCK= CMD(25), //!< arg: 32-bit block adress, Response: R1
+	SEND_ACMD			= CMD(55), //!< arg: None 				, Response: R1
+	READ_OCR			= CMD(58), //!< arg: None 				, Response: R3
 
 	/**
 	 * Sends host capacity support information and activates the card's
@@ -86,8 +89,19 @@ enum command {
 	 *  [31]   Reserved
 	 *  [30]   HCS
 	 *  [29:0] Reserved
+	 *  Response R1
 	 */
 	SD_SEND_OP_COND		= ACMD(41),
+
+	/**
+	 * Set the number of write blocks to be preerased before writing (to be used
+	 * for faster Multiple Block WR com mand).
+	 * args:
+	 * [31:23]	stuff bits
+	 * [22:0]	Number of blocks
+	 * Response: R1
+	 */
+	SET_WR_BLK_ERASE_COUNT = ACMD(23),
 };
 
 enum VHS_masks {
@@ -256,6 +270,8 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 		tx(crc7);
 	}
 
+	// TODO handle R1b
+
 	// Wait for a valid response and then store it
 	{
 		switch (cmd) {
@@ -263,10 +279,14 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 			case SEND_IF_COND: 			r->type = R7; break;
 			case SET_BLOCKLEN:			r->type = R1; break;
 			case READ_SINGLE_BLOCK: 	r->type = R1; break;
+			case READ_MULTIPLE_BLOCK:	r->type = R1; break;
 			case WRITE_BLOCK: 			r->type = R1; break;
+			case WRITE_MULTIPLE_BLOCK: 	r->type = R1; break;
 			case SEND_ACMD:				r->type = R1; break;
 			case READ_OCR:				r->type = R3; break;
 			case SD_SEND_OP_COND:		r->type = R1; break;
+			case SET_WR_BLK_ERASE_COUNT:r->type = R1; break;
+			case STOP_TRANSMISSION:		r->type = R1B;break;
 
 			default: 					r->type = R1; break;
 		}
@@ -280,6 +300,12 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 			case R3: 	response_len = R3_LEN; res_buff = r->r3; break;
 			case R7:	response_len = R7_LEN; res_buff = r->r7; break;
 			default: return 1; // No response type given.
+		}
+
+		// Is this check required when we retry afterwards again?
+		if (r->type == R1B) {
+			int16_t max_idles = 40000;
+			while (rx() == IDLE_BYTE && --max_idles);
 		}
 
 		int8_t num_retries = 10;
@@ -388,87 +414,54 @@ int8_t sd_init(void) {
 	return 0;
 }
 
-/**
- * Reads a block from the SD card
- * @param  buff   Pointer to where read data is stored
- * @param  sector Sector where the block is located on the SD card
- * @param  offset Seek to offset before storing data
- * @param  n      How many bytes to read from the block
- * @return        1:success 0:failure
- */
-int8_t sd_read_block(uint8_t *buff, uint32_t sector, int16_t offset,
-					 int16_t n) {
-	if (buff == NULL) return 1;
-	if (!(offset+n <= SD_BLOCKSIZE)) return 1;
-
-	// Check if card uses block or byte addressing
-	struct response r;
-	if (send_cmd(READ_SINGLE_BLOCK, adjust_sector(sector), &r) != 0) return 1;
-
+static int recv_block(uint8_t *buf, size_t n) {
 	SS_L();
+	int16_t retries = 40000; // should be ca. 200ms
 
-	int16_t retries = 40000;
-	uint8_t rc;
-	// Wait for data packet
-	do rc = rx(); while (rc == IDLE_BYTE && --retries);
+	// Wait for ready response. If sdcard is not ready in time return error
+	while (rx() != 0xFE && --retries);
+	if (!retries) return -1;// Error
 
-	if (rc != 0xFE) {
-		SS_H();
-		return 1;
-	}
+	do {
+		*buf++ = rx();
+	} while (n--);
 
-	int16_t remaining = (SD_BLOCKSIZE+sizeof(uint16_t)) - offset - n;
-
-	// Throw away everything before the offset
-	while (offset--) rx();
-
-	// Save n bytes in the buffer
-	do *buff++ = rx(); while (--n);
-
-	// Throw away trailing bytes and the CRC value (the sizeof(uint16_t))
-	do rx(); while(--remaining);
+	// Discard CRC
+	rx();
+	rx();
 
 	SS_H();
+
 	return 0;
 }
 
-/**
- * Writes a block to the SD card. if n < SD_BLOCKSIZE remaining bytes in the
- * block will be filled with zeroes.
- * @param  data   Pointer to the data that should be written the the block
- * @param  sector Sector where the block i located
- * @param  n      How many bytes should be written to the block
- * @return        1:success 0:failure
- */
-int8_t sd_write_block(uint8_t *data, uint32_t sector, size_t n) {
-	if (data == NULL) return 1;
+int8_t sd_read(uint8_t *buff, uint32_t sector, size_t n) {
+	sector = adjust_sector(sector);
 
-	// Initiate sector write
-	{
-		struct response r;
-		// Check if card uses block or byte addressing
-		if (send_cmd(WRITE_BLOCK, adjust_sector(sector), &r) != 0) return 1;
-		if (r.r1[0] != 0) return 1;
-		SS_L();
+	const uint8_t cmd = (n > 1) ? READ_MULTIPLE_BLOCK : READ_SINGLE_BLOCK;
+	if (send_cmd(cmd, sector, &(struct response){}) != 0) return -1; // Error
 
-		const uint16_t header = 0xFFFE;
-		tx(((uint8_t*)&header)[1]); // Send datablock header MSB
-		tx(((uint8_t*)&header)[0]);
-	}
+	do {
+		if (recv_block(buff, SD_BLOCKSIZE) != 0) break;
+	} while (--n);
+	if (cmd == READ_MULTIPLE_BLOCK) send_cmd(STOP_TRANSMISSION, 0, &(struct response){});
 
-	int16_t remaining = SD_BLOCKSIZE; // remaining bytes in this block
+	return n ? -1 : 0;
+}
 
-	// Send data
-	{
-		while (n-- && remaining--) tx(*data++);
-	}
+static int send_block(const uint8_t buf[SD_BLOCKSIZE], uint8_t token) {
+	SS_L();
+	int16_t retries = 40000; // should be ca 500ms
+	while (rx() != IDLE_BYTE && --retries);
+	if (!retries) return -1; // Error
 
-	// Finalize the write
-	{
-		while(remaining--) tx(0x00);
-		const uint16_t crc16 = 0;
-		tx(((uint8_t*)&crc16)[1]); // MSB first
-		tx(((uint8_t*)&crc16)[0]);
+	tx(token);
+	if (buf != NULL) {
+		for (size_t i = 0; i < SD_BLOCKSIZE; ++i) tx(*buf++);
+
+		// tx Dummy CRC value
+		tx(IDLE_BYTE);
+		tx(IDLE_BYTE);
 
 		// Check response
 		// bits: [7|6|5|4| 3|2|1  |0]
@@ -479,18 +472,37 @@ int8_t sd_write_block(uint8_t *data, uint32_t sector, size_t n) {
 
 			case 0x0B: // [3|2|1] = [101] Data rejected due to a CRC error
 			case 0x0D: // [3|2|1] = [110] Data Rejected due to a Write Error
-			default: goto error;
+			default:
+				SS_H();
+				return -1;
 		}
-		// Wait for end of write with a timeout of 500ms
-		int timeout;
-		for (timeout = 5000; rx() != IDLE_BYTE; --timeout) _delay_us(100);
-		if (timeout == 0) goto error;
-		SS_H();
+	}
+
+	SS_H();
+
+	return 0;
+}
+
+int8_t sd_write(const uint8_t *buf, uint32_t sector, size_t n) {
+	if (buf == NULL) return 1;
+	sector = adjust_sector(sector);
+
+	if (n == 1) {
+		// Write single block
+		if (send_cmd(WRITE_BLOCK, sector, &(struct response){}) != 0
+			&& send_block(buf, 0xFE) != 0) return -1;
+	} else {
+		// Write multi block
+		if (!USES_BLOCK_ADDRESSING(card_type)) {
+			send_cmd(SET_WR_BLK_ERASE_COUNT, n, &(struct response){});
+		}
+		if (send_cmd(WRITE_MULTIPLE_BLOCK, sector, &(struct response){}) != 0) return -1;
+		for (size_t i = 0; i < n; ++i) {
+			if (send_block(buf, 0xFC) != 0) return -1;
+		}
+		if (send_block(NULL, 0xFD) != 0) return -1;
 	}
 
 	return 0;
-
-error:
-	SS_H();
-	return 1;
 }
+
