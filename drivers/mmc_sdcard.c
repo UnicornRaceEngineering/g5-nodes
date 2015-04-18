@@ -73,6 +73,8 @@ enum command {
 	GO_IDLE_STATE 		= CMD(0),  //!< arg: None 				, Respone: R1
 
 	SEND_IF_COND		= CMD(8),  //!< arg: 32-bit [11:8] Voltage supplied (VHS) [7:0] Check pattern, Response R7
+	SEND_CSD			= CMD(9),  //!< arg stuffbit, Response R1
+	SEND_CID			= CMD(10),  //!< arg stuffbit, Response R1
 	STOP_TRANSMISSION	= CMD(12), //!< arg: 32-bit stuff bits,	  Response: R1b
 	SET_BLOCKLEN 		= CMD(16), //!< arg: 32-bit block length, Response: R1
 	READ_SINGLE_BLOCK	= CMD(17), //!< arg: 32-bit block adress, Response: R1
@@ -103,6 +105,23 @@ enum command {
 	 */
 	SET_WR_BLK_ERASE_COUNT = ACMD(23),
 };
+
+#define R_TYPE(cmd) ((const enum response_type[]) { \
+	[GO_IDLE_STATE] 			= R1, \
+	[SEND_IF_COND] 				= R7, \
+	[STOP_TRANSMISSION] 		= R1B, \
+	[SET_BLOCKLEN] 				= R1, \
+	[READ_SINGLE_BLOCK]			= R1, \
+	[READ_MULTIPLE_BLOCK]		= R1, \
+	[WRITE_BLOCK]				= R1, \
+	[WRITE_MULTIPLE_BLOCK]		= R1, \
+	[SEND_ACMD]					= R1, \
+	[READ_OCR]					= R3, \
+	[SD_SEND_OP_COND]			= R1, \
+	[SET_WR_BLK_ERASE_COUNT]	= R1, \
+	[SEND_CSD] 					= R1, \
+	[SEND_CID] 					= R1, \
+}[cmd])
 
 enum VHS_masks {
 	VHS_NOT_DEFINED = 0x00,
@@ -219,22 +238,6 @@ static void idle_clock(int n) {
 	SS_H();
 }
 
-#if 0
-static void check_r1(uint8_t r1) {
-	usart1_printf("r1: %#02x ", r1);
-
-	if (r1 & R1_START_BIT) 				usart1_printf("Start bit not zero ");
-	if (r1 & R1_PARAMETER_ERROR) 		usart1_printf("Parmeter error ");
-	if (r1 & R1_ADDRESS_ERROR) 			usart1_printf("Address error ");
-	if (r1 & R1_ERASE_SEQUENCE_ERROR) 	usart1_printf("Erase sequence error ");
-	if (r1 & R1_CRC_ERROR) 				usart1_printf("CRC error ");
-	if (r1 & R1_ILLEGA_COMMAND) 		usart1_printf("Illegal command ");
-	if (r1 & R1_ERASE_RESET) 			usart1_printf("Erase reset ");
-	if (r1 & R1_IN_IDLE_STATE) 			usart1_printf("In idle state ");
-	usart1_putc('\n');
-}
-#endif
-
 /**
  * Sends a command to the SD card
  * @param  cmd The command send to the SD card
@@ -255,6 +258,12 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 			SS_L();
 		}
 
+		if (R_TYPE(cmd) == R1B) {
+			//!< @TODO use timer tick to make this take about 200ms
+			int16_t max_idles = 20000/4;
+			while (rx() == IDLE_BYTE && --max_idles);
+		}
+
 		// Send the command
 		tx((uint8_t)cmd);
 
@@ -270,26 +279,9 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 		tx(crc7);
 	}
 
-	// TODO handle R1b
-
 	// Wait for a valid response and then store it
 	{
-		switch (cmd) {
-			case GO_IDLE_STATE: 		r->type = R1; break;
-			case SEND_IF_COND: 			r->type = R7; break;
-			case SET_BLOCKLEN:			r->type = R1; break;
-			case READ_SINGLE_BLOCK: 	r->type = R1; break;
-			case READ_MULTIPLE_BLOCK:	r->type = R1; break;
-			case WRITE_BLOCK: 			r->type = R1; break;
-			case WRITE_MULTIPLE_BLOCK: 	r->type = R1; break;
-			case SEND_ACMD:				r->type = R1; break;
-			case READ_OCR:				r->type = R3; break;
-			case SD_SEND_OP_COND:		r->type = R1; break;
-			case SET_WR_BLK_ERASE_COUNT:r->type = R1; break;
-			case STOP_TRANSMISSION:		r->type = R1B;break;
-
-			default: 					r->type = R1; break;
-		}
+		r->type = R_TYPE(cmd);
 
 		int8_t response_len;
 		uint8_t *res_buff; // Will be pointer to the response buffer
@@ -302,13 +294,8 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 			default: return 1; // No response type given.
 		}
 
-		// Is this check required when we retry afterwards again?
-		if (r->type == R1B) {
-			int16_t max_idles = 40000;
-			while (rx() == IDLE_BYTE && --max_idles);
-		}
 
-		int8_t num_retries = 10;
+		int8_t num_retries = 10*10;
 		do {
 			res_buff[response_len-1] = rx(); // We recv MSB first
 		} while(((res_buff[response_len-1] & RX_START_MSK) != 0) && num_retries--);
@@ -321,7 +308,6 @@ static int8_t send_cmd(enum command cmd, uint32_t arg, struct response *r) {
 		// Recv MSB first. We already stored the first byte so substract one more
 		for (int8_t i = response_len-2; i >= 0; --i) res_buff[i] = rx();
 	}
-
 	SS_H();
 
 	return 0;
@@ -414,13 +400,17 @@ int8_t sd_init(void) {
 	return 0;
 }
 
+
 static int recv_block(uint8_t *buf, size_t n) {
 	SS_L();
-	int16_t retries = 40000; // should be ca. 200ms
+	int16_t retries = 200; // should be ca. 200ms
 
 	// Wait for ready response. If sdcard is not ready in time return error
 	while (rx() != 0xFE && --retries);
-	if (!retries) return -1;// Error
+	if (!retries) {
+		SS_H();
+		return -1;// Error
+	}
 
 	do {
 		*buf++ = rx();
@@ -435,33 +425,33 @@ static int recv_block(uint8_t *buf, size_t n) {
 	return 0;
 }
 
+
 int8_t sd_read(uint8_t *buff, uint32_t sector, size_t n) {
 	sector = adjust_sector(sector);
 
 	const uint8_t cmd = (n > 1) ? READ_MULTIPLE_BLOCK : READ_SINGLE_BLOCK;
-	if (send_cmd(cmd, sector, &(struct response){}) != 0) return -1; // Error
+	if (send_cmd(cmd, sector, &(struct response){0}) != 0) return -1; // Error
 
 	do {
 		if (recv_block(buff, SD_BLOCKSIZE) != 0) break;
 	} while (--n);
-	if (cmd == READ_MULTIPLE_BLOCK) send_cmd(STOP_TRANSMISSION, 0, &(struct response){});
+	if (cmd == READ_MULTIPLE_BLOCK) send_cmd(STOP_TRANSMISSION, 0, &(struct response){0});
 
 	return n ? -1 : 0;
 }
 
 static int send_block(const uint8_t buf[SD_BLOCKSIZE], uint8_t token) {
 	SS_L();
-	int16_t retries = 40000; // should be ca 500ms
-	while (rx() != IDLE_BYTE && --retries);
-	if (!retries) return -1; // Error
 
 	tx(token);
+
 	if (buf != NULL) {
 		for (size_t i = 0; i < SD_BLOCKSIZE; ++i) tx(*buf++);
 
 		// tx Dummy CRC value
-		tx(IDLE_BYTE);
-		tx(IDLE_BYTE);
+		const uint16_t crc16 = 0;
+		tx(((uint8_t*)&crc16)[1]); // MSB first
+		tx(((uint8_t*)&crc16)[0]);
 
 		// Check response
 		// bits: [7|6|5|4| 3|2|1  |0]
@@ -478,6 +468,14 @@ static int send_block(const uint8_t buf[SD_BLOCKSIZE], uint8_t token) {
 		}
 	}
 
+	// Wait for end of write with a timeout of 500ms
+	int timeout;
+	for (timeout = 5000; rx() != IDLE_BYTE; --timeout) _delay_us(100);
+	if (timeout == 0) {
+		SS_H();
+		return -1;
+	}
+
 	SS_H();
 
 	return 0;
@@ -489,20 +487,61 @@ int8_t sd_write(const uint8_t *buf, uint32_t sector, size_t n) {
 
 	if (n == 1) {
 		// Write single block
-		if (send_cmd(WRITE_BLOCK, sector, &(struct response){}) != 0
-			&& send_block(buf, 0xFE) != 0) return -1;
+		struct response r = {0};
+		if (send_cmd(WRITE_BLOCK, sector, &r) != 0) return -1;
+		if (send_block(buf, 0xFE) != 0) return -1;
 	} else {
 		// Write multi block
 		if (!USES_BLOCK_ADDRESSING(card_type)) {
-			send_cmd(SET_WR_BLK_ERASE_COUNT, n, &(struct response){});
+			send_cmd(SET_WR_BLK_ERASE_COUNT, n, &(struct response){0});
 		}
-		if (send_cmd(WRITE_MULTIPLE_BLOCK, sector, &(struct response){}) != 0) return -1;
-		for (size_t i = 0; i < n; ++i) {
-			if (send_block(buf, 0xFC) != 0) return -1;
-		}
+		if (send_cmd(WRITE_MULTIPLE_BLOCK, sector, &(struct response){0}) != 0) return -1;
+		while (n--) if (send_block(buf, 0xFC) != 0) return -1;
 		if (send_block(NULL, 0xFD) != 0) return -1;
 	}
+
+	SS_H();
 
 	return 0;
 }
 
+int read_csd(uint8_t csd[static CSD_SIZE]) {
+
+	if (send_cmd(SEND_CSD, 0, &(struct response){0}) != 0) return -1;
+	if (recv_block(csd, CSD_SIZE) != 0) return -1;
+	return 0;
+}
+
+int read_cid(uint8_t cid[static CID_SIZE]) {
+	if (send_cmd(SEND_CID, 0, &(struct response){0}) != 0) return -1;
+	if (recv_block(cid, CID_SIZE) != 0) return -1;
+	return 0;
+}
+
+/**
+ * Return the memory capacity of the card (in KBytes as per the specification)
+ * @param  memory_capacity The cards memory capacity
+ * @return                 Non zero error code
+ */
+int get_memory_capacity(uint32_t *memory_capacity) {
+	uint8_t csd[CSD_SIZE] = {0};
+	if (read_csd(csd) != 0) return -1;
+
+	if (CSD_STRUCTURE(csd) == 1) {
+		// CSD version 2.0
+
+		const uint32_t c_size = CSD_V2_C_SIZE(csd);
+		*memory_capacity = (c_size + 1) * 512; // (c_size + 1) * 512KByte
+	} else {
+		// CSD version 1.0
+
+		const uint32_t c_size = EXTRACT_AT_INDEX(csd, CSD_SIZE, 73, 6);
+		const uint16_t mult = 1 << (CSD_V1_C_SIZE_MULT(csd) + 2); // 2^c_size_mult+2
+		const uint16_t block_len = 1 << CSD_V1_READ_BL_LEN(csd); // 2^read_bl_len
+		const uint32_t blocknr = (c_size + 1) * mult;
+
+		*memory_capacity = blocknr * block_len;
+	}
+
+	return 0;
+}
