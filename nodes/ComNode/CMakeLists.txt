@@ -15,6 +15,6 @@ target_include_directories(${NODE_NAME}
 	PRIVATE ${PROJECT_SOURCE_DIR}/third_party/petitfs/petitfs_root/src
 )
 
-target_link_libraries(${NODE_NAME} libat90 drivers pff3)
+target_link_libraries(${NODE_NAME} libat90 drivers)
 
 avr_make_flashable(${NODE_NAME})
