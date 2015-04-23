@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define NEUTRAL_BTN_PIN		PIN3
 
 void neutral_btn_init(void);
-bool neutral_btn_pressed(void);
+bool neutral_state_has_changed(void);
+bool neutral_is_enabled(void);
 
 #endif /* NEUTRAL_H */

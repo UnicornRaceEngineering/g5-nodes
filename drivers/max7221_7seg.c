@@ -157,10 +157,87 @@ void seg7_disp_char(int8_t digit, const char c, const bool decimal_point) {
 	case '8': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_E|SEG_F|SEG_G); 	break;
 	case '9': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_F|SEG_G); 		break;
 
+	case 'a':
+	case 'A': patteren = (SEG_A|SEG_B|SEG_C|SEG_E|SEG_F|SEG_G); 		break;
+
+	case 'b':
+	case 'B': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_E|SEG_F|SEG_G); 	break;
+
+	case 'c':
+	case 'C': patteren = (SEG_A|SEG_D|SEG_E|SEG_F); 					break;
+
+	case 'D':
+	case 'd': patteren = (SEG_B|SEG_C|SEG_D|SEG_E|SEG_G); 				break;
+
+	case 'e':
+	case 'E': patteren = (SEG_A|SEG_D|SEG_E|SEG_F|SEG_G);				break;
+
+	case 'f':
+	case 'F': patteren = (SEG_A|SEG_E|SEG_F|SEG_G); 					break;
+
+	case 'g':
+	case 'G': patteren = (SEG_A|SEG_C|SEG_D|SEG_E|SEG_F|SEG_G); 		break;
+
+	case 'h':
+	case 'H': patteren = (SEG_B|SEG_C|SEG_E|SEG_F|SEG_G); 				break;
+
+	case 'i':
+	case 'I': patteren = (SEG_E|SEG_F); 								break;
+
+	case 'j':
+	case 'J': patteren = (SEG_B|SEG_C|SEG_D); 							break;
+
+	case 'k':
+	case 'K': patteren = 0x00; /* TODO */ 								break;
+
+	case 'l':
+	case 'L': patteren = (SEG_D|SEG_E|SEG_F); 							break;
+
+	case 'm':
+	case 'M': patteren = 0x00; /* TODO */ 								break;
+
+	case 'N':
+	case 'n': patteren = (SEG_A|SEG_B|SEG_C|SEG_E|SEG_F); 				break;
+
+	case 'o':
+	case 'O': patteren = (SEG_A|SEG_B|SEG_C|SEG_D|SEG_E|SEG_F); 		break;
+
+	case 'p':
+	case 'P': patteren = (SEG_A|SEG_B|SEG_E|SEG_F|SEG_G); 				break;
+
+	case 'Q':
+	case 'q': patteren = (SEG_A|SEG_B|SEG_C|SEG_F|SEG_G); 				break;
+
+	case 'R':
+	case 'r': patteren = (SEG_A|SEG_E|SEG_F); 							break;
+
+	case 's':
+	case 'S': patteren = (SEG_A|SEG_F|SEG_G|SEG_C|SEG_D); 				break;
+
+	case 't':
+	case 'T': patteren = (SEG_F|SEG_G|SEG_E|SEG_D); 					break;
+
+	case 'u':
+	case 'U': patteren = (SEG_B|SEG_C|SEG_D|SEG_E|SEG_F); 				break;
+
+	case 'v':
+	case 'V': patteren = 0x00; /* TODO */ 								break;
+
+	case 'w':
+	case 'W': patteren = 0x00; /* TODO */ 								break;
+
+	case 'x':
+	case 'X': patteren = 0x00; /* TODO */ 								break;
+
+	case 'Y':
+	case 'y': patteren = (SEG_F|SEG_B|SEG_G|SEG_C); 					break;
+
+	case 'z':
+	case 'Z': patteren = (SEG_A|SEG_B|SEG_G|SEG_E|SEG_D); 				break;
+
 	case '-': patteren = (SEG_G); 										break;
 
-	//!< @TODO add support for letters
-
+	case '\0':
 	case ' ':
 	default: patteren = 0x00;											break;
 	}
