@@ -89,7 +89,7 @@ void* smalloc(uint8_t size) {
  */
 uint8_t sfree(void *heap_ptr)
 {
-	uint8_t target = (heap_ptr - header) - (void*)&heap[0];
+	uint8_t target = ((uint8_t *)heap_ptr - header) - &heap[0];
 	uint8_t pointer = 0;
 
 	do {
