@@ -129,7 +129,7 @@ int main(void) {
 		{
 			const uint8_t state = paddle_state();
 			if (state) {
-				can_broadcast_single(PADDLE_STATUS, (uint8_t [1]) {state} );
+				can_broadcast(PADDLE_STATUS, (uint8_t [1]) {state} );
 				shiftlight_off();
 			}
 		}
@@ -137,7 +137,7 @@ int main(void) {
 		// Check if neutral enable button has changed state and broadcast the
 		// current state
 		if (neutral_state_has_changed()) {
-			can_broadcast_single(NEUTRAL_ENABLED, (uint8_t [1]) {neutral_is_enabled()});
+			can_broadcast(NEUTRAL_ENABLED, (uint8_t [1]) {neutral_is_enabled()});
 		}
 
 #if 0

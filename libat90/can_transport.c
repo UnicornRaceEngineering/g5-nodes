@@ -81,16 +81,6 @@ int can_broadcast(const enum message_id receiver, void * const data) {
 }
 
 
-int can_broadcast_single(const enum message_id receiver, uint8_t data[7]) {
-	uint16_t i = 0;
-	do {
-		if (message_info(i).id == receiver)
-			return can_send_single(message_info(i).id, message_info(i).len, data);
-	} while (message_info(++i).id);
-	return -1;
-}
-
-
 // Callback to be run when rx comletes on the CAN
 static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	if (queue_length) {
