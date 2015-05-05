@@ -55,13 +55,13 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
  * @param  id ID of the node that is initialized
  * @return    A pointer to the node handle
  */
-int init_can_node(enum node_id node) {
+void init_can_node(enum node_id node) {
 	oldest_message = 0;
 	newest_message = 0;
 	queue_length = 0;
 
 	set_canrec_callback(rx_complete);
-	return can_init(node);
+	can_init(node);
 }
 
 
@@ -71,13 +71,13 @@ int init_can_node(enum node_id node) {
  * @param  data a pointer to the raw data that should be send
  * @return      Non zero on error.
  */
-int can_broadcast(const enum message_id receiver, void * const data) {
+uint8_t can_broadcast(const enum message_id receiver, void * const data) {
 	uint16_t i = 0;
 	do {
 		if (message_info(i).id == receiver)
 			return can_send(message_info(i).id, message_info(i).len, data);
 	} while (message_info(++i).id);
-	return -1;
+	return 1;
 }
 
 

@@ -214,14 +214,15 @@ struct can_msg_t {
 
 //_____ D E C L A R A T I O N S ________________________________________________
 
-static void finnish_receive(uint8_t mob);
+static inline void finnish_receive(uint8_t mob);
 static void continue_sending (uint8_t mob);
-static int8_t find_me_a_mob(void);
-static void enable_spy_mob(uint8_t mob);
-static void initiate_receive(uint8_t old_mob, can_msg_t *msg);
-static void receive_on_mob(uint8_t old_mob, can_msg_t *msg);
-static void mob_receive(uint8_t mob, uint16_t id);
-static void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]);
+static inline int8_t find_me_a_mob(void);
+static inline void enable_spy_mob(uint8_t mob);
+static uint8_t initiate_receive(uint8_t old_mob, can_msg_t *msg);
+static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg);
+static inline void mob_receive(uint8_t mob, uint16_t id);
+static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]);
+static uint8_t receive_frame(uint8_t mob);
 
 static volatile can_msg_t *msg_list[15] = {0};
 static volatile uint16_t mob_on_job;
@@ -235,7 +236,7 @@ void set_canrec_callback(canrec_callback_t callback) {
 }
 
 
-uint8_t can_init(uint16_t mask) {
+void can_init(uint16_t mask) {
 	CAN_RESET();
 
 	/*
@@ -271,7 +272,6 @@ uint8_t can_init(uint16_t mask) {
 
 	CAN_ENABLE();
 	CAN_INT_ALL();
-	return 0;
 }
 
 
@@ -285,8 +285,25 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 	// frames are needed and the first of these messages will be of type 1.
 	if (len > 7) {
 		int8_t mob = find_me_a_mob();
+		if (mob == -1) {
+			return 1;
+		}
 		BIT_SET(mob_on_job, mob);
+
+		int8_t new_mob = find_me_a_mob();
+		if (new_mob == -1) {
+			BIT_CLEAR(mob_on_job, mob);
+			return 1;
+		}
+		BIT_SET(mob_on_job, new_mob);
+
 		msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+		if (!msg_list[mob]) {
+			BIT_CLEAR(mob_on_job, new_mob);
+			BIT_CLEAR(mob_on_job, mob);
+			return 1;
+		}
+
 		msg_list[mob]->data = (uint8_t*)msg;
 		msg_list[mob]->id = id;
 		msg_list[mob]->len = len;
@@ -299,8 +316,6 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 		data[1] = HIGH_BYTE(msg_list[mob]->len << 3);
 		uint8_t header = 2;
 
-		int8_t new_mob = find_me_a_mob();
-		BIT_SET(mob_on_job, new_mob);
 		CAN_SET_MOB(new_mob);
 		MOB_SET_STD_ID(msg_list[mob]->id);
 		MOB_SET_STD_FILTER_FULL();
@@ -317,11 +332,9 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 
 		CAN_SET_MOB(mob);
 		mob_send(mob, msg_list[mob]->id, data);
-		return 0;
 	} else {
 		int8_t mob = find_me_a_mob();
-		if (mob == -1)
-			return -1;
+		if (mob == -1) return -1;
 
 		uint8_t data[8] = {0};
 		data[0] = (len << 3) & 0xF8;
@@ -342,7 +355,7 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 }
 
 
-static void mob_receive(uint8_t mob, uint16_t id) {
+static inline void mob_receive(uint8_t mob, uint16_t id) {
 	CAN_SET_MOB(mob);
 	MOB_EN_RX();
 	MOB_SET_DLC(8); // Set the expected payload length
@@ -352,7 +365,7 @@ static void mob_receive(uint8_t mob, uint16_t id) {
 }
 
 
-static void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]) {
+static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]) {
 	CAN_SET_MOB(mob);
 	//The ID has to be set as the first parameter otherwise the it will be
 	//the ID of the next message sent by the MOB.
@@ -364,7 +377,7 @@ static void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]) {
 }
 
 
-static int8_t find_me_a_mob(void) {
+static inline int8_t find_me_a_mob(void) {
 	for (uint8_t i = 0; i <= 15; i++)
 		if (!BIT_CHECK(mob_on_job, i))
 			return i;
@@ -373,7 +386,7 @@ static int8_t find_me_a_mob(void) {
 }
 
 
-static void enable_spy_mob(uint8_t mob) {
+static inline void enable_spy_mob(uint8_t mob) {
 	BIT_SET(mob_on_job, mob);
 	CAN_SET_MOB(mob);
 	MOB_SET_STD_FILTER_NONE();
@@ -383,7 +396,7 @@ static void enable_spy_mob(uint8_t mob) {
 }
 
 
-static void initiate_receive(uint8_t mob, can_msg_t *msg) {
+static uint8_t initiate_receive(uint8_t mob, can_msg_t *msg) {
 	uint16_t number_of_frames = ((msg->len - msg->idx) + (7 - 1)) / 7;
 	uint8_t free_mobs = 0;
 	for (uint8_t i = 0; i < 15; i++)
@@ -396,8 +409,11 @@ static void initiate_receive(uint8_t mob, can_msg_t *msg) {
 	uint8_t FC_flag = !block_size;
 	uint8_t seperation_time = 1; // 1 millisecond;
 
-	if (FC_flag == 0)
-		receive_on_mob(mob, (can_msg_t*)msg);
+	if (FC_flag == 0) {
+		if (receive_on_mob(mob, (can_msg_t*)msg)) {
+			return 1;
+		}
+	}
 
 	uint8_t data[8] = {0};
 	uint8_t type = 3;
@@ -407,28 +423,42 @@ static void initiate_receive(uint8_t mob, can_msg_t *msg) {
 	data[2] = seperation_time;
 
 	int8_t res_mob = find_me_a_mob();
+	if (res_mob == -1) {
+		BIT_CLEAR(mob_on_job, mob);
+		return 1;
+	}
 	BIT_SET(mob_on_job, res_mob);
 
 	msg_list[res_mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+	if (!msg_list[res_mob]) {
+		BIT_CLEAR(mob_on_job, res_mob);
+		BIT_CLEAR(mob_on_job, mob);
+		return 1;
+	}
+
 	msg_list[res_mob]->idx = 3;
 	msg_list[res_mob]->len = 3;
 	msg_list[res_mob]->waiting = 0;
 
 	CAN_SET_MOB(res_mob);
 	mob_send(res_mob, msg->id, data);
+	return 0;
 }
 
 
-static void receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
+static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
 	int8_t mob = find_me_a_mob();
+	if (mob == -1) return 1;
+
 	msg_list[mob] = (can_msg_t*)msg;
 	BIT_SET(mob_on_job, mob);
 	mob_receive(mob, msg->id);
 	CAN_SET_MOB(old_mob);
+	return 0;
 }
 
 
-static void finnish_receive(uint8_t mob) {
+static inline void finnish_receive(uint8_t mob) {
 	(*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
 						(uint8_t*)&msg_list[mob]->data[0]);
 
@@ -472,7 +502,7 @@ static void continue_sending(uint8_t mob) {
 }
 
 
-static void receive_frame(uint8_t mob) {
+static uint8_t receive_frame(uint8_t mob) {
 	uint8_t msg[8];
 	MOB_RX_DATA(msg);
 
@@ -482,6 +512,9 @@ static void receive_frame(uint8_t mob) {
 			uint16_t len = (msg[0] & 0xF8) >> 3;
 			uint16_t id = MOB_GET_STD_ID();
 			uint8_t *data = (uint8_t*)smalloc(len);
+			if (!data) {
+				return 1;
+			}
 
 			for (uint8_t i = 0; i < len; i++)
 				data[i] = msg[i + 1];
@@ -492,8 +525,17 @@ static void receive_frame(uint8_t mob) {
 
 		case 1:
 			msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+			if (!msg_list[mob]) {
+				return 1;
+			}
+
 			msg_list[mob]->len = ((msg[0] & 0xF8) >> 3) + ((msg[1] * 256) >> 3);
 			msg_list[mob]->data = (uint8_t*)smalloc(msg_list[mob]->len);
+			if (!msg_list[mob]->data) {
+				sfree((void *)msg_list[mob]);
+				return 1;
+			}
+
 			msg_list[mob]->id = MOB_GET_STD_ID();
 			msg_list[mob]->msg_num = 0;
 			msg_list[mob]->idx = 6;
@@ -502,7 +544,11 @@ static void receive_frame(uint8_t mob) {
 			for (uint8_t i = header; i < DATA_MAX; i++)
 				msg_list[mob]->data[i - header] = msg[i];
 
-			initiate_receive(mob, (can_msg_t*)msg_list[mob]);
+			uint8_t err = initiate_receive(mob, (can_msg_t*)msg_list[mob]);
+			if (err) {
+				return err;
+			}
+			
 			CAN_SET_MOB(mob);
 			msg_list[mob] = 0;
 			break;
@@ -515,7 +561,7 @@ static void receive_frame(uint8_t mob) {
 
 			if (msg_list[mob]->len == msg_list[mob]->idx) {
 				finnish_receive(mob);
-				return;
+				return 0;
 			}
 			break;
 
@@ -523,7 +569,7 @@ static void receive_frame(uint8_t mob) {
 			msg_list[mob]->waiting = 0;
 			continue_sending(msg_list[mob]->on_mob);
 			BIT_CLEAR(mob_on_job, mob);
-			return;
+			return 0;
 
 		default:
 			// Error: unsupported type
@@ -532,7 +578,7 @@ static void receive_frame(uint8_t mob) {
 
 	CAN_ENABLE_MOB_INTERRUPT(mob);
 	MOB_EN_RX();
-	return;
+	return 0;
 }
 
 
