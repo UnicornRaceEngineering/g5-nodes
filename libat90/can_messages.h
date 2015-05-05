@@ -59,6 +59,7 @@ struct message_detail {
 	{ .id = PADDLE_STATUS			, .len =  1 }, \
 	{ .id = GPS_DATA				, .len = 13 }, \
 	{ .id = ECU_DATA_PKT			, .len =  5 }, \
+	{ .id = CURRENT_GEAR			, .len =  1 }, \
 	{ .id = NEUTRAL_ENABLED			, .len =  1 }, \
 	{ .id = 0						, .len =  0 }, \
 }[type])
