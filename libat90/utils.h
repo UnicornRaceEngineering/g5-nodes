@@ -74,7 +74,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #define LOW_BYTE(w) 		( (uint8_t) ((w) & 0xFF)		) //!< Extracts the low-order (rightmost) byte of a variable.
 #define HIGH_BYTE(w) 		( (uint8_t) ((w) >> 8)			) //!< Extracts the high-order (leftmost) byte of a word (or the second lowest byte of a larger data type).
-#define MERGE_BYTE(h, l) 	( (uint16_t)(((h) << 8) | (l)) 	) //!< Merges two 8 bit bytes into one 16 bit byte where h is the High byte and l is the Low byte
+#define MERGE_BYTE(h, l) 	( ((uint16_t)(((h) << 8)) | (l)) 	) //!< Merges two 8 bit bytes into one 16 bit byte where h is the High byte and l is the Low byte
+
+#define MERGE_U32(msb_h, msb_l, lsb_h, lsb_l)	( ((uint32_t)(MERGE_BYTE(msb_h, msb_l)) << 16) | MERGE_BYTE(lsb_h, lsb_l) )
 
 #define LOW_NIBBLE(b)		( (b) & 0xF 		)
 #define HIGH_NIBBLE(b)		( ((b) >> 4) & 0xF 	)
@@ -98,6 +100,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	BITMASK_SET((ctrl_register), (normalized_bitset)); \
 } while (0)
 
+#define BYTE_POS(nbytes, bitindex)		(((((nbytes)*8)-1)-(bitindex)) / 8)
+#define BYTE_POS_MSB(nbytes, bitindex)	(BYTE_POS((nbytes), (((nbytes)*8)-1)-(bitindex)))
+#define MSK_HIGHEST(x)	(((0xFF + 1) >> (x)) - 1)
+#define MSK_LOWEST(x)	((1 << (x)) - 1)
+
+/**
+ *	Extract byte value from the given array. This is usefull if we are operating
+ *	on a register that is bigger than any normal C datatype.
+ *	@param arr       The register byte array
+ *	@param nbytes    The number of bytes in the byte array
+ *	@param bit_index Index of the first bit of the value that should be extracted
+ *	@param width     The bit width if the value that should be extracted
+ */
+#define EXTRACT_AT_INDEX(arr, nbytes, bit_index, width) ((arr[BYTE_POS((nbytes), (bit_index))] >> ((bit_index) - (BYTE_POS_MSB((nbytes), (bit_index)) * 8))) & MSK_LOWEST((width)))
+
+
 /**
  * Jump at the addresse 0x0000 (not a reset !)
  * @warning not a reset!
@@ -109,6 +127,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #define Hard_reset()    { WDTCR |= 1<<WDE;  while(1); }
 
+#define DEBUG()	do {printf("%s:%d\n", __FUNCTION__, __LINE__);} while(0)
 
 int32_t map(int32_t x,
             const int32_t from_low, const int32_t from_high,
