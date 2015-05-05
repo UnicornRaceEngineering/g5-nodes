@@ -238,6 +238,11 @@ static void idle_clock(int n) {
 	SS_H();
 }
 
+static int wait_ready(uint16_t ms) {
+	for (ms *= 10; rx() != IDLE_BYTE; --ms) _delay_us(100);
+	return (ms == 0) ? -1: 0;
+}
+
 /**
  * Sends a command to the SD card
  * @param  cmd The command send to the SD card
@@ -469,9 +474,7 @@ static int send_block(const uint8_t buf[SD_BLOCKSIZE], uint8_t token) {
 	}
 
 	// Wait for end of write with a timeout of 500ms
-	int timeout;
-	for (timeout = 5000; rx() != IDLE_BYTE; --timeout) _delay_us(100);
-	if (timeout == 0) {
+	if (wait_ready(500) != 0) {
 		SS_H();
 		return -1;
 	}
@@ -503,6 +506,10 @@ int8_t sd_write(const uint8_t *buf, uint32_t sector, size_t n) {
 	SS_H();
 
 	return 0;
+}
+
+int sd_sync(void) {
+	return wait_ready(500);
 }
 
 int read_csd(uint8_t csd[static CSD_SIZE]) {

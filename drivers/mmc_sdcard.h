@@ -101,6 +101,8 @@ int8_t sd_init(void);
 int8_t sd_read(uint8_t *buff, uint32_t sector, size_t n);
 int8_t sd_write(const uint8_t *buf, uint32_t sector, size_t n);
 
+int sd_sync(void);
+
 int read_csd(uint8_t csd[static CSD_SIZE]);
 int read_cid(uint8_t cid[static CID_SIZE]);
 
