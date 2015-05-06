@@ -417,9 +417,7 @@ static int recv_block(uint8_t *buf, size_t n) {
 		return -1;// Error
 	}
 
-	do {
-		*buf++ = rx();
-	} while (n--);
+	for (size_t i = 0; i < n; ++i) buf[i] = rx();
 
 	// Discard CRC
 	rx();
