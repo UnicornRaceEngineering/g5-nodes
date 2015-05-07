@@ -42,12 +42,32 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param *msg	Pointer to message on the heap.
  */
 
-typedef void (*canrec_callback_t)(uint16_t id, uint16_t len, uint8_t *msg);
+typedef uint8_t (*canrec_callback_t)(uint16_t id, uint16_t len, uint8_t *msg);
+
+typedef struct can_filter_t {
+	uint16_t lower_bound;
+	uint16_t upper_bound;
+} can_filter_t;
+
+enum can_counters{
+	SUCCES,
+	DLCW_ERR,
+	RX_COMP,
+	TX_COMP,
+	ACK_ERR,
+	FORM_ERR,
+	CRC_ERR,
+	STUFF_ERR,
+	BIT_ERR,
+	NO_MOB_ERR,
+	ALLOC_ERR,
+	TOTAL_ERR,
+};
 
 
-uint8_t can_init(uint16_t mask);
-uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg);
-int8_t can_send_single(const uint16_t id, const uint16_t len, uint8_t msg[7]);
+void can_init(can_filter_t, can_filter_t);
+uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg);
 void set_canrec_callback(canrec_callback_t callback);
+uint16_t get_counter(enum can_counters counter);
 
 #endif /* CAN_H */

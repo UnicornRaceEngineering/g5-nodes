@@ -32,12 +32,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <heap.h>
 
 
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
 static void init(void) {
 	usart1_init(115200);
 	init_heap();
-	can_init(1);
+
+	can_filter_t filter1 = { .lower_bound =   0, .upper_bound = 255 };
+	can_filter_t filter2 = { .lower_bound = 256, .upper_bound = 511 };
+	can_init(filter1, filter2);
 	set_canrec_callback(rx_complete);
 	
 	sei();
@@ -77,7 +80,8 @@ int main(void) {
 }
 
 // Callback to be run when rx comletes on the CAN
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	printf("id: %d len: %d\n", id, len);
 	// for (uint8_t i = 0; i < len; i++) putchar(msg[i]);
+	return 0;
 }
