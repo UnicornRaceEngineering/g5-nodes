@@ -47,7 +47,7 @@ int main(void) {
 
 	_delay_ms(5000);
 	while (1) {
-#if 1
+#if 0
 	// Sending a short message (1 frame)
 	uint8_t msg[6] = {'H', 'e', 'l', 'l', 'o', '\n'};
 	can_broadcast(TRANSPORT_TEST_SHORT, msg);
