@@ -37,6 +37,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "heap.h"
 #include "can_baud.h"
 #include "can.h"
+#include <stdio.h>
+#include <util/delay.h>
 
 
 //_____ D E F I N I T I O N S __________________________________________________
@@ -46,8 +48,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_FULL_ABORT()  { CANGCON |=  (1<<ABRQ); CANGCON &= ~(1<<ABRQ); }
 
 #define NB_MOB          ( 15        ) //!< Number of MOB's
-#define NB_DATA_MAX     ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
+#define DATA_MAX        ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB     ( NB_MOB-1  ) //!< Index of the last MOB. This is useful when looping over all MOB's
+#define NB_SPYMOB       ( 2         ) //!< Number of spymobs used.
 #define NO_MOB          ( 0xFF      )
 
 #define DLC_MSK         ( (1<<DLC3)|(1<<DLC2)|(1<<DLC1)|(1<<DLC0)   ) //!< Mask for Data Length Coding bits in CANCDMOB
@@ -71,14 +74,14 @@ enum FC_flag {
 *   switch on the given status of the MOB
 */
 enum mob_status_t {
-	MOB_TX_COMPLETED        = ( 1<<TXOK ),                                              //!< 0x40
-	MOB_RX_COMPLETED        = ( 1<<RXOK ),                                              //!< 0x20
-	MOB_RX_COMPLETED_DLCW   = ( (1<<RXOK)|(1<<DLCW) ),                                  //!< 0xA0
-	MOB_ACK_ERROR           = ( 1<<AERR ),                                              //!< 0x01
-	MOB_FORM_ERROR          = ( 1<<FERR ),                                              //!< 0x02
-	MOB_CRC_ERROR           = ( 1<<CERR ),                                              //!< 0x04
-	MOB_STUFF_ERROR         = ( 1<<SERR ),                                              //!< 0x08
-	MOB_BIT_ERROR           = ( 1<<BERR ),                                              //!< 0x10
+	MOB_TX_COMPLETED        = ( 1<<TXOK ),             //!< 0x40
+	MOB_RX_COMPLETED        = ( 1<<RXOK ),             //!< 0x20
+	MOB_RX_COMPLETED_DLCW   = ( (1<<RXOK)|(1<<DLCW) ), //!< 0xA0
+	MOB_ACK_ERROR           = ( 1<<AERR ),             //!< 0x01
+	MOB_FORM_ERROR          = ( 1<<FERR ),             //!< 0x02
+	MOB_CRC_ERROR           = ( 1<<CERR ),             //!< 0x04
+	MOB_STUFF_ERROR         = ( 1<<SERR ),             //!< 0x08
+	MOB_BIT_ERROR           = ( 1<<BERR ),             //!< 0x10
  };
 
 typedef struct can_msg_t can_msg_t;
@@ -213,19 +216,32 @@ struct can_msg_t {
 
 //_____ D E C L A R A T I O N S ________________________________________________
 
-static void finnish_receive(uint8_t mob);
-static void can_transmit (uint8_t mob, uint8_t type);
-static int8_t find_me_a_mob(void);
-static void enable_spy_mob(uint8_t mob);
-static void initiate_receive(uint8_t old_mob, can_msg_t *msg);
-static uint8_t count_free_mobs(void);
-static void send_response(enum FC_flag flag, uint8_t block_size,
-							uint8_t seperation_time, uint8_t id);
-static void receive_on_mob(uint8_t old_mob, can_msg_t *msg);
+static inline uint8_t finnish_receive(uint8_t mob);
+static void continue_sending (uint8_t mob);
+static inline int8_t find_me_a_mob(void);
+static inline void enable_spy_mob(uint8_t mob);
+static uint8_t initiate_receive(uint8_t old_mob, can_msg_t *msg);
+static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg);
+static inline void mob_receive(uint8_t mob, uint16_t id);
+static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]);
+static uint8_t receive_frame(uint8_t mob);
+static void reset_counters(void);
 
 static volatile can_msg_t *msg_list[15] = {0};
 static volatile uint16_t mob_on_job;
 static canrec_callback_t canrec_callback = 0;
+static volatile can_filter_t filter1, filter2;
+
+static volatile uint16_t dlcw_err;
+static volatile uint16_t rx_comp;
+static volatile uint16_t tx_comp;
+static volatile uint16_t ack_err;
+static volatile uint16_t form_err;
+static volatile uint16_t crc_err;
+static volatile uint16_t stuff_err;
+static volatile uint16_t bit_err;
+static volatile uint16_t no_mob_err;
+static volatile uint16_t alloc_err;
 
 
 //______________________________________________________________________________
@@ -234,8 +250,45 @@ void set_canrec_callback(canrec_callback_t callback) {
 	canrec_callback = callback;
 }
 
-uint8_t can_init(uint16_t mask) {
+
+static void reset_counters() {
+	dlcw_err  = 0;
+	rx_comp   = 0;
+	tx_comp   = 0;
+	ack_err   = 0;
+	form_err  = 0;
+	crc_err   = 0;
+	stuff_err = 0;
+	bit_err   = 0;
+}
+
+
+uint16_t get_counter(enum can_counters counter) {
+	switch (counter) {
+		case DLCW_ERR: 	return dlcw_err;
+		case RX_COMP: 	return rx_comp;
+		case TX_COMP: 	return tx_comp;
+		case ACK_ERR: 	return ack_err;
+		case FORM_ERR:	return form_err;
+		case CRC_ERR: 	return crc_err;
+		case STUFF_ERR: return stuff_err;
+		case BIT_ERR: 	return bit_err;
+		case NO_MOB_ERR:return bit_err;
+		case ALLOC_ERR: return bit_err;
+		case TOTAL_ERR: return dlcw_err + ack_err + form_err + crc_err +
+								stuff_err + bit_err + no_mob_err + alloc_err;
+		default: 		return 0;
+	}
+}
+
+
+void can_init(can_filter_t fil1, can_filter_t fil2) {
 	CAN_RESET();
+	reset_counters();
+
+	// Set the CAN ID filters.
+	filter1 = fil1;
+	filter2 = fil2;
 
 	/*
 	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
@@ -265,23 +318,19 @@ uint8_t can_init(uint16_t mask) {
 	}
 
 	mob_on_job = 0;
-	enable_spy_mob(14);
-	enable_spy_mob(13);
+
+	// Enable all spymobs
+	uint8_t i = NB_SPYMOB;
+	while (--i) {
+		enable_spy_mob(LAST_MOB_NB - i);
+	}
 
 	CAN_ENABLE();
 	CAN_INT_ALL();
-	return 0;
 }
 
-uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
-	int8_t mob = find_me_a_mob();
-	BIT_SET(mob_on_job, mob);
-	msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
-	msg_list[mob]->data = (uint8_t*)msg;
-	msg_list[mob]->id = id;
-	msg_list[mob]->len = len;
-	msg_list[mob]->idx = 0;
-	msg_list[mob]->msg_num = 0;
+
+uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 
 	// After initializing all the information needed for the message we start
 	// transmitting from mob and with a message type that can be 0 or 1 (these
@@ -289,57 +338,202 @@ uint8_t can_send(const uint16_t id, const uint16_t len, void * const msg) {
 	// If the payload length is 7 or less the payload can be transmitted in a
 	// single message (type 0). When sending longer messages is send multiple
 	// frames are needed and the first of these messages will be of type 1.
-	can_transmit(mob, (len > 7));
-	return 0;
+	if (len > 7) {
+		int8_t mob = find_me_a_mob();
+		if (mob == -1) {
+			return NO_MOB_ERR;
+		}
+		BIT_SET(mob_on_job, mob);
+
+		int8_t new_mob = find_me_a_mob();
+		if (new_mob == -1) {
+			BIT_CLEAR(mob_on_job, mob);
+			return NO_MOB_ERR;
+		}
+		BIT_SET(mob_on_job, new_mob);
+
+		msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+		if (!msg_list[mob]) {
+			BIT_CLEAR(mob_on_job, new_mob);
+			BIT_CLEAR(mob_on_job, mob);
+			++alloc_err;
+			return ALLOC_ERR;
+		}
+
+		msg_list[mob]->data = (uint8_t*)msg;
+		msg_list[mob]->id = id;
+		msg_list[mob]->len = len;
+		msg_list[mob]->idx = 0;
+		msg_list[mob]->msg_num = 0;
+
+		uint8_t data[DATA_MAX] = {0};
+		data[0] = 1;
+		data[0] += LOW_BYTE(msg_list[mob]->len << 3);
+		data[1] = HIGH_BYTE(msg_list[mob]->len << 3);
+		uint8_t header = 2;
+
+		CAN_SET_MOB(new_mob);
+		MOB_SET_STD_ID(msg_list[mob]->id);
+		MOB_SET_STD_FILTER_FULL();
+		MOB_SET_DLC(DATA_MAX); // Set the expected payload length
+		MOB_EN_RX();
+		CAN_ENABLE_MOB_INTERRUPT(new_mob);
+		msg_list[mob]->on_mob = mob;
+		msg_list[mob]->waiting = 1;
+		msg_list[new_mob] = msg_list[mob];
+
+		for (uint8_t i = header; i < DATA_MAX; i++) {
+			data[i] = msg_list[mob]->data[msg_list[mob]->idx++];
+		}
+
+		CAN_SET_MOB(mob);
+		mob_send(mob, msg_list[mob]->id, data);
+	} else {
+		int8_t mob = find_me_a_mob();
+		if (mob == -1) {
+			return NO_MOB_ERR;
+		}
+
+		uint8_t data[8] = {0};
+		data[0] = (len << 3) & 0xF8;
+		for (uint8_t i = 0; i < len; ++i)
+			data[i + 1] = msg[i];
+
+		BIT_SET(mob_on_job, mob);
+		CAN_SET_MOB(mob);
+		MOB_SET_STD_ID(id);
+		MOB_SET_DLC(8);
+		MOB_TX_DATA(data);
+		MOB_EN_TX();
+		while(TX_BUSY());
+		BIT_CLEAR(mob_on_job, mob);
+		sfree((void *)msg);
+	}
+	return SUCCES;
 }
 
-static void send_response(enum FC_flag flag, uint8_t block_size,
-							uint8_t seperation_time, uint8_t id) {
-	uint8_t msg[8];
-	uint8_t type = 3;
-	msg[0] = type & 0x07;
-	msg[0] += ((uint8_t)flag << 3) & 0xF8;
-	msg[1] = block_size;
-	msg[2] = seperation_time;
 
-	int8_t mob = find_me_a_mob();
-	BIT_SET(mob_on_job, mob);
-
-	msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
-	msg_list[mob]->idx = 3;
-	msg_list[mob]->len = 3;
-	msg_list[mob]->waiting = 0;
-
+static inline void mob_receive(uint8_t mob, uint16_t id) {
 	CAN_SET_MOB(mob);
+	MOB_EN_RX();
+	MOB_SET_DLC(8); // Set the expected payload length
+	MOB_SET_STD_ID(id);
+	MOB_SET_STD_FILTER_FULL();
+	CAN_ENABLE_MOB_INTERRUPT(mob);
+}
+
+
+static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]) {
+	CAN_SET_MOB(mob);
+	//The ID has to be set as the first parameter otherwise the it will be
+	//the ID of the next message sent by the MOB.
 	MOB_SET_STD_ID(id);
 	MOB_SET_DLC(8);
-	MOB_TX_DATA(msg);
+	MOB_TX_DATA(data);
 	CAN_ENABLE_MOB_INTERRUPT(mob);
 	MOB_EN_TX();
 }
 
-int8_t can_send_single(const uint16_t id, const uint16_t len, uint8_t msg[7]) {
-	int8_t mob = find_me_a_mob();
-	if (mob == -1)
-		return -1;
 
-	uint8_t data[8] = {0};
-	data[0] = (6 << 3) & 0xF8;
-	for (uint8_t i = 0; i < 7; ++i)
-		data[i + 1] = msg[i];
+static inline int8_t find_me_a_mob(void) {
+	for (uint8_t i = 0; i <= 15; i++)
+		if (!BIT_CHECK(mob_on_job, i))
+			return i;
 
-	BIT_SET(mob_on_job, mob);
-	CAN_SET_MOB(mob);
-	MOB_SET_STD_ID(id);
-	MOB_SET_DLC(8);
-	MOB_TX_DATA(data);
-	MOB_EN_TX();
-	while(TX_BUSY());
-	BIT_CLEAR(mob_on_job, mob);
-	return 0;
+	++no_mob_err;
+	return -1;
 }
 
-static void can_transmit (uint8_t mob, uint8_t type) {
+
+static inline void enable_spy_mob(uint8_t mob) {
+	BIT_SET(mob_on_job, mob);
+	CAN_SET_MOB(mob);
+	MOB_SET_STD_FILTER_NONE();
+	MOB_SET_DLC(8); // Set the expected payload length
+	CAN_ENABLE_MOB_INTERRUPT(mob);
+	MOB_EN_RX();
+}
+
+
+static uint8_t initiate_receive(uint8_t mob, can_msg_t *msg) {
+	uint16_t number_of_frames = ((msg->len - msg->idx) + (7 - 1)) / 7;
+	uint8_t free_mobs = 0;
+	for (uint8_t i = 0; i < 15; i++)
+		free_mobs += !BIT_CHECK(mob_on_job, i);
+
+	uint8_t block_size = (number_of_frames > MAX_BLOCK_SIZE) ?
+							MAX_BLOCK_SIZE : number_of_frames;
+	block_size = (free_mobs > block_size) ? block_size : free_mobs;
+
+	uint8_t FC_flag = !block_size;
+	uint8_t seperation_time = 1; // 1 millisecond;
+
+	if (FC_flag == 0) {
+		if (receive_on_mob(mob, (can_msg_t*)msg)) {
+			return NO_MOB_ERR;
+		}
+	}
+
+	uint8_t data[8] = {0};
+	uint8_t type = 3;
+	data[0] = type & 0x07;
+	data[0] += ((uint8_t)FC_flag << 3) & 0xF8;
+	data[1] = block_size;
+	data[2] = seperation_time;
+
+	int8_t res_mob = find_me_a_mob();
+	if (res_mob == -1) {
+		BIT_CLEAR(mob_on_job, mob);
+		return NO_MOB_ERR;
+	}
+	BIT_SET(mob_on_job, res_mob);
+
+	msg_list[res_mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+	if (!msg_list[res_mob]) {
+		BIT_CLEAR(mob_on_job, res_mob);
+		BIT_CLEAR(mob_on_job, mob);
+		return ALLOC_ERR;
+	}
+
+	msg_list[res_mob]->idx = 3;
+	msg_list[res_mob]->len = 3;
+	msg_list[res_mob]->waiting = 0;
+
+	CAN_SET_MOB(res_mob);
+	mob_send(res_mob, msg->id, data);
+	return SUCCES;
+}
+
+
+static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
+	int8_t mob = find_me_a_mob();
+	if (mob == -1) {
+		return NO_MOB_ERR;
+	}
+
+	msg_list[mob] = (can_msg_t*)msg;
+	BIT_SET(mob_on_job, mob);
+	mob_receive(mob, msg->id);
+	CAN_SET_MOB(old_mob);
+	return SUCCES;
+}
+
+
+static inline uint8_t finnish_receive(uint8_t mob) {
+	uint8_t err = (*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
+						(uint8_t*)&msg_list[mob]->data[0]);
+
+	sfree((void *)msg_list[mob]);
+	msg_list[mob] = 0;
+	BIT_CLEAR(mob_on_job, mob);
+	if (err) {
+		return err;
+	}
+	return SUCCES;
+}
+
+
+static void continue_sending(uint8_t mob) {
 	if (msg_list[mob]->waiting)
 		return;
 
@@ -352,165 +546,78 @@ static void can_transmit (uint8_t mob, uint8_t type) {
 		return;
 	}
 
-	uint8_t msg[8] = {0};
-	uint8_t msg_length;
-	uint8_t header;
-
 	msg_list[mob]->waiting = 0;
-
-	switch (type) {
-		case 0:
-			msg[0] = type & 0x07;
-			msg[0] += (msg_list[mob]->len << 3) & 0xF8;
-			header = 1;
-			break;
-
-		case 1:
-			msg[0] = type & 0x07;
-			msg[0] += LOW_BYTE(msg_list[mob]->len << 3);
-			msg[1] = HIGH_BYTE(msg_list[mob]->len << 3);
-			header = 2;
-
-			int8_t new_mob = find_me_a_mob();
-			BIT_SET(mob_on_job, new_mob);
-			CAN_SET_MOB(new_mob);
-			MOB_SET_STD_ID(msg_list[mob]->id);
-			MOB_SET_STD_FILTER_FULL();
-			MOB_SET_DLC(8); // Set the expected payload length
-			MOB_EN_RX();
-			CAN_ENABLE_MOB_INTERRUPT(new_mob);
-			msg_list[mob]->on_mob = mob;
-			msg_list[mob]->waiting = 1;
-			msg_list[new_mob] = msg_list[mob];
-			break;
-
-		case 2:
-			msg[0] = type & 0x07;
-			msg_list[mob]->msg_num++;
-			msg[0] += (msg_list[mob]->msg_num << 3) & 0xF8;
-			header = 1;
-			break;
-
-		default:
-			// Error: unsupported type
-			return;
-	}
-
+	msg_list[mob]->msg_num++;
+	uint8_t msg[8] = {0};
+	msg[0] = 2;
+	msg[0] += (msg_list[mob]->msg_num << 3) & 0xF8;
+	const uint8_t header = 1;
 
 	// If message is at the end with sending the mesage,
 	// the length will be ajusted
-	msg_length = (msg_list[mob]->len >= (msg_list[mob]->idx + (8 - header)))
-					? ((type == 1) ? 6 : 7)
-					: (msg_list[mob]->len - msg_list[mob]->idx);
+	uint8_t msg_length = (msg_list[mob]->len >= (msg_list[mob]->idx + (DATA_MAX - header)))
+					? DATA_MAX - header : (msg_list[mob]->len - msg_list[mob]->idx);
 
 	for (uint8_t i = 0; i < msg_length; i++)
 		msg[i + header] = msg_list[mob]->data[msg_list[mob]->idx++];
 
 	CAN_SET_MOB(mob);
-	//The ID has to be set as the first parameter otherwise the it will be
-	//the ID of the next message sent by the MOB.
-	MOB_SET_STD_ID(msg_list[mob]->id);
-	MOB_SET_DLC(8);
-	MOB_TX_DATA(msg);
-	CAN_ENABLE_MOB_INTERRUPT(mob);
-	MOB_EN_TX();
+	_delay_us(100);
+	mob_send(mob, msg_list[mob]->id, msg);
 }
 
-static int8_t find_me_a_mob(void) {
-	for (uint8_t i = 0; i <= 15; i++)
-		if (!BIT_CHECK(mob_on_job, i))
-			return i;
 
-	return -1;
-}
-
-static void enable_spy_mob(uint8_t mob) {
-	BIT_SET(mob_on_job, mob);
-	CAN_SET_MOB(mob);
-	MOB_SET_STD_FILTER_NONE();
-	MOB_SET_DLC(8); // Set the expected payload length
-	CAN_ENABLE_MOB_INTERRUPT(mob);
-	MOB_EN_RX();
-}
-
-static uint8_t count_free_mobs(void) {
-	uint8_t free_mobs = 0;
-	for (uint8_t i = 0; i < 15; i++)
-		free_mobs += !BIT_CHECK(mob_on_job, i);
-	return free_mobs;
-}
-
-static void initiate_receive(uint8_t mob, can_msg_t *msg) {
-	uint16_t number_of_frames = ((msg->len - msg->idx) + (7 - 1)) / 7;
-	uint8_t free_mobs = count_free_mobs();
-
-	uint8_t block_size = (number_of_frames > MAX_BLOCK_SIZE) ?
-							MAX_BLOCK_SIZE : number_of_frames;
-	block_size = (free_mobs > block_size) ? block_size : free_mobs;
-
-	uint8_t FC_flag = !block_size;
-	uint8_t seperation_time = 1; // 1 millisecond;
-
-	if (FC_flag == 0)
-		receive_on_mob(mob, (can_msg_t*)msg);
-
-	send_response(FC_flag, block_size, seperation_time, msg->id);
-}
-
-static void receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
-	int8_t mob = find_me_a_mob();
-	msg_list[mob] = (can_msg_t*)msg;
-	BIT_SET(mob_on_job, mob);
-	CAN_SET_MOB(mob);
-	MOB_EN_RX();
-	MOB_SET_DLC(8); // Set the expected payload length
-	MOB_SET_STD_ID(msg->id);
-	MOB_SET_STD_FILTER_FULL();
-	CAN_ENABLE_MOB_INTERRUPT(mob);
-	CAN_SET_MOB(old_mob);
-}
-
-static void finnish_receive(uint8_t mob) {
-	if (canrec_callback != 0)
-		(*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
-							(uint8_t*)&msg_list[mob]->data[0]);
-
-	sfree((void *)msg_list[mob]);
-	msg_list[mob] = 0;
-	BIT_CLEAR(mob_on_job, mob);
-}
-
-static void can_get(uint8_t mob) {
+static uint8_t receive_frame(uint8_t mob) {
 	uint8_t msg[8];
 	MOB_RX_DATA(msg);
 
-	const uint8_t type = msg[0] & 0x07;
-
-	switch (type) {
+	switch (msg[0] & 0x07) { // Switch on the message type.
 		case 0:
-			msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
-			msg_list[mob]->len = ((msg[0] & 0xF8) >> 3);
-			msg_list[mob]->data = (uint8_t*)smalloc(msg_list[mob]->len);
-			msg_list[mob]->id = MOB_GET_STD_ID();
-			msg_list[mob]->msg_num = 0;
-			msg_list[mob]->idx = msg_list[mob]->len;
-			for (uint8_t i = 0; i < msg_list[mob]->len; i++)
-				msg_list[mob]->data[i] = msg[i + 1];
-			finnish_receive(mob);
-			break;
+		{
+			uint16_t len = (msg[0] & 0xF8) >> 3;
+			uint16_t id = MOB_GET_STD_ID();
+			uint8_t *data = (uint8_t*)smalloc(len);
+			if (!data) {
+				return ALLOC_ERR;
+			}
+
+			for (uint8_t i = 0; i < len; i++)
+				data[i] = msg[i + 1];
+
+			uint8_t err = (*canrec_callback)(id, len, (uint8_t*)&data[0]);
+			if (err) {
+				sfree((void *) data);
+				return err;
+			}
+		}
+		break;
 
 		case 1:
 			msg_list[mob] = (can_msg_t*)smalloc(sizeof(can_msg_t));
+			if (!msg_list[mob]) {
+				return ALLOC_ERR;
+			}
+
 			msg_list[mob]->len = ((msg[0] & 0xF8) >> 3) + ((msg[1] * 256) >> 3);
 			msg_list[mob]->data = (uint8_t*)smalloc(msg_list[mob]->len);
+			if (!msg_list[mob]->data) {
+				sfree((void *)msg_list[mob]);
+				return ALLOC_ERR;
+			}
+
 			msg_list[mob]->id = MOB_GET_STD_ID();
 			msg_list[mob]->msg_num = 0;
 			msg_list[mob]->idx = 6;
 			msg_list[mob]->waiting = 0;
-			for (uint8_t i = 2; i < 8; i++)
-				msg_list[mob]->data[i - 2] = msg[i];
+			const uint8_t header = 2;
+			for (uint8_t i = header; i < DATA_MAX; i++)
+				msg_list[mob]->data[i - header] = msg[i];
 
-			initiate_receive(mob, (can_msg_t*)msg_list[mob]);
+			uint8_t err = initiate_receive(mob, (can_msg_t*)msg_list[mob]);
+			if (err) {
+				return err;
+			}
+
 			CAN_SET_MOB(mob);
 			msg_list[mob] = 0;
 			break;
@@ -521,26 +628,20 @@ static void can_get(uint8_t mob) {
 			while ( (msg_list[mob]->idx < msg_list[mob]->len) && (i < 8))
 				msg_list[mob]->data[msg_list[mob]->idx++] = msg[i++];
 
-			if (msg_list[mob]->len == msg_list[mob]->idx && type != 3) {
-				finnish_receive(mob);
-				return;
+			if (msg_list[mob]->len == msg_list[mob]->idx) {
+				uint8_t err = finnish_receive(mob);
+				if (err) {
+					return err;
+				}
+				return SUCCES;
 			}
-
-			if (msg_list[mob]->len != msg_list[mob]->idx) {
-				receive_on_mob(mob, (can_msg_t*)msg_list[mob]);
-
-				msg_list[mob] = 0;
-				BIT_CLEAR(mob_on_job, mob);
-			}
-			return;
+			break;
 
 		case 3:
-			MOB_ABORT();
-			CANSTMOB = 0;
 			msg_list[mob]->waiting = 0;
-			can_transmit(msg_list[mob]->on_mob, 2);
+			continue_sending(msg_list[mob]->on_mob);
 			BIT_CLEAR(mob_on_job, mob);
-			return;
+			return SUCCES;
 
 		default:
 			// Error: unsupported type
@@ -549,11 +650,12 @@ static void can_get(uint8_t mob) {
 
 	CAN_ENABLE_MOB_INTERRUPT(mob);
 	MOB_EN_RX();
-	return;
+	return SUCCES;
 }
 
+
 ISR (CANIT_vect) {
-	while (PRIORITY_MOB() != 15) { /* True if mob have pending interrupt */
+	while (PRIORITY_MOB() != NB_MOB) { /* True if mob have pending interrupt */
 		const uint8_t mob = PRIORITY_MOB();
 		CAN_SET_MOB(mob);
 		const uint8_t canst = CANSTMOB;
@@ -562,29 +664,61 @@ ISR (CANIT_vect) {
 
 		switch (canst) {
 			case MOB_RX_COMPLETED_DLCW:
-				// Fall through to MOB_RX_COMPLETED on purpose.
+				++dlcw_err;;
+				break;
 			case MOB_RX_COMPLETED:
-				can_get(mob);
+				++rx_comp;
+
+				// Run through filter, and return if ID not in ranges.
+				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
+					uint16_t id = MOB_GET_STD_ID();
+					if ( !((id > filter1.lower_bound && id < filter1.upper_bound)
+						|| (id > filter2.lower_bound && id < filter2.upper_bound)) )
+					{
+						CAN_ENABLE_MOB_INTERRUPT(mob);
+						MOB_EN_RX();
+						continue;
+					}
+				}
+
+				// Receive a frame and deal with errors if necessary.
+				uint8_t err = receive_frame(mob);
+				if (err) {
+					if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
+						CAN_ENABLE_MOB_INTERRUPT(mob);
+						MOB_EN_RX();
+					}
+
+					if (err == ALLOC_ERR) {
+						++alloc_err;
+					}
+				}
 				break;
 
 			case MOB_TX_COMPLETED:
-				can_transmit(mob, 2);
+				++tx_comp;
+				continue_sending(mob);
 				break;
 
-		// 	case MOB_ACK_ERROR:
-		// 		break;
+		 	case MOB_ACK_ERROR:
+		 		++ack_err;
+		 		break;
 
-		// 	case MOB_FORM_ERROR:
-		// 		break;
+		 	case MOB_FORM_ERROR:
+		 		++form_err;
+		 		break;
 
-		// 	case MOB_CRC_ERROR:
-		// 		break;
+		 	case MOB_CRC_ERROR:
+		 		++crc_err;
+		 		break;
 
-		// 	case MOB_STUFF_ERROR:
-		// 		break;
+		 	case MOB_STUFF_ERROR:
+		 		++stuff_err;
+		 		break;
 
-		// 	case MOB_BIT_ERROR:
-		// 		break;
+		 	case MOB_BIT_ERROR:
+		 		++bit_err;
+		 		break;
 		}
 		cli();
 	}

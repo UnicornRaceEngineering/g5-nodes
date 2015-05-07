@@ -293,7 +293,7 @@ int main(void) {
 			mesnumber= 0;
 
 			uint8_t msg[1] = {current_gear};
-			can_broadcast_single(CURRENT_GEAR, msg);
+			can_broadcast(CURRENT_GEAR, msg);
 		}
 	}
 

@@ -37,17 +37,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "can_messages.h"
 
 
-struct message_list {
-	struct can_message *message;
-	struct message_list *older_message;
-	struct message_list *newer_message;
-};
-
-static struct message_list *oldest_message;
-static struct message_list *newest_message;
+static struct can_message *oldest_message;
+static struct can_message *newest_message;
 static volatile uint8_t queue_length;
 
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
 /**
  * Initializes the node so it is ready to communicate on the network
@@ -55,13 +49,18 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
  * @param  id ID of the node that is initialized
  * @return    A pointer to the node handle
  */
-int init_can_node(enum node_id node) {
+void init_can_node(enum node_id node) {
 	oldest_message = 0;
 	newest_message = 0;
 	queue_length = 0;
 
 	set_canrec_callback(rx_complete);
-	return can_init(node);
+
+	can_filter_t filter1 = {.lower_bound = filter_info(PUBLIC).lower_bound,
+							.upper_bound = filter_info(PUBLIC).upper_bound };
+	can_filter_t filter2 = {.lower_bound = filter_info(node).lower_bound,
+							.upper_bound = filter_info(node).upper_bound };
+	can_init(filter1, filter2);
 }
 
 
@@ -71,58 +70,51 @@ int init_can_node(enum node_id node) {
  * @param  data a pointer to the raw data that should be send
  * @return      Non zero on error.
  */
-int can_broadcast(const enum message_id receiver, void * const data) {
+uint8_t can_broadcast(const enum message_id receiver, void * const data) {
 	uint16_t i = 0;
 	do {
 		if (message_info(i).id == receiver)
 			return can_send(message_info(i).id, message_info(i).len, data);
 	} while (message_info(++i).id);
-	return -1;
-}
-
-
-int can_broadcast_single(const enum message_id receiver, uint8_t data[7]) {
-	uint16_t i = 0;
-	do {
-		if (message_info(i).id == receiver)
-			return can_send_single(message_info(i).id, message_info(i).len, data);
-	} while (message_info(++i).id);
-	return -1;
+	return 1;
 }
 
 
 // Callback to be run when rx comletes on the CAN
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	if (queue_length) {
-		struct message_list *temp = newest_message;
-		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
-		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
-		newest_message->message->info.id = id;
-		newest_message->message->info.len = len;
-		newest_message->message->data = msg;
+		struct can_message *temp = newest_message;
+		newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
+		if (!newest_message) {
+			return ALLOC_ERR;
+		}
+		newest_message->info.id = id;
+		newest_message->info.len = len;
+		newest_message->data = msg;
 		newest_message->older_message = temp;
 		newest_message->newer_message = 0;
 		temp->newer_message = newest_message;
 	} else {
-		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
+		newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
+		if (!newest_message) {
+			return ALLOC_ERR;
+		}
 		oldest_message = newest_message;
-		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
-		newest_message->message->info.id = id;
-		newest_message->message->info.len = len;
-		newest_message->message->data = msg;
+		newest_message->info.id = id;
+		newest_message->info.len = len;
+		newest_message->data = msg;
 		newest_message->newer_message = 0;
 		newest_message->older_message = 0;
 	}
 	++queue_length;
+	return SUCCES;
 }
 
 struct can_message* read_inbox(void) {
 	if (queue_length) {
-		struct message_list *temp = oldest_message;
-		oldest_message = temp->newer_message;
+		struct can_message *return_message = oldest_message;
+		oldest_message = return_message->newer_message;
 		oldest_message->older_message = 0;
-		struct can_message *return_message = temp->message;
-		sfree((void *)temp);
 		--queue_length;
 		return return_message;
 	} else {

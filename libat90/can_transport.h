@@ -36,12 +36,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 struct can_message {
 	struct message_detail info;
 	uint8_t *data;
+
+	struct can_message *older_message;
+	struct can_message *newer_message;
 };
 
 
-int init_can_node(const enum node_id id);
-int can_broadcast(const enum message_id receiver, void * const data);
-int can_broadcast_single(const enum message_id receiver, uint8_t data[7]);
+void init_can_node(const enum node_id id);
+uint8_t can_broadcast(const enum message_id receiver, void * const data);
 struct can_message* read_inbox(void);
 uint8_t get_queue_length(void);
 void can_free(struct can_message*);

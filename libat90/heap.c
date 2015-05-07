@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static volatile uint8_t heap[HEAPSIZE];
 static volatile uint8_t header;
+static volatile uint16_t smalloc_err;
 
 /**
  * Initializes the heap.
@@ -50,9 +51,25 @@ static volatile uint8_t header;
  * @return 	void
  */
 void init_heap (void) {
+	smalloc_err = 0;
 	header = 2;
 	heap[0] = HEAPSIZE;
 	heap[1] = 0;
+}
+
+/**
+ * Returns the number of failed allocations on the heap.
+ * @return 		number of failed allocations on the heap.
+ */
+uint16_t get_heap_err() {
+	return smalloc_err;
+}
+
+/**
+ * Resets counter of failed allocations on the heap.
+ */
+ void reset_heap_err() {
+	smalloc_err = 0;
 }
 
 /**
@@ -78,6 +95,7 @@ void* smalloc(uint8_t size) {
 			return (void*)&heap[new_ptr + header];
 		}
 	} while(heap_ptr != HEAPSIZE);
+	++smalloc_err;
 	return 0;
 }
 
