@@ -47,7 +47,7 @@ static struct message_list *oldest_message;
 static struct message_list *newest_message;
 static volatile uint8_t queue_length;
 
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
 /**
  * Initializes the node so it is ready to communicate on the network
@@ -87,11 +87,18 @@ uint8_t can_broadcast(const enum message_id receiver, void * const data) {
 
 
 // Callback to be run when rx comletes on the CAN
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	if (queue_length) {
 		struct message_list *temp = newest_message;
 		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
+		if (!newest_message) {
+			return ALLOC_ERR;
+		}
 		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
+		if (!newest_message->message) {
+			sfree((void *)newest_message);
+			return ALLOC_ERR;
+		}
 		newest_message->message->info.id = id;
 		newest_message->message->info.len = len;
 		newest_message->message->data = msg;
@@ -100,8 +107,15 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 		temp->newer_message = newest_message;
 	} else {
 		newest_message = (struct message_list*)smalloc(sizeof(struct message_list));
+		if (!newest_message) {
+			return ALLOC_ERR;
+		}
 		oldest_message = newest_message;
 		newest_message->message = (struct can_message*)smalloc(sizeof(struct can_message));
+		if (!newest_message->message) {
+			sfree((void *)newest_message);
+			return ALLOC_ERR;
+		}
 		newest_message->message->info.id = id;
 		newest_message->message->info.len = len;
 		newest_message->message->data = msg;
@@ -109,6 +123,7 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 		newest_message->older_message = 0;
 	}
 	++queue_length;
+	return SUCCES;
 }
 
 struct can_message* read_inbox(void) {

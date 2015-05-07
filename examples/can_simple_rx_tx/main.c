@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <heap.h>
 
 
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 
 static void init(void) {
 	usart1_init(115200);
@@ -80,7 +80,8 @@ int main(void) {
 }
 
 // Callback to be run when rx comletes on the CAN
-static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
+static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
 	printf("id: %d len: %d\n", id, len);
 	// for (uint8_t i = 0; i < len; i++) putchar(msg[i]);
+	return 0;
 }
