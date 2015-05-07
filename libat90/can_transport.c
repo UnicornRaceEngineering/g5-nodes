@@ -61,7 +61,12 @@ void init_can_node(enum node_id node) {
 	queue_length = 0;
 
 	set_canrec_callback(rx_complete);
-	can_init(node);
+
+	can_filter_t filter1 = {.lower_bound = filter_info(PUBLIC).lower_bound,
+							.upper_bound = filter_info(PUBLIC).upper_bound };
+	can_filter_t filter2 = {.lower_bound = filter_info(node).lower_bound,
+							.upper_bound = filter_info(node).upper_bound };
+	can_init(filter1, filter2);
 }
 
 

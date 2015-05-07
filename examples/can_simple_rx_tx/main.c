@@ -37,7 +37,10 @@ static void rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
 static void init(void) {
 	usart1_init(115200);
 	init_heap();
-	can_init(1);
+
+	can_filter_t filter1 = { .lower_bound =   0, .upper_bound = 255 };
+	can_filter_t filter2 = { .lower_bound = 256, .upper_bound = 511 };
+	can_init(filter1, filter2);
 	set_canrec_callback(rx_complete);
 	
 	sei();

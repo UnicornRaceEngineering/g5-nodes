@@ -49,6 +49,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define NB_MOB          ( 15        ) //!< Number of MOB's
 #define DATA_MAX        ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB     ( NB_MOB-1  ) //!< Index of the last MOB. This is useful when looping over all MOB's
+#define NB_SPYMOB       ( 2         ) //!< Number of spymobs used.
 #define NO_MOB          ( 0xFF      )
 
 #define DLC_MSK         ( (1<<DLC3)|(1<<DLC2)|(1<<DLC1)|(1<<DLC0)   ) //!< Mask for Data Length Coding bits in CANCDMOB
@@ -227,6 +228,7 @@ static uint8_t receive_frame(uint8_t mob);
 static volatile can_msg_t *msg_list[15] = {0};
 static volatile uint16_t mob_on_job;
 static canrec_callback_t canrec_callback = 0;
+static volatile can_filter_t filter1, filter2;
 
 
 //______________________________________________________________________________
@@ -236,8 +238,12 @@ void set_canrec_callback(canrec_callback_t callback) {
 }
 
 
-void can_init(uint16_t mask) {
+void can_init(can_filter_t fil1, can_filter_t fil2) {
 	CAN_RESET();
+
+	// Set the CAN ID filters.
+	filter1 = fil1;
+	filter2 = fil2;
 
 	/*
 	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
@@ -267,8 +273,12 @@ void can_init(uint16_t mask) {
 	}
 
 	mob_on_job = 0;
-	enable_spy_mob(14);
-	enable_spy_mob(13);
+
+	// Enable all spymobs
+	uint8_t i = NB_SPYMOB;
+	while (--i) {
+		enable_spy_mob(LAST_MOB_NB - i);
+	}
 
 	CAN_ENABLE();
 	CAN_INT_ALL();
@@ -548,7 +558,7 @@ static uint8_t receive_frame(uint8_t mob) {
 			if (err) {
 				return err;
 			}
-			
+
 			CAN_SET_MOB(mob);
 			msg_list[mob] = 0;
 			break;
@@ -594,6 +604,19 @@ ISR (CANIT_vect) {
 			case MOB_RX_COMPLETED_DLCW:
 				// Fall through to MOB_RX_COMPLETED on purpose.
 			case MOB_RX_COMPLETED:
+
+				// Run through filter, and return if ID not in ranges.
+				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
+					uint16_t id = MOB_GET_STD_ID();
+					if ( !((id > filter1.lower_bound && id < filter1.upper_bound)
+						|| (id > filter2.lower_bound && id < filter2.upper_bound)) )
+					{
+						CAN_ENABLE_MOB_INTERRUPT(mob);
+						MOB_EN_RX();
+						continue;
+					}
+				}
+
 				receive_frame(mob);
 				break;
 

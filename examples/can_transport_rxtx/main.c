@@ -63,7 +63,7 @@ int main(void) {
 	// recieving
 	while(get_queue_length()) {
 		struct can_message *message = read_inbox();
-		printf("message of id %2d and length %2d : ", message->info.id, message->info.len);
+		printf("message of id %4d and length %3d : ", message->info.id, message->info.len);
 		for (int i = 0; i < message->info.len; ++i)
 			putchar(message->data[i]);
 		can_free(message);

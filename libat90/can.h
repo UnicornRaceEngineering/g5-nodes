@@ -44,8 +44,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 typedef void (*canrec_callback_t)(uint16_t id, uint16_t len, uint8_t *msg);
 
+typedef struct can_filter_t {
+	uint16_t lower_bound;
+	uint16_t upper_bound;
+} can_filter_t;
 
-void can_init(uint16_t mask);
+
+void can_init(can_filter_t, can_filter_t);
 uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg);
 void set_canrec_callback(canrec_callback_t callback);
 
