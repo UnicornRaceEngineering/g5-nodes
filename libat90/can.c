@@ -37,6 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "heap.h"
 #include "can_baud.h"
 #include "can.h"
+#include <stdio.h>
 #include <util/delay.h>
 
 
@@ -224,11 +225,21 @@ static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg);
 static inline void mob_receive(uint8_t mob, uint16_t id);
 static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]);
 static uint8_t receive_frame(uint8_t mob);
+static void reset_counters(void);
 
 static volatile can_msg_t *msg_list[15] = {0};
 static volatile uint16_t mob_on_job;
 static canrec_callback_t canrec_callback = 0;
 static volatile can_filter_t filter1, filter2;
+
+static volatile uint16_t dlcw_err;
+static volatile uint16_t rx_comp;
+static volatile uint16_t tx_comp;
+static volatile uint16_t ack_err;
+static volatile uint16_t form_err;
+static volatile uint16_t crc_err;
+static volatile uint16_t stuff_err;
+static volatile uint16_t bit_err;
 
 
 //______________________________________________________________________________
@@ -238,8 +249,37 @@ void set_canrec_callback(canrec_callback_t callback) {
 }
 
 
+static void reset_counters() {
+	dlcw_err  = 0;
+	rx_comp   = 0;
+	tx_comp   = 0;
+	ack_err   = 0;
+	form_err  = 0;
+	crc_err   = 0;
+	stuff_err = 0;
+	bit_err   = 0;
+}
+
+
+uint16_t get_counter(enum can_counters counter) {
+	switch (counter) {
+		case DLCW_ERR: 	return dlcw_err;
+		case RX_COMP: 	return rx_comp;
+		case TX_COMP: 	return tx_comp;
+		case ACK_ERR: 	return ack_err;
+		case FORM_ERR:	return form_err;
+		case CRC_ERR: 	return crc_err;
+		case STUFF_ERR: return stuff_err;
+		case BIT_ERR: 	return bit_err;
+		case TOTAL_ERR: return dlcw_err + ack_err + form_err + crc_err + stuff_err + bit_err;
+		default: 		return 0;
+	}
+}
+
+
 void can_init(can_filter_t fil1, can_filter_t fil2) {
 	CAN_RESET();
+	reset_counters();
 
 	// Set the CAN ID filters.
 	filter1 = fil1;
@@ -602,8 +642,10 @@ ISR (CANIT_vect) {
 
 		switch (canst) {
 			case MOB_RX_COMPLETED_DLCW:
-				// Fall through to MOB_RX_COMPLETED on purpose.
+				++dlcw_err;;
+				break;
 			case MOB_RX_COMPLETED:
+				++rx_comp;
 
 				// Run through filter, and return if ID not in ranges.
 				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
@@ -621,23 +663,29 @@ ISR (CANIT_vect) {
 				break;
 
 			case MOB_TX_COMPLETED:
+				++tx_comp;
 				continue_sending(mob);
 				break;
 
-		// 	case MOB_ACK_ERROR:
-		// 		break;
+		 	case MOB_ACK_ERROR:
+		 		++ack_err;
+		 		break;
 
-		// 	case MOB_FORM_ERROR:
-		// 		break;
+		 	case MOB_FORM_ERROR:
+		 		++form_err;
+		 		break;
 
-		// 	case MOB_CRC_ERROR:
-		// 		break;
+		 	case MOB_CRC_ERROR:
+		 		++crc_err;
+		 		break;
 
-		// 	case MOB_STUFF_ERROR:
-		// 		break;
+		 	case MOB_STUFF_ERROR:
+		 		++stuff_err;
+		 		break;
 
-		// 	case MOB_BIT_ERROR:
-		// 		break;
+		 	case MOB_BIT_ERROR:
+		 		++bit_err;
+		 		break;
 		}
 		cli();
 	}

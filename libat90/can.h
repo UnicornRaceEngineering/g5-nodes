@@ -49,9 +49,22 @@ typedef struct can_filter_t {
 	uint16_t upper_bound;
 } can_filter_t;
 
+enum can_counters{
+	DLCW_ERR,
+	RX_COMP,
+	TX_COMP,
+	ACK_ERR,
+	FORM_ERR,
+	CRC_ERR,
+	STUFF_ERR,
+	BIT_ERR,
+	TOTAL_ERR,
+};
+
 
 void can_init(can_filter_t, can_filter_t);
 uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg);
 void set_canrec_callback(canrec_callback_t callback);
+uint16_t get_counter(enum can_counters counter);
 
 #endif /* CAN_H */
