@@ -37,7 +37,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "heap.h"
 #include "can_baud.h"
 #include "can.h"
-#include <stdio.h>
 #include <util/delay.h>
 
 
