@@ -45,6 +45,8 @@ void * smalloc(uint8_t size);
 uint8_t sfree(void *heap_ptr);
 uint8_t count_heap(void);
 uint8_t count_fragmentation(void);
+uint16_t get_heap_err(void);
+void reset_heap_err(void);
 
 
 #endif /* HEAP_H */
