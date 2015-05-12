@@ -393,6 +393,8 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 			return NO_MOB_ERR;
 		}
 
+		msg_list[mob] = 0;
+
 		uint8_t data[8] = {0};
 		data[0] = (len << 3) & 0xF8;
 		for (uint8_t i = 0; i < len; ++i)
@@ -404,9 +406,7 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 		MOB_SET_DLC(8);
 		MOB_TX_DATA(data);
 		MOB_EN_TX();
-		while(TX_BUSY());
-		BIT_CLEAR(mob_on_job, mob);
-		sfree((void *)msg);
+		CAN_ENABLE_MOB_INTERRUPT(mob);
 	}
 	return SUCCES;
 }
@@ -533,6 +533,11 @@ static inline uint8_t finnish_receive(uint8_t mob) {
 
 
 static void continue_sending(uint8_t mob) {
+	if (msg_list[mob] == 0) {
+		BIT_CLEAR(mob_on_job, mob);
+		return;
+	}
+
 	if (msg_list[mob]->waiting)
 		return;
 
