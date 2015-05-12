@@ -38,14 +38,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mmc_sdcard.h>
 #include <can_transport.h>
 #include <stdio.h>
-#include <tick.h>
+#include <sysclock.h>
 
 static void init(void) {
 	rtc_init();
 	ecu_init();
 	xbee_init();
 	log_init();
-	tick_init();
+	sysclock_init();
 
 	init_can_node(COM_NODE);
 
