@@ -21,16 +21,38 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef TICK_H
-#define TICK_H
 
-#include <stdint.h>
+#include <stdlib.h>
+#include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+#include <util/delay.h>
+#include <usart.h>
+#include <sysclock.h>
 
 
-typedef void (*tick_callback_t)(uint32_t milliseconds);
+static void tick_tock(uint32_t tick);
+unsigned int seconds;
 
-void tick_init(void);
-uint32_t get_tick(void);
-void set_tick_callback(tick_callback_t func);
+static void init(void) {
+	usart1_init(115200);
+	sysclock_init();
 
-#endif /* TICK_H */
+	set_tick_callback(tick_tock);
+	seconds = 0;
+	sei();
+	puts_P(PSTR("Init complete\n\n"));
+}
+
+int main(void) {
+	init();
+
+	while(1){
+	}
+
+    return 0;
+}
+
+static void tick_tock(uint32_t milliseconds) {
+	if (milliseconds % 1000 == 0)
+		printf("seconds counted: %4u\n", ++seconds);
+}

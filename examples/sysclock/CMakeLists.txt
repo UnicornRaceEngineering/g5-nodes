@@ -1,4 +1,4 @@
-set(NODE_NAME tick)
+set(NODE_NAME sysclock)
 
 set(SRC_FILES
 	main.c)

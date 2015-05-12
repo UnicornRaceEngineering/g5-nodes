@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>
 #include <io.h>
 #include <util/delay.h>
-#include <tick.h>
+#include <sysclock.h>
 
 #include "paddleshift.h"
 

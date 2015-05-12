@@ -35,7 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <io.h>
 #include <utils.h>
-#include <tick.h>
+#include <sysclock.h>
 
 // Drivers
 #include <74ls138d_demultiplexer.h>
@@ -87,7 +87,7 @@ static void init(void) {
 	init_can_node(STEERING_NODE);
 	init_heap();
 	usart1_init(115200);
-	tick_init();
+	sysclock_init();
 	paddle_init();
 	statuslight_init();
 	seg7_init();

@@ -34,7 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <io.h>
 #include <can_transport.h>
 #include <heap.h>
-#include <tick.h>
+#include <sysclock.h>
 #include "../SteeringNode/paddleshift.h"
 
 #include "dewalt.h"

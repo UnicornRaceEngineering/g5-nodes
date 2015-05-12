@@ -9,7 +9,7 @@ set(SRC_FILES
 	spi.c
 	can_transport.c
 	utils.c
-	tick.c
+	sysclock.c
 )
 
 add_library(libat90 ${SRC_FILES})

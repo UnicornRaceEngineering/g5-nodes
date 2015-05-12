@@ -21,48 +21,16 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef SYSCLOCK_H
+#define SYSCLOCK_H
 
 #include <stdint.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include "tick.h"
 
 
-static volatile uint32_t tick;
-static volatile tick_callback_t callback;
+typedef void (*tick_callback_t)(uint32_t milliseconds);
 
-static void default_tick_tock(uint32_t milliseconds) {
-}
+void sysclock_init(void);
+uint32_t get_tick(void);
+void set_tick_callback(tick_callback_t func);
 
-void tick_init(void) {
-	tick = 0;
-	callback = default_tick_tock;
-
-	// control regiters set to Mode 12 (CTC) and no prescaling.
-	TCCR1A = 0;
-	TCCR1B = (1 << WGM12) + (1 << CS10);
-	TCCR1C = 0;
-
-	// Output Compare Register A to 11059
-	// equal to 1ms
-	OCR1A = 11059;
-
-	// Set counter value to 0
-	TCNT1L = 0;
-	TCNT1H = 0;
-
-	// Set to interrupt on output compare match A.
-	TIMSK1 = 1 << OCIE1A;
-}
-
-void set_tick_callback(tick_callback_t func) {
-	callback = func;
-}
-
-uint32_t get_tick(void) {
-	return tick;
-}
-
-ISR(TIMER1_COMPA_vect) {
-	(*callback)(++tick);
-}
+#endif /* SYSCLOCK_H */

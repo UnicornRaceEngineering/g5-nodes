@@ -22,37 +22,47 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdlib.h>
+#include <stdint.h>
+#include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include <util/delay.h>
-#include <usart.h>
-#include <tick.h>
+#include "sysclock.h"
 
 
-static void tick_tock(uint32_t tick);
-unsigned int seconds;
+static volatile uint32_t tick;
+static volatile tick_callback_t callback;
 
-static void init(void) {
-	usart1_init(115200);
-	tick_init();
-
-	set_tick_callback(tick_tock);
-	seconds = 0;
-	sei();
-	puts_P(PSTR("Init complete\n\n"));
+static void default_tick_tock(uint32_t milliseconds) {
 }
 
-int main(void) {
-	init();
+void sysclock_init(void) {
+	tick = 0;
+	callback = default_tick_tock;
 
-	while(1){
-	}
+	// control regiters set to Mode 12 (CTC) and no prescaling.
+	TCCR1A = 0;
+	TCCR1B = (1 << WGM12) + (1 << CS10);
+	TCCR1C = 0;
 
-    return 0;
+	// Output Compare Register A to 11059
+	// equal to 1ms
+	OCR1A = 11059;
+
+	// Set counter value to 0
+	TCNT1L = 0;
+	TCNT1H = 0;
+
+	// Set to interrupt on output compare match A.
+	TIMSK1 = 1 << OCIE1A;
 }
 
-static void tick_tock(uint32_t milliseconds) {
-	if (milliseconds % 1000 == 0)
-		printf("seconds counted: %4u\n", ++seconds);
+void set_tick_callback(tick_callback_t func) {
+	callback = func;
+}
+
+uint32_t get_tick(void) {
+	return tick;
+}
+
+ISR(TIMER1_COMPA_vect) {
+	(*callback)(++tick);
 }
