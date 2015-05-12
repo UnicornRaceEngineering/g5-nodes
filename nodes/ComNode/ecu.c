@@ -45,6 +45,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <heap.h>
 #include <can_transport.h>
 
+#include "log.h"
 #include "xbee.h"
 #include "bson.h"
 #include "ecu.h"
@@ -153,6 +154,7 @@ void ecu_parse_package(void) {
 				s += sizeof(ts);
 
 				xbee_send(buff, s);
+				log_append(buff, s);
 			}
 		}
 	}

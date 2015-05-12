@@ -21,52 +21,34 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/interrupt.h> // sei()
-#include <util/delay.h>
-#include <stdbool.h>
-#include <avr/pgmspace.h>
+#include <stdint.h>
+#include <fatfs/ff.h>
+#include <stddef.h>
+#include <stdio.h>
 
-#include "ecu.h"
-#include "xbee.h"
-#include "bson.h"
 #include "log.h"
 
-#include <usart.h>
-#include <string.h>
-#include <spi.h>
-#include <m41t81s_rtc.h>
-#include <mmc_sdcard.h>
-#include <can_transport.h>
-#include <stdio.h>
-#include <tick.h>
+static FATFS fs;
+static FIL file;
 
-static void init(void) {
-	rtc_init();
-	ecu_init();
-	xbee_init();
-	log_init();
-	tick_init();
+void log_init(void) {
+	f_mount(&fs, "", 1);
 
-	init_can_node(COM_NODE);
-
-	sei();
-	puts_P(PSTR("Init complete\n\n"));
+	// increment filename until we have a new file that does not already exists.
+	char file_name[32] = {'\0'};
+	unsigned i = 0;
+	do {
+		sprintf(file_name, "log%u.dat", i++);
+	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) == FR_EXIST);
 }
 
-int main(void) {
-	init();
-
-	while(1){
-		// Main work loop
-		ecu_parse_package();
-
-		// Sync to sd card alteast every 200 ms
-		static uint32_t last_tick = 0;
-		if (get_tick() - last_tick > 200) {
-			log_sync();
-			last_tick = get_tick();
-		}
-	}
-
-    return 0;
+int log_append(void *buf, size_t n) {
+	unsigned bw;
+	if(f_write(&file, buf, n, &bw) != FR_OK) return -1;
+	return (bw == n) ? 0 : -1;
 }
+
+void log_sync(void) {
+	f_sync(&file);
+}
+

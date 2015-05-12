@@ -5,6 +5,7 @@ set(SRC_FILES
 	ecu.c
 	xbee.c
 	bson.c
+	log.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})
@@ -12,9 +13,9 @@ add_executable(${NODE_NAME} ${SRC_FILES})
 target_include_directories(${NODE_NAME}
 	PRIVATE ${PROJECT_SOURCE_DIR}/libat90
 	PRIVATE ${PROJECT_SOURCE_DIR}/drivers
-	PRIVATE ${PROJECT_SOURCE_DIR}/third_party/petitfs/petitfs_root/src
+	PRIVATE ${PROJECT_SOURCE_DIR}/third_party/include
 )
 
-target_link_libraries(${NODE_NAME} libat90 drivers)
+target_link_libraries(${NODE_NAME} libat90 drivers fatfs)
 
 avr_make_flashable(${NODE_NAME})
