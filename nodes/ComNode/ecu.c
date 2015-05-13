@@ -125,9 +125,9 @@ void ecu_parse_package(void) {
 		if (pkt[i].sensor.id != EMPTY) {
 			// Broadcast on CAN
 			{
-				uint8_t *buf = smalloc(1 + sizeof(pkt[i].sensor.value));
-				*buf++ = pkt[i].sensor.id;
-				memcpy(buf, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
+				uint8_t buf[1 + sizeof(pkt[i].sensor.value)];
+				buf[0] = pkt[i].sensor.id;
+				memcpy(&buf[1], &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
 				can_broadcast(ECU_DATA_PKT, buf);
 			}
 
