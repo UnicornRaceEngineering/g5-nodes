@@ -54,13 +54,23 @@ struct can_filter {
 
 
 enum message_id {
+	// Public
 	TRANSPORT_TEST_SHORT= 1,
-	TRANSPORT_TEST_LONG	= 2,
-	PADDLE_STATUS 		= 3,
-	GPS_DATA 			= 4,
-	ECU_DATA_PKT		= 5,
-	CURRENT_GEAR		= 6,
-	NEUTRAL_ENABLED		= 7,
+	TRANSPORT_TEST_LONG = 2,
+	ANNOUNCE            = 3,
+	TIME_SYNC           = 4,
+
+	// Com node
+	HEARTBEAT           = 256,
+	GPS_DATA            = 257,
+	ECU_DATA_PKT        = 258,
+
+	// Gear node
+	PADDLE_STATUS       = 512,
+
+	// Steerinng node
+	CURRENT_GEAR        = 768,
+	NEUTRAL_ENABLED     = 769,
 };
 
 struct message_detail {
