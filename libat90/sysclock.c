@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include "sysclock.h"
 
 
@@ -60,7 +61,11 @@ void set_tick_callback(tick_callback_t func) {
 }
 
 uint32_t get_tick(void) {
-	return tick;
+	uint32_t read_tick;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		read_tick = tick;
+	}
+	return read_tick;
 }
 
 ISR(TIMER1_COMPA_vect) {
