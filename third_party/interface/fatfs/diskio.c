@@ -9,16 +9,26 @@
 
 #include <fatfs/diskio.h>		/* FatFs lower layer API */
 #include <mmc_sdcard.h>
+#include <m41t81s_rtc.h>
 
 /* Definitions of physical drive number for each drive */
 
 volatile static DSTATUS status = STA_NOINIT;	/* Disk status */
 
-// TODO
-// This is a stub. We must get the correct time from the RTC
-// DWORD get_fattime(void) {
-// 	return 0xFFFF;
-// }
+DWORD get_fattime(void) {
+	struct rtc_time t;
+	rtc_get_time(&t);
+
+	// RTC only gives the two last digits of the year
+	uint16_t y = t.year > 50 ? t.year + 1900 : t.year + 2000;
+
+	return ((DWORD)(t.seconds/2) << 0)
+		| ((DWORD)t.minutes << 5)
+		| ((DWORD)t.hours << 11)
+		| ((DWORD)t.day_of_month << 16)
+		| ((DWORD)t.month << 21)
+		| ((DWORD)(y - 1980) << 25);
+}
 
 
 /*-----------------------------------------------------------------------*/
