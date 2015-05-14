@@ -43,6 +43,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>
 #include <utils.h>
 #include <heap.h>
+#include <system_messages.h>
 #include <can_transport.h>
 
 #include "log.h"
@@ -123,39 +124,31 @@ void ecu_parse_package(void) {
 		}
 
 		if (pkt[i].sensor.id != EMPTY) {
-			// Broadcast on CAN
+			const uint16_t tx_id = ECU_DATA_PKT + pkt[i].sensor.id;
+			enum medium transport = NONE;
+			// Find transport medium by looking up the message_info table
 			{
-				uint8_t buf[1 + sizeof(pkt[i].sensor.value)];
-				buf[0] = pkt[i].sensor.id;
-				memcpy(&buf[1], &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
-				can_broadcast(ECU_DATA_PKT, buf);
+				int type = 0;
+				do {
+					if (message_info(type).id == tx_id) {
+						transport = message_info(type).transport;
+						break;
+					}
+				} while (message_info(++type).id);
 			}
 
-			// Broadcast to Xbee
-			{
-				uint8_t buff[4 + 1 + 4 + 1 + 8];
-				int s = 0;
+			uint8_t buf[sizeof(tx_id)+sizeof(pkt[i].sensor.value)];
+			memcpy(buf, &tx_id, sizeof(tx_id));
+			memcpy(buf+sizeof(tx_id), &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
 
-				// The first 4 byte in the buffer
-				buff[s++] = DT_INT8;
-				buff[s++] = XBEE_ECU;
-				buff[s++] = DT_INT8;
-				buff[s++] = pkt[i].sensor.id;
-
-				// next 1 + 4 bytes
-				buff[s++] = DT_FLOAT32;
-				memcpy(buff + s, &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
-				s += sizeof(pkt[i].sensor.value);
-
-				// 1 + 8 bytes
-				buff[s++] = DT_UTC_DATETIME;
-				const int64_t ts = rtc_utc_datetime();
-				memcpy(buff + s, &ts, sizeof(ts));
-				s += sizeof(ts);
-
-				xbee_send(buff, s);
-				log_append(buff, s);
+			if (transport & CAN) {
+				// CAN sends the id as message id, so it is not needed in the
+				// payload.
+				can_broadcast(tx_id, &pkt[i].sensor.value);
 			}
+
+			if (transport & XBEE) xbee_send(buf, ARR_LEN(buf));
+			if (transport & SD) log_append(buf, ARR_LEN(buf));
 		}
 	}
 }

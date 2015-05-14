@@ -64,7 +64,8 @@ enum message_id {
 	// Com node
 	HEARTBEAT           = 256,
 	GPS_DATA            = 257,
-	ECU_DATA_PKT        = 258, /*  */
+	ECU_DATA_PKT        = 258, /* Every ID between ECU_DATA_PKT and
+								* LAST_ECU_DATA_PKT is reserved */
 	LAST_ECU_DATA_PKT   = ECU_DATA_PKT + N_ECU_IDS,
 
 	// Gear node
@@ -88,12 +89,51 @@ struct message_detail {
 	uint8_t transport;
 };
 
-#define message_info(type) ((const struct message_detail const[]) { \
+#define message_info(type) ((const struct message_detail []) { \
 	{ .id = TRANSPORT_TEST_SHORT,    .len =  6,    .transport = CAN             }, \
 	{ .id = TRANSPORT_TEST_LONG,     .len = 27,    .transport = CAN             }, \
 	{ .id = PADDLE_STATUS,           .len =  1,    .transport = CAN             }, \
 	{ .id = GPS_DATA,                .len = 13,    .transport = CAN | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT,            .len =  4,    .transport =       XBEE | SD }, \
+	\
+	{ .id = ECU_DATA_PKT,                      .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + FUEL_PRESSURE,      .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_LAP_COUNT,   .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_INJ_SUM,     .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + LAST_GEAR_SHIFT,    .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + MOTOR_OILTEMP,      .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + OIL_PRESSURE,       .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_TIME,        .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_LAP_TIME,    .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + GEAR_OIL_TEMP,      .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_TRACTION,    .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_GAS,         .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_LAMBDA_V2,   .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_CAM_TRIG_P1, .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_CAM_TRIG_P2, .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_CHOKER_ADD,  .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + STATUS_LAMBDA_PWM,  .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + WATER_TEMP,         .len =  4, .transport = CAN | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + MANIFOLD_AIR_TEMP,  .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + SPEEDER_POTMETER,   .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + RPM,                .len =  4, .transport = CAN | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + TRIGGER_ERR,        .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + CAM_ANGLE1,         .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + CAM_ANGLE2,         .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + ROAD_SPEED,         .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + MAP_SENSOR,         .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + BATTERY_V,          .len =  4, .transport = CAN | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + LAMBDA_V,           .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + LOAD,               .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + INJECTOR_TIME,      .len =  4, .transport = 0 }, \
+	{ .id = ECU_DATA_PKT + IGNITION_TIME,      .len =  4, .transport = 0 }, \
+	{ .id = ECU_DATA_PKT + DWELL_TIME,         .len =  4, .transport = 0 }, \
+	{ .id = ECU_DATA_PKT + GX,                 .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + GY,                 .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + GZ,                 .len =  4, .transport = 0   | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT + MOTOR_FLAGS,        .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + OUT_BITS,           .len =  4, .transport = NONE }, \
+	{ .id = ECU_DATA_PKT + TIME,               .len =  4, .transport = NONE }, \
+	\
 	{ .id = CURRENT_GEAR,            .len =  1,    .transport = CAN | XBEE | SD }, \
 	{ .id = NEUTRAL_ENABLED,         .len =  1,    .transport = CAN | XBEE | SD }, \
 	{ .id = 0,                       .len =  0,    .transport = NONE            }, \
