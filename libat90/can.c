@@ -676,8 +676,8 @@ ISR (CANIT_vect) {
 				// Run through filter, and return if ID not in ranges.
 				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
 					uint16_t id = MOB_GET_STD_ID();
-					if ( !((id > filter1.lower_bound && id < filter1.upper_bound)
-						|| (id > filter2.lower_bound && id < filter2.upper_bound)) )
+					if ( !((id >= filter1.lower_bound && id < filter1.upper_bound)
+						|| (id >= filter2.lower_bound && id < filter2.upper_bound)) )
 					{
 						CAN_ENABLE_MOB_INTERRUPT(mob);
 						MOB_EN_RX();
