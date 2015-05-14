@@ -45,7 +45,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGN_PIN		(PIN4)
 #define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
-#define MEASUREMENTS 50
+#define MEASUREMENTS 500
 
 enum {
 	GEAR_DOWN = -1,
@@ -62,24 +62,24 @@ static volatile uint16_t limit_time = 0;
 static volatile uint8_t on_off = 0;
 volatile uint8_t current_gear = 0;
 
-// static int shift_gear(int gear_dir) {
-// 	//!< TODO: check the right way to slow down
-// 	switch (gear_dir) {
-// 		case GEAR_DOWN:
-// 			dewalt_set_direction_B();
-// 			dewalt_set_pwm_dutycycle(100);
-// 			break;
-// 		case GEAR_NEUTRAL:
-// 			//!< TODO: Implement this
-// 			dewalt_set_pwm_dutycycle(10);
-// 			break;
-// 		case GEAR_UP:
-// 			dewalt_set_direction_A();
-// 			dewalt_set_pwm_dutycycle(100);
-// 			break;
-// 	}
-// 	return 0;
-// }
+static int shift_gear(int gear_dir) {
+	//!< TODO: check the right way to slow down
+	switch (gear_dir) {
+		case GEAR_DOWN:
+			dewalt_set_direction_B();
+			dewalt_set_pwm_dutycycle(100);
+			break;
+		case GEAR_NEUTRAL:
+			//!< TODO: Implement this
+			dewalt_set_pwm_dutycycle(10);
+			break;
+		case GEAR_UP:
+			dewalt_set_direction_A();
+			dewalt_set_pwm_dutycycle(100);
+			break;
+	}
+	return 0;
+}
 
 void timer_init(void) {
 	// setup timer 0 which periodically sends heartbeat to the ECU
@@ -122,6 +122,7 @@ ISR (TIMER0_COMP_vect) {
 				done = 1;
 				numbermess = mesnumber;
 				dewalt_kill();
+				printf("Killed before timeout\n");
 			}
 
 			// counts up the number f measurements done
@@ -144,17 +145,19 @@ static void init(void) {
 	init_neutral_gear_sensor();
 	adc_init(1, AVCC, 4);
 	init_heap();
-	init_can_node(STEERING_NODE);
+	init_can_node(GEAR_NODE);
 	//set_tick_callback(newline);
 
 	dewalt_init();
 	dewalt_kill();
 
-	SET_PIN_MODE(PORTF, PIN6, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN7, OUTPUT);
+	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
+	IGNITION_UNCUT();
+	//SET_PIN_MODE(PORTF, PIN6, OUTPUT);
+	//SET_PIN_MODE(PORTF, PIN7, OUTPUT);
 
-	IO_SET_LOW(PORTF, PIN6);
-	IO_SET_LOW(PORTF, PIN7);
+	//IO_SET_LOW(PORTF, PIN6);
+	//IO_SET_LOW(PORTF, PIN7);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -172,10 +175,12 @@ int main(void) {
 	//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
 	while (1) {
+		//printf("Ne %d\n", GEAR_IS_NEUTRAL());
+		//_delay_ms(10);
 		while(get_queue_length()) {
 			struct can_message *message = read_inbox();
 			//printf("Got id: %d and data: %d\n", message->info.id, message->data[0]);
-			if (message->info.id == 3)
+			if (message->info.id == 512)
 				gear_request = message->data[0];
 			can_free(message);
 		}
@@ -183,12 +188,16 @@ int main(void) {
 		if (gear_request) {
 
 			if (gear_request & PADDLE_UP){
-				IO_SET_HIGH(PORTF, PIN6);
+				//IO_SET_HIGH(PORTF, PIN6);
+				IGNITION_CUT();
+				shift_gear(GEAR_DOWN);
 				if (current_gear < 6)
 					++current_gear;
 			}
 			else if(gear_request & PADDLE_DOWN){
-				IO_SET_HIGH(PORTF, PIN7);
+				//IO_SET_HIGH(PORTF, PIN7);
+				IGNITION_CUT();
+				shift_gear(GEAR_UP);
 				if (current_gear > 1)
 					--current_gear;
 			}
@@ -221,9 +230,10 @@ int main(void) {
 			char c = getchar();
 			switch (c) {
 				case 'q':
-					//printf("\n\nGear Down\n\n");
-					//shift_gear(GEAR_DOWN);
-					IO_SET_HIGH(PORTF, PIN6);
+					printf("\n\nGear Down\n\n");
+					IGNITION_CUT();
+					shift_gear(GEAR_DOWN);
+					//IO_SET_HIGH(PORTF, PIN6);
 
 					break;
 				case 'w':
@@ -231,14 +241,20 @@ int main(void) {
 					//shift_gear(GEAR_NEUTRAL);
 					break;
 				case 'e':
-					//printf("\n\nGear Up\n\n");
-					//shift_gear(GEAR_UP);
-					IO_SET_HIGH(PORTF, PIN7);
+					printf("\n\nGear Up\n\n");
+					IGNITION_CUT();
+					shift_gear(GEAR_UP);
+					//IO_SET_HIGH(PORTF, PIN7);
 					break;
 				case ' ':
 				case 'z':
 					//printf("\n\nKILL!\n\n");
 					//dewalt_kill();
+					printf("ign cut\n");
+					IGNITION_CUT();
+					_delay_ms(2000);
+					IGNITION_UNCUT();
+					printf("ign cut done\n");
 					break;
 			}
 			// Before starting measurements we have a small delay. Not for any
@@ -266,8 +282,8 @@ int main(void) {
 			on_off = 0;
 			dewalt_kill();
 
-			IO_SET_LOW(PORTF, PIN6);
-			IO_SET_LOW(PORTF, PIN7);
+			//IO_SET_LOW(PORTF, PIN6);
+			//IO_SET_LOW(PORTF, PIN7);
 			//printf("\nTimed out\n");
 
 			// prints put all the measured ampere data.
