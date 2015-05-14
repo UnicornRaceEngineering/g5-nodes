@@ -56,7 +56,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ECU_HEARTBEAT_ISR_VECT  TIMER0_COMP_vect
 #define HEARTBEAT_DELAY_LENGTH  8 // How many times we delay the heartbeat timer
 
-FILE *ecu = &usart0_io;
+static FILE *ecu = &usart0_io;
 
 static inline uint32_t clamp(uint32_t value) {
 	return (value > (1 << 15)) ? -(0xFFFF - value) : value;

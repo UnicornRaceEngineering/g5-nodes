@@ -29,8 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define XBEE_BAUD 	(115200)
 
-FILE *xbee_out = &usart1_byte_output;
-FILE *xbee_in = &usart1_io;
+static FILE *xbee_out = &usart1_byte_output;
 
 void xbee_init(void) {
 	usart1_init(XBEE_BAUD);
