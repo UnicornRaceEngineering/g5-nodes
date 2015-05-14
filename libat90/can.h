@@ -42,7 +42,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param *msg	Pointer to message on the heap.
  */
 
-typedef uint8_t (*canrec_callback_t)(uint16_t id, uint16_t len, uint8_t *msg);
+typedef uint8_t (*canrec_callback_t)(uint16_t id, uint8_t *msg);
 
 typedef struct can_filter_t {
 	uint16_t lower_bound;
@@ -61,6 +61,7 @@ enum can_counters{
 	BIT_ERR,
 	NO_MOB_ERR,
 	ALLOC_ERR,
+	ID_ERR,
 	TOTAL_ERR,
 };
 
