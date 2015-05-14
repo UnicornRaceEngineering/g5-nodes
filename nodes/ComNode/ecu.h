@@ -60,10 +60,10 @@ enum ecu_id {
 	STATUS_LAMBDA_PWM,
 	WATER_TEMP,
 	MANIFOLD_AIR_TEMP,
-	POTMETER,
+	SPEEDER_POTMETER, /* Speeder position */
 	RPM,
 	TRIGGER_ERR,
-	CAM_ANGLE1,
+	CAM_ANGLE1, /* Camshaft */
 	CAM_ANGLE2,
 	ROAD_SPEED,
 	MAP_SENSOR, /* manifold air pressure */
@@ -103,7 +103,7 @@ enum ecu_id {
 	[STATUS_LAMBDA_PWM] = "Status Lambda PWM", \
 	[WATER_TEMP] = "WaterMotor temp", \
 	[MANIFOLD_AIR_TEMP] = "ManifoldAir temp", \
-	[POTMETER] = "Potmeter (0-100%)", \
+	[SPEEDER_POTMETER] = "Speeder Potmeter (0-100%)", \
 	[RPM] = "RPM", \
 	[TRIGGER_ERR] = "Trigger Err", \
 	[CAM_ANGLE1] = "Cam Angle1", \

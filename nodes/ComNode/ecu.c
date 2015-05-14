@@ -90,7 +90,7 @@ void ecu_parse_package(void) {
 			case MANIFOLD_AIR_TEMP:
 				pkt[i].sensor.value = (pkt[i].raw_value * (-150.0 / 3840) + 120);
 				break;
-			case POTMETER:
+			case SPEEDER_POTMETER:
 				pkt[i].sensor.value = ((pkt[i].raw_value - 336) / 26.9);
 				break;
 			case RPM:

@@ -37,7 +37,7 @@
 
 {.sensor = {.id = WATER_TEMP,}, .raw_value = 0, 			.length = 2,},
 {.sensor = {.id = MANIFOLD_AIR_TEMP,}, .raw_value = 0, 		.length = 2,},
-{.sensor = {.id = POTMETER,}, .raw_value = 0, 				.length = 2,},
+{.sensor = {.id = SPEEDER_POTMETER,}, .raw_value = 0, 				.length = 2,},
 
 {.sensor = {.id = EMPTY,}, .raw_value = 0, 					.length = 2,},
 
