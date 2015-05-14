@@ -34,7 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "heap.h"
 #include "can.h"
 #include "can_transport.h"
-#include "can_messages.h"
+#include "system_messages.h"
 
 
 static struct can_message *oldest_message;

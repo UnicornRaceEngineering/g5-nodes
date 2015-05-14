@@ -22,14 +22,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /**
- * @files can_messages.h
+ * @files system_messages.h
  * Defines the message types for the high-level can transmission.
  */
 
-#ifndef CAN_MESSAGES_H
-#define CAN_MESSAGES_H
+#ifndef SYSTEM_MESSAGES_H
+#define SYSTEM_MESSAGES_H
 
 #include <stdint.h>
+#include "../nodes/ComNode/ecu.h"
 
 enum node_id {
 	PUBLIC,
@@ -63,7 +64,8 @@ enum message_id {
 	// Com node
 	HEARTBEAT           = 256,
 	GPS_DATA            = 257,
-	ECU_DATA_PKT        = 258,
+	ECU_DATA_PKT        = 258, /*  */
+	LAST_ECU_DATA_PKT   = ECU_DATA_PKT + N_ECU_IDS,
 
 	// Gear node
 	PADDLE_STATUS       = 512,
@@ -73,20 +75,28 @@ enum message_id {
 	NEUTRAL_ENABLED     = 769,
 };
 
-struct message_detail {
-	enum message_id id;
-	uint16_t len;
+enum medium {
+	NONE = 0,
+	CAN  = 1 << 0,
+	XBEE = 1 << 1,
+	SD   = 1 << 2,
 };
 
-#define message_info(type) ((const struct message_detail []) { \
-	{ .id = TRANSPORT_TEST_SHORT	, .len =  6 }, \
-	{ .id = TRANSPORT_TEST_LONG		, .len = 27 }, \
-	{ .id = PADDLE_STATUS			, .len =  1 }, \
-	{ .id = GPS_DATA				, .len = 13 }, \
-	{ .id = ECU_DATA_PKT			, .len =  5 }, \
-	{ .id = CURRENT_GEAR			, .len =  1 }, \
-	{ .id = NEUTRAL_ENABLED			, .len =  1 }, \
-	{ .id = 0						, .len =  0 }, \
+struct message_detail {
+	enum message_id id;
+	uint8_t len;
+	uint8_t transport;
+};
+
+#define message_info(type) ((const struct message_detail const[]) { \
+	{ .id = TRANSPORT_TEST_SHORT,    .len =  6,    .transport = CAN             }, \
+	{ .id = TRANSPORT_TEST_LONG,     .len = 27,    .transport = CAN             }, \
+	{ .id = PADDLE_STATUS,           .len =  1,    .transport = CAN             }, \
+	{ .id = GPS_DATA,                .len = 13,    .transport = CAN | XBEE | SD }, \
+	{ .id = ECU_DATA_PKT,            .len =  4,    .transport =       XBEE | SD }, \
+	{ .id = CURRENT_GEAR,            .len =  1,    .transport = CAN | XBEE | SD }, \
+	{ .id = NEUTRAL_ENABLED,         .len =  1,    .transport = CAN | XBEE | SD }, \
+	{ .id = 0,                       .len =  0,    .transport = NONE            }, \
 }[type])
 
-#endif /* CAN_TRANSPORT_H */
+#endif /* SYSTEM_MESSAGES_H */
