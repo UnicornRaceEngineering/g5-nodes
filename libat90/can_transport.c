@@ -41,7 +41,7 @@ static struct can_message *oldest_message;
 static struct can_message *newest_message;
 static volatile uint8_t queue_length;
 
-static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg);
+static uint8_t rx_complete(uint16_t id, uint8_t *msg);
 
 /**
  * Initializes the node so it is ready to communicate on the network
@@ -76,38 +76,42 @@ uint8_t can_broadcast(const enum message_id receiver, void * const data) {
 		if (message_info(i).id == receiver)
 			return can_send(message_info(i).id, message_info(i).len, data);
 	} while (message_info(++i).id);
-	return 1;
+	return ID_ERR;
 }
 
 
 // Callback to be run when rx comletes on the CAN
-static uint8_t rx_complete(uint16_t id, uint16_t len, uint8_t *msg) {
-	if (queue_length) {
-		struct can_message *temp = newest_message;
-		newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
-		if (!newest_message) {
-			return ALLOC_ERR;
+static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
+	uint16_t i = 0;
+	do {
+		if (message_info(i).id == id) {
+			if (queue_length) {
+				struct can_message *temp = newest_message;
+				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
+				if (!newest_message) {
+					return ALLOC_ERR;
+				}
+				newest_message->info = message_info(i);
+				newest_message->data = msg;
+				newest_message->older_message = temp;
+				newest_message->newer_message = 0;
+				temp->newer_message = newest_message;
+			} else {
+				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
+				if (!newest_message) {
+					return ALLOC_ERR;
+				}
+				oldest_message = newest_message;
+				newest_message->info = message_info(i);
+				newest_message->data = msg;
+				newest_message->newer_message = 0;
+				newest_message->older_message = 0;
+			}
+			++queue_length;
+			return SUCCES;
 		}
-		newest_message->info.id = id;
-		newest_message->info.len = len;
-		newest_message->data = msg;
-		newest_message->older_message = temp;
-		newest_message->newer_message = 0;
-		temp->newer_message = newest_message;
-	} else {
-		newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
-		if (!newest_message) {
-			return ALLOC_ERR;
-		}
-		oldest_message = newest_message;
-		newest_message->info.id = id;
-		newest_message->info.len = len;
-		newest_message->data = msg;
-		newest_message->newer_message = 0;
-		newest_message->older_message = 0;
-	}
-	++queue_length;
-	return SUCCES;
+	} while (message_info(++i).id);
+	return ID_ERR;
 }
 
 struct can_message* read_inbox(void) {

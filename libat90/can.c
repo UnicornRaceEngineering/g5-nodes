@@ -519,8 +519,7 @@ static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
 
 
 static inline uint8_t finnish_receive(uint8_t mob) {
-	uint8_t err = (*canrec_callback)(msg_list[mob]->id, msg_list[mob]->len,
-						(uint8_t*)&msg_list[mob]->data[0]);
+	uint8_t err = (*canrec_callback)(msg_list[mob]->id,	(uint8_t*)&msg_list[mob]->data[0]);
 
 	sfree((void *)msg_list[mob]);
 	msg_list[mob] = 0;
@@ -588,7 +587,7 @@ static uint8_t receive_frame(uint8_t mob) {
 			for (uint8_t i = 0; i < len; i++)
 				data[i] = msg[i + 1];
 
-			uint8_t err = (*canrec_callback)(id, len, (uint8_t*)&data[0]);
+			uint8_t err = (*canrec_callback)(id, (uint8_t*)&data[0]);
 			if (err) {
 				sfree((void *) data);
 				return err;
@@ -676,8 +675,8 @@ ISR (CANIT_vect) {
 				// Run through filter, and return if ID not in ranges.
 				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
 					uint16_t id = MOB_GET_STD_ID();
-					if ( !((id > filter1.lower_bound && id < filter1.upper_bound)
-						|| (id > filter2.lower_bound && id < filter2.upper_bound)) )
+					if ( !((id >= filter1.lower_bound && id < filter1.upper_bound)
+						|| (id >= filter2.lower_bound && id < filter2.upper_bound)) )
 					{
 						CAN_ENABLE_MOB_INTERRUPT(mob);
 						MOB_EN_RX();
