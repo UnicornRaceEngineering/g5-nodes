@@ -40,6 +40,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <sysclock.h>
 
+#define SD_SYNC_TIME	1000 // Interval in ms that data is written to SD
+
 static void init(void) {
 	rtc_init();
 	ecu_init();
@@ -58,14 +60,25 @@ int main(void) {
 
 	while(1){
 		// Main work loop
-		ecu_parse_package();
 
-		// Sync to sd card alteast every 200 ms
+		while (get_queue_length()) {
+			struct can_message *msg = read_inbox();
+			if (msg->info.transport & SD) {
+				log_append(&msg->info.id, sizeof(msg->info.id));
+				log_append(msg->data, msg->info.len);
+			}
+
+			can_free(msg);
+		}
+
+		// Sync to sd card at the give interval
 		static uint32_t last_tick = 0;
-		if (get_tick() - last_tick > 200) {
+		if (get_tick() - last_tick > SD_SYNC_TIME) {
 			log_sync();
 			last_tick = get_tick();
 		}
+
+		ecu_parse_package();
 	}
 
     return 0;
