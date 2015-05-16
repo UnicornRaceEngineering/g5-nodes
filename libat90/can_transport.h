@@ -34,7 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 struct can_message {
-	struct message_detail info;
+	uint16_t index;
 	uint8_t *data;
 
 	struct can_message *older_message;

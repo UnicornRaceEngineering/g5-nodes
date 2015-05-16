@@ -39,6 +39,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <can_transport.h>
 #include <stdio.h>
 #include <sysclock.h>
+#include <system_messages.h>
 
 #define SD_SYNC_TIME	1000 // Interval in ms that data is written to SD
 
@@ -63,9 +64,11 @@ int main(void) {
 
 		while (get_queue_length()) {
 			struct can_message *msg = read_inbox();
-			if (msg->info.transport & SD) {
-				log_append(&msg->info.id, sizeof(msg->info.id));
-				log_append(msg->data, msg->info.len);
+			struct message_detail msg_info = message_info(msg->index);
+			if (msg_info.transport & SD) {
+				uint16_t id_data = msg_info.id;
+				log_append(&id_data, sizeof(id_data));
+				log_append(msg->data, msg_info.len);
 			}
 
 			can_free(msg);

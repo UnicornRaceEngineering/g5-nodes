@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include "../nodes/ComNode/ecu.h"
 
+
 enum node_id {
 	PUBLIC,
 	COM_NODE,
@@ -40,10 +41,12 @@ enum node_id {
 	GPS_NODE,
 };
 
+
 struct can_filter {
 	uint16_t lower_bound;
 	uint16_t upper_bound;
 };
+
 
 #define filter_info(node_id) ((const struct can_filter []) { \
 	{ .lower_bound =    0	, .upper_bound =  255 }, /* PUBLIC */ \
@@ -55,26 +58,30 @@ struct can_filter {
 
 
 enum message_id {
-	// Public
-	TRANSPORT_TEST_SHORT= 1,
-	TRANSPORT_TEST_LONG = 2,
-	ANNOUNCE            = 3,
-	TIME_SYNC           = 4,
-
 	// Com node
-	HEARTBEAT           = 256,
-	GPS_DATA            = 257,
-	ECU_DATA_PKT        = 258, /* Every ID between ECU_DATA_PKT and
-								* LAST_ECU_DATA_PKT is reserved */
-	LAST_ECU_DATA_PKT   = ECU_DATA_PKT + N_ECU_IDS,
+	ECU_PKT,
+	LAST_ECU_PKT = N_ECU_IDS - 1,
+
+	HEARTBEAT,
+	GPS_DATA,
 
 	// Gear node
-	PADDLE_STATUS       = 512,
+	PADDLE_STATUS,
 
 	// Steerinng node
-	CURRENT_GEAR        = 768,
-	NEUTRAL_ENABLED     = 769,
+	CURRENT_GEAR,
+	NEUTRAL_ENABLED,
+
+	// Public
+	TRANSPORT_TEST_SHORT,
+	TRANSPORT_TEST_LONG,
+	ANNOUNCE,
+	TIME_SYNC,
+
+	// end
+	END_OF_LIST,
 };
+
 
 enum medium {
 	NONE = 0,
@@ -83,60 +90,63 @@ enum medium {
 	SD   = 1 << 2,
 };
 
+
 struct message_detail {
-	enum message_id id;
-	uint8_t len;
-	uint8_t transport;
+	const uint16_t id;
+	const uint8_t len;
+	const uint8_t transport;
 };
 
+
 #define message_info(type) ((const struct message_detail []) { \
-	{ .id = TRANSPORT_TEST_SHORT,    .len =  6,    .transport = CAN             }, \
-	{ .id = TRANSPORT_TEST_LONG,     .len = 27,    .transport = CAN             }, \
-	{ .id = PADDLE_STATUS,           .len =  1,    .transport = CAN             }, \
-	{ .id = GPS_DATA,                .len = 13,    .transport = CAN | XBEE | SD }, \
+	[TRANSPORT_TEST_SHORT]         = { .id =   1,    .len =  6,    .transport = 0 | CAN             }, \
+	[TRANSPORT_TEST_LONG]          = { .id =   2,    .len = 27,    .transport = 0 | CAN             }, \
+	[GPS_DATA]                     = { .id = 256,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
 	\
-	{ .id = ECU_DATA_PKT,                      .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + FUEL_PRESSURE,      .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_LAP_COUNT,   .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_INJ_SUM,     .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + LAST_GEAR_SHIFT,    .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + MOTOR_OILTEMP,      .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + OIL_PRESSURE,       .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_TIME,        .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_LAP_TIME,    .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + GEAR_OIL_TEMP,      .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_TRACTION,    .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_GAS,         .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_LAMBDA_V2,   .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_CAM_TRIG_P1, .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_CAM_TRIG_P2, .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_CHOKER_ADD,  .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + STATUS_LAMBDA_PWM,  .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + WATER_TEMP,         .len =  4, .transport = CAN | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + MANIFOLD_AIR_TEMP,  .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + SPEEDER_POTMETER,   .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + RPM,                .len =  4, .transport = CAN | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + TRIGGER_ERR,        .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + CAM_ANGLE1,         .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + CAM_ANGLE2,         .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + ROAD_SPEED,         .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + MAP_SENSOR,         .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + BATTERY_V,          .len =  4, .transport = CAN | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + LAMBDA_V,           .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + LOAD,               .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + INJECTOR_TIME,      .len =  4, .transport = 0 }, \
-	{ .id = ECU_DATA_PKT + IGNITION_TIME,      .len =  4, .transport = 0 }, \
-	{ .id = ECU_DATA_PKT + DWELL_TIME,         .len =  4, .transport = 0 }, \
-	{ .id = ECU_DATA_PKT + GX,                 .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + GY,                 .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + GZ,                 .len =  4, .transport = 0   | XBEE | SD }, \
-	{ .id = ECU_DATA_PKT + MOTOR_FLAGS,        .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + OUT_BITS,           .len =  4, .transport = NONE }, \
-	{ .id = ECU_DATA_PKT + TIME,               .len =  4, .transport = NONE }, \
+	[ECU_PKT + EMPTY]              = { .id = 257,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + FUEL_PRESSURE]      = { .id = 258,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAP_COUNT]   = { .id = 259,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_INJ_SUM]     = { .id = 260,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + LAST_GEAR_SHIFT]    = { .id = 261,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + MOTOR_OILTEMP]      = { .id = 262,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + OIL_PRESSURE]       = { .id = 263,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_TIME]        = { .id = 264,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAP_TIME]    = { .id = 265,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + GEAR_OIL_TEMP]      = { .id = 266,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_TRACTION]    = { .id = 267,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_GAS]         = { .id = 268,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAMBDA_V2]   = { .id = 269,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CAM_TRIG_P1] = { .id = 270,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CAM_TRIG_P2] = { .id = 271,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAMBDA_PWM]  = { .id = 273,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + WATER_TEMP]         = { .id = 274,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + MANIFOLD_AIR_TEMP]  = { .id = 275,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + SPEEDER_POTMETER]   = { .id = 276,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + RPM]                = { .id = 277,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + TRIGGER_ERR]        = { .id = 278,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + CAM_ANGLE1]         = { .id = 279,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + CAM_ANGLE2]         = { .id = 280,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + ROAD_SPEED]         = { .id = 281,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + MAP_SENSOR]         = { .id = 282,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + BATTERY_V]          = { .id = 283,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + LAMBDA_V]           = { .id = 284,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + LOAD]               = { .id = 285,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + INJECTOR_TIME]      = { .id = 286,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + IGNITION_TIME]      = { .id = 287,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + DWELL_TIME]         = { .id = 288,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + GX]                 = { .id = 289,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + GY]                 = { .id = 290,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + GZ]                 = { .id = 291,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + MOTOR_FLAGS]        = { .id = 292,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + OUT_BITS]           = { .id = 293,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + TIME]               = { .id = 294,    .len =  4,    .transport = 0                   }, \
 	\
-	{ .id = CURRENT_GEAR,            .len =  1,    .transport = CAN | XBEE | SD }, \
-	{ .id = NEUTRAL_ENABLED,         .len =  1,    .transport = CAN | XBEE | SD }, \
-	{ .id = 0,                       .len =  0,    .transport = NONE            }, \
+	[PADDLE_STATUS]                = { .id = 512,    .len =  1,    .transport = 0 | CAN             }, \
+	[CURRENT_GEAR]                 = { .id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[NEUTRAL_ENABLED]              = { .id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	\
+	[END_OF_LIST]                  = { .id =   0,    .len =  0,    .transport = 0                   }, \
 }[type])
 
 #endif /* SYSTEM_MESSAGES_H */

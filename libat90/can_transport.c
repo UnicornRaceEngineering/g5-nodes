@@ -70,28 +70,23 @@ void init_can_node(enum node_id node) {
  * @param  data a pointer to the raw data that should be send
  * @return      Non zero on error.
  */
-uint8_t can_broadcast(const enum message_id receiver, void * const data) {
-	uint16_t i = 0;
-	do {
-		if (message_info(i).id == receiver)
-			return can_send(message_info(i).id, message_info(i).len, data);
-	} while (message_info(++i).id);
-	return ID_ERR;
+uint8_t can_broadcast(const enum message_id type, void * const data) {
+	return can_send(message_info(type).id, message_info(type).len, data);
 }
 
 
 // Callback to be run when rx comletes on the CAN
 static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
-	uint16_t i = 0;
+	uint16_t index = 0;
 	do {
-		if (message_info(i).id == id) {
+		if (message_info(index).id == id) {
 			if (queue_length) {
 				struct can_message *temp = newest_message;
 				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
 				if (!newest_message) {
 					return ALLOC_ERR;
 				}
-				newest_message->info = message_info(i);
+				newest_message->index = index;
 				newest_message->data = msg;
 				newest_message->older_message = temp;
 				newest_message->newer_message = 0;
@@ -102,7 +97,7 @@ static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
 					return ALLOC_ERR;
 				}
 				oldest_message = newest_message;
-				newest_message->info = message_info(i);
+				newest_message->index = index;
 				newest_message->data = msg;
 				newest_message->newer_message = 0;
 				newest_message->older_message = 0;
@@ -110,7 +105,7 @@ static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
 			++queue_length;
 			return SUCCES;
 		}
-	} while (message_info(++i).id);
+	} while (message_info(++index).id);
 	return ID_ERR;
 }
 
