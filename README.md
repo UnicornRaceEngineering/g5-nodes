@@ -15,5 +15,3 @@ make
 ```
 
 to flash the node boards `cd` to the node in the build dir and do `make ${NODE_NAME}_writeflash`. You can see all possible targets with `make help`
-
-

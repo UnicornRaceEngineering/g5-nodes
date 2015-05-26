@@ -22,21 +22,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <string.h>
+#include <heap.h>
+#include <can_transport.h>
 #include <usart.h>
-#include <sysclock.h>
+#include "sysclock.h"
 
-
-unsigned int seconds;
 
 static void init(void) {
 	usart1_init(115200);
+	init_heap();
 	sysclock_init();
+	init_can_node(STEERING_NODE);
 
-	seconds = 0;
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }
@@ -44,8 +47,11 @@ static void init(void) {
 int main(void) {
 	init();
 
-	while(1){
+	while (1) {
+		uint8_t node_id = STEERING_NODE;
+		can_broadcast(HEARTBEAT, &node_id);
+		_delay_ms(30);
 	}
 
-    return 0;
+	return 0;
 }

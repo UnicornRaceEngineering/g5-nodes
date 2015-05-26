@@ -27,10 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 
 
-typedef void (*tick_callback_t)(uint32_t milliseconds);
-
 void sysclock_init(void);
 uint32_t get_tick(void);
-void set_tick_callback(tick_callback_t func);
 
 #endif /* SYSCLOCK_H */

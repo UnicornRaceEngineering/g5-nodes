@@ -30,14 +30,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 static volatile uint32_t tick;
-static volatile tick_callback_t callback;
 
-static void default_tick_tock(uint32_t milliseconds) {
-}
 
 void sysclock_init(void) {
 	tick = 0;
-	callback = default_tick_tock;
 
 	// control regiters set to Mode 12 (CTC) and no prescaling.
 	TCCR1A = 0;
@@ -56,10 +52,6 @@ void sysclock_init(void) {
 	TIMSK1 = 1 << OCIE1A;
 }
 
-void set_tick_callback(tick_callback_t func) {
-	callback = func;
-}
-
 uint32_t get_tick(void) {
 	uint32_t read_tick;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
@@ -69,5 +61,5 @@ uint32_t get_tick(void) {
 }
 
 ISR(TIMER1_COMPA_vect) {
-	(*callback)(++tick);
+	++tick;
 }

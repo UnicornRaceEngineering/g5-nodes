@@ -22,21 +22,31 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
+#include <string.h>
+#include <heap.h>
+#include <can_transport.h>
 #include <usart.h>
-#include <sysclock.h>
+#include "sysclock.h"
 
 
-unsigned int seconds;
+void handle_heartbeat(struct can_message *msg);
+
+
+uint8_t node_state[N_NODES] = {0};
+uint32_t last_heartbeat[N_NODES] = {0};
+
 
 static void init(void) {
 	usart1_init(115200);
+	init_heap();
 	sysclock_init();
+	init_can_node(COM_NODE);
 
-	seconds = 0;
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }
@@ -44,8 +54,47 @@ static void init(void) {
 int main(void) {
 	init();
 
-	while(1){
+	while (1) {
+		while (get_queue_length()) {
+			struct can_message *msg = read_inbox();
+			struct message_detail msg_info = message_info(msg->index);
+
+			uint16_t index = 0;
+			do {
+				if (message_info(index).id == msg_info.id) {
+					break;
+				}
+			} while(++index < END_OF_LIST);
+
+			switch(index) {
+				case HEARTBEAT: handle_heartbeat(msg); break;
+				default: break;
+			}
+
+			can_free(msg);
+		}
+
+		for (uint8_t i = 0; i < N_NODES; ++i) {
+			if (node_state[i]) {
+				if ((get_tick() - last_heartbeat[i]) > 50) {
+					node_state[i] = 0;
+					printf("node %d is unreachable\n", i);
+				}
+			}
+		}
 	}
 
-    return 0;
+	return 0;
+}
+
+
+void handle_heartbeat(struct can_message *msg) {
+	uint8_t node_id = msg->data[0];
+
+	last_heartbeat[node_id] = get_tick();
+	if (!node_state[node_id]) {
+		/* State changed */
+		node_state[node_id] = 1;
+		printf("node %d is reachable\n", node_id);
+	}
 }
