@@ -39,6 +39,8 @@ enum node_id {
 	GEAR_NODE,
 	STEERING_NODE,
 	GPS_NODE,
+
+	N_NODES,
 };
 
 
@@ -75,7 +77,6 @@ enum message_id {
 	// Public
 	TRANSPORT_TEST_SHORT,
 	TRANSPORT_TEST_LONG,
-	ANNOUNCE,
 	TIME_SYNC,
 
 	// end
@@ -98,10 +99,10 @@ struct message_detail {
 };
 
 
-#define message_info(type) ((const struct message_detail []) { \
+#define MESSAGE_INFO(type) ((const struct message_detail []) { \
 	[TRANSPORT_TEST_SHORT]         = { .id =   1,    .len =  6,    .transport = 0 | CAN             }, \
 	[TRANSPORT_TEST_LONG]          = { .id =   2,    .len = 27,    .transport = 0 | CAN             }, \
-	[GPS_DATA]                     = { .id = 256,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
+	[TIME_SYNC]                    = { .id =   3,    .len =  4,    .transport = 0 | CAN             }, \
 	\
 	[ECU_PKT + EMPTY]              = { .id = 257,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + FUEL_PRESSURE]      = { .id = 258,    .len =  4,    .transport = 0                   }, \
@@ -142,6 +143,8 @@ struct message_detail {
 	[ECU_PKT + OUT_BITS]           = { .id = 293,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + TIME]               = { .id = 294,    .len =  4,    .transport = 0                   }, \
 	\
+	[GPS_DATA]                     = { .id = 295,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
+	[HEARTBEAT]                    = { .id = 296,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
 	[PADDLE_STATUS]                = { .id = 512,    .len =  1,    .transport = 0 | CAN             }, \
 	[CURRENT_GEAR]                 = { .id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
 	[NEUTRAL_ENABLED]              = { .id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
