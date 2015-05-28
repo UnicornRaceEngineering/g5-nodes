@@ -57,11 +57,11 @@ int main(void) {
 	while (1) {
 		while (get_queue_length()) {
 			struct can_message *msg = read_inbox();
-			struct message_detail msg_info = message_info(msg->index);
+			struct message_detail msg_info = MESSAGE_INFO(msg->index);
 
 			uint16_t index = 0;
 			do {
-				if (message_info(index).id == msg_info.id) {
+				if (MESSAGE_INFO(index).id == msg_info.id) {
 					break;
 				}
 			} while(++index < END_OF_LIST);

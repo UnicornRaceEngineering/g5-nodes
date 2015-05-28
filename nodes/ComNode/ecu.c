@@ -130,11 +130,11 @@ void ecu_parse_package(void) {
 			{
 				int type = 0;
 				do {
-					if (message_info(type).id == tx_id) {
-						transport = message_info(type).transport;
+					if (MESSAGE_INFO(type).id == tx_id) {
+						transport = MESSAGE_INFO(type).transport;
 						break;
 					}
-				} while (message_info(++type).id);
+				} while (MESSAGE_INFO(++type).id);
 			}
 
 			uint8_t buf[sizeof(tx_id)+sizeof(pkt[i].sensor.value)];

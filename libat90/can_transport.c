@@ -71,7 +71,7 @@ void init_can_node(enum node_id node) {
  * @return      Non zero on error.
  */
 uint8_t can_broadcast(const enum message_id type, void * const data) {
-	return can_send(message_info(type).id, message_info(type).len, data);
+	return can_send(MESSAGE_INFO(type).id, MESSAGE_INFO(type).len, data);
 }
 
 
@@ -79,7 +79,7 @@ uint8_t can_broadcast(const enum message_id type, void * const data) {
 static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
 	uint16_t index = 0;
 	do {
-		if (message_info(index).id == id) {
+		if (MESSAGE_INFO(index).id == id) {
 			if (queue_length) {
 				struct can_message *temp = newest_message;
 				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
@@ -105,7 +105,7 @@ static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
 			++queue_length;
 			return SUCCES;
 		}
-	} while (message_info(++index).id);
+	} while (MESSAGE_INFO(++index).id);
 	return ID_ERR;
 }
 

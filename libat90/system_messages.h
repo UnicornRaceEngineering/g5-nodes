@@ -99,7 +99,7 @@ struct message_detail {
 };
 
 
-#define message_info(type) ((const struct message_detail []) { \
+#define MESSAGE_INFO(type) ((const struct message_detail []) { \
 	[TRANSPORT_TEST_SHORT]         = { .id =   1,    .len =  6,    .transport = 0 | CAN             }, \
 	[TRANSPORT_TEST_LONG]          = { .id =   2,    .len = 27,    .transport = 0 | CAN             }, \
 	[TIME_SYNC]                    = { .id =   3,    .len =  4,    .transport = 0 | CAN             }, \

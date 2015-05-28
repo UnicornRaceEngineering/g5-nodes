@@ -180,7 +180,7 @@ int main(void) {
 		while(get_queue_length()) {
 			struct can_message *message = read_inbox();
 			//printf("Got id: %d and data: %d\n", message->info.id, message->data[0]);
-			if (message_info(message->index).id == 512)
+			if (MESSAGE_INFO(message->index).id == 512)
 				gear_request = message->data[0];
 			can_free(message);
 		}

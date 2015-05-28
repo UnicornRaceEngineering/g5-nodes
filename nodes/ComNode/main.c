@@ -64,7 +64,7 @@ int main(void) {
 
 		while (get_queue_length()) {
 			struct can_message *msg = read_inbox();
-			struct message_detail msg_info = message_info(msg->index);
+			struct message_detail msg_info = MESSAGE_INFO(msg->index);
 			if (msg_info.transport & SD) {
 				uint16_t id_data = msg_info.id;
 				log_append(&id_data, sizeof(id_data));
