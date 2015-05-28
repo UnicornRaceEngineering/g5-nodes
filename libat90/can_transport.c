@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "can.h"
 #include "can_transport.h"
 #include "system_messages.h"
+#include "sysclock.h"
 
 
 static struct can_message *oldest_message;
@@ -133,4 +134,8 @@ void can_free(struct can_message* message) {
 
 void * can_malloc(uint8_t size) {
 	return smalloc(size);
+}
+
+void can_cleanup() {
+	mob_cleanup(get_tick());
 }

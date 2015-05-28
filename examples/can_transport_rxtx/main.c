@@ -30,9 +30,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>
 #include <can_transport.h>
 #include <usart.h>
+#include <heap.h>
+#include <sysclock.h>
 
 
 static void init(void) {
+	sysclock_init();
 	usart1_init(115200);
 	init_can_node(STEERING_NODE);
 
@@ -43,32 +46,38 @@ static void init(void) {
 int main(void) {
 	init();
 
-	_delay_ms(5000);
 	while (1) {
-#if 0
-	// Sending a short message (1 frame)
-	uint8_t msg[6] = {'H', 'e', 'l', 'l', 'o', '\n'};
-	can_broadcast(TRANSPORT_TEST_SHORT, msg);
-	_delay_ms(100);
+#if 1
+		uint8_t err = 0;
+		// Sending a short message (1 frame)
+		uint8_t msg[6] = {'H', 'e', 'l', 'l', 'o', '\n'};
+		err = can_broadcast(TRANSPORT_TEST_SHORT, msg);
+		if (err) printf("err: %d\n",  err);
+		_delay_ms(100);
 
-	// Sending a long message (4 frames)
-	uint8_t *storage = (uint8_t*)can_malloc(27);
-	char str[27] = "HAS anyone really been far\n";
-	strncpy((char*)&storage[0], str, 27);
-	can_broadcast(TRANSPORT_TEST_LONG, storage);
-	_delay_ms(1000);
+		// Sending a long message (4 frames)
+		uint8_t *storage = (uint8_t*)smalloc(27);
+		if (storage) {
+			char str[27] = "HAS anyone really been far\n";
+			strncpy((char*)&storage[0], str, 27);
+			err = can_broadcast(TRANSPORT_TEST_LONG, storage);
+			if (err)
+				printf("err: %d\n",  err);
+		}
+		_delay_ms(1000);
 #else
-	// recieving
-	while(get_queue_length()) {
-		struct can_message *message = read_inbox();
-		printf("message of id %4d and length %3d : ", MESSAGE_INFO(message->index).id, MESSAGE_INFO(message->index).len);
-		for (int i = 0; i < MESSAGE_INFO(message->index).len; ++i)
-			putchar(message->data[i]);
-		can_free(message);
-	}
-	putchar('\n');
-	_delay_ms(1000);
+		// recieving
+		while(get_queue_length()) {
+			struct can_message *message = read_inbox();
+			printf("message of id %4d and length %3d : ", MESSAGE_INFO(message->index).id, MESSAGE_INFO(message->index).len);
+			for (int i = 0; i < MESSAGE_INFO(message->index).len; ++i)
+				putchar(message->data[i]);
+			can_free(message);
+		}
+		putchar('\n');
+		_delay_ms(1000);
 #endif
+		can_cleanup();
 	}
 
 	return 0;

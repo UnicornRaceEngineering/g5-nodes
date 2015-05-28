@@ -70,5 +70,6 @@ void can_init(can_filter_t, can_filter_t);
 uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg);
 void set_canrec_callback(canrec_callback_t callback);
 uint16_t get_counter(enum can_counters counter);
+void mob_cleanup(uint32_t time_now);
 
 #endif /* CAN_H */

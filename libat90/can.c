@@ -33,10 +33,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <stdint.h>
+#include <util/atomic.h>
 #include "utils.h"
 #include "heap.h"
 #include "can_baud.h"
 #include "can.h"
+#include "sysclock.h"
 #include <util/delay.h>
 
 
@@ -93,6 +95,7 @@ struct can_msg_t {
 	uint8_t *data;
 	uint8_t on_mob;
 	uint8_t waiting;
+	uint32_t age;
 };
 
 
@@ -280,7 +283,7 @@ uint16_t get_counter(enum can_counters counter) {
 	}
 }
 
-
+#include <stdio.h>
 void can_init(can_filter_t fil1, can_filter_t fil2) {
 	CAN_RESET();
 	reset_counters();
@@ -320,7 +323,7 @@ void can_init(can_filter_t fil1, can_filter_t fil2) {
 
 	// Enable all spymobs
 	uint8_t i = NB_SPYMOB;
-	while (--i) {
+	while (i--) {
 		enable_spy_mob(LAST_MOB_NB - i);
 	}
 
@@ -364,6 +367,7 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 		msg_list[mob]->len = len;
 		msg_list[mob]->idx = 0;
 		msg_list[mob]->msg_num = 0;
+		msg_list[mob]->age = get_tick();
 
 		uint8_t data[DATA_MAX] = {0};
 		data[0] = 1;
@@ -378,7 +382,7 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 		MOB_EN_RX();
 		CAN_ENABLE_MOB_INTERRUPT(new_mob);
 		msg_list[mob]->on_mob = mob;
-		msg_list[mob]->waiting = 1;
+		msg_list[mob]->waiting = new_mob;
 		msg_list[new_mob] = msg_list[mob];
 
 		for (uint8_t i = header; i < DATA_MAX; i++) {
@@ -412,6 +416,29 @@ uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
 }
 
 
+void mob_cleanup(uint32_t time_now) {
+	for (uint8_t mob = 0; mob < NB_MOB; ++mob) {
+		if (BIT_CHECK(mob_on_job, mob) && msg_list[mob]) {
+			printf("mob %2d, waiting %2d, has age %4lu\n", mob, msg_list[mob]->waiting, get_tick() - msg_list[mob]->age);
+		}
+		if ((get_tick() - msg_list[mob]->age) > 10) {
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+				sfree((void *)msg_list[mob]->data);
+				sfree((void *)msg_list[mob]);
+				if (msg_list[mob]->waiting <= NO_MOB) {
+					uint8_t receiving_mob = msg_list[mob]->waiting;
+					msg_list[receiving_mob] = 0;
+					BIT_CLEAR(mob_on_job, receiving_mob);
+				}
+				uint8_t sending_mob = msg_list[mob]->on_mob;
+				msg_list[sending_mob] = 0;
+				BIT_CLEAR(mob_on_job, sending_mob);
+			}
+		}
+	}
+}
+
+
 static inline void mob_receive(uint8_t mob, uint16_t id) {
 	CAN_SET_MOB(mob);
 	MOB_EN_RX();
@@ -435,7 +462,7 @@ static inline void mob_send(uint8_t mob, uint16_t id, uint8_t data[8]) {
 
 
 static inline int8_t find_me_a_mob(void) {
-	for (uint8_t i = 0; i <= 15; i++)
+	for (uint8_t i = 0; i < 15; i++)
 		if (!BIT_CHECK(mob_on_job, i))
 			return i;
 
@@ -496,7 +523,7 @@ static uint8_t initiate_receive(uint8_t mob, can_msg_t *msg) {
 
 	msg_list[res_mob]->idx = 3;
 	msg_list[res_mob]->len = 3;
-	msg_list[res_mob]->waiting = 0;
+	msg_list[res_mob]->waiting = NO_MOB;
 
 	CAN_SET_MOB(res_mob);
 	mob_send(res_mob, msg->id, data);
@@ -511,6 +538,7 @@ static inline uint8_t receive_on_mob(uint8_t old_mob, can_msg_t *msg) {
 	}
 
 	msg_list[mob] = (can_msg_t*)msg;
+	msg_list[mob]->on_mob = mob;
 	BIT_SET(mob_on_job, mob);
 	mob_receive(mob, msg->id);
 	CAN_SET_MOB(old_mob);
@@ -537,7 +565,7 @@ static void continue_sending(uint8_t mob) {
 		return;
 	}
 
-	if (msg_list[mob]->waiting)
+	if (msg_list[mob]->waiting != NO_MOB)
 		return;
 
 	if (msg_list[mob]->len == msg_list[mob]->idx) {
@@ -549,7 +577,7 @@ static void continue_sending(uint8_t mob) {
 		return;
 	}
 
-	msg_list[mob]->waiting = 0;
+	msg_list[mob]->waiting = NO_MOB;
 	msg_list[mob]->msg_num++;
 	uint8_t msg[8] = {0};
 	msg[0] = 2;
@@ -611,7 +639,8 @@ static uint8_t receive_frame(uint8_t mob) {
 			msg_list[mob]->id = MOB_GET_STD_ID();
 			msg_list[mob]->msg_num = 0;
 			msg_list[mob]->idx = 6;
-			msg_list[mob]->waiting = 0;
+			msg_list[mob]->waiting = NO_MOB;
+			msg_list[mob]->age = get_tick();
 			const uint8_t header = 2;
 			for (uint8_t i = header; i < DATA_MAX; i++)
 				msg_list[mob]->data[i - header] = msg[i];
@@ -626,6 +655,7 @@ static uint8_t receive_frame(uint8_t mob) {
 			break;
 
 		case 2:
+			msg_list[mob]->age = get_tick();
 			msg_list[mob]->msg_num = ((msg[0] & 0xF8) >> 3);
 			uint8_t i = 1;
 			while ( (msg_list[mob]->idx < msg_list[mob]->len) && (i < 8))
@@ -641,7 +671,7 @@ static uint8_t receive_frame(uint8_t mob) {
 			break;
 
 		case 3:
-			msg_list[mob]->waiting = 0;
+			msg_list[mob]->waiting = NO_MOB;
 			continue_sending(msg_list[mob]->on_mob);
 			BIT_CLEAR(mob_on_job, mob);
 			return SUCCES;
