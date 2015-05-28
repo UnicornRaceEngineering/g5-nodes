@@ -47,5 +47,6 @@ uint8_t can_broadcast(const enum message_id receiver, void * const data);
 struct can_message* read_inbox(void);
 uint8_t get_queue_length(void);
 void can_free(struct can_message*);
+void * can_malloc(uint8_t size);
 
 #endif /* CAN_TRANSPORT_H */

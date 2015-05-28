@@ -34,7 +34,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 #include <utils.h>
@@ -60,7 +59,7 @@ int main(void) {
 			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
 											 // to split it up into 4 bytes
 
-			uint8_t *data = (uint8_t*)smalloc(13);
+			uint8_t *data = (uint8_t*)can_malloc(13);
 			data[0] = 1;
 			data[1] = *(dd_ptr + 0);
 			data[2] = *(dd_ptr + 1);

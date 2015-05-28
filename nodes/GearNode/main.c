@@ -33,7 +33,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>
 #include <io.h>
 #include <can_transport.h>
-#include <heap.h>
 #include <sysclock.h>
 #include "../SteeringNode/paddleshift.h"
 
@@ -144,7 +143,6 @@ static void init(void) {
 	timer_init();
 	init_neutral_gear_sensor();
 	adc_init(1, AVCC, 4);
-	init_heap();
 	init_can_node(GEAR_NODE);
 	//set_tick_callback(newline);
 

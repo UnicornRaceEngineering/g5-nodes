@@ -28,7 +28,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <string.h>
-#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 #include "sysclock.h"
@@ -36,7 +35,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static void init(void) {
 	usart1_init(115200);
-	init_heap();
 	sysclock_init();
 	init_can_node(STEERING_NODE);
 

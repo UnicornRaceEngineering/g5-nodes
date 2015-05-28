@@ -28,14 +28,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <string.h>
-#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 
 
 static void init(void) {
 	usart1_init(115200);
-	init_heap();
 	init_can_node(STEERING_NODE);
 
 	sei();
@@ -54,7 +52,7 @@ int main(void) {
 	_delay_ms(100);
 
 	// Sending a long message (4 frames)
-	uint8_t *storage = (uint8_t*)smalloc(27);
+	uint8_t *storage = (uint8_t*)can_malloc(27);
 	char str[27] = "HAS anyone really been far\n";
 	strncpy((char*)&storage[0], str, 27);
 	can_broadcast(TRANSPORT_TEST_LONG, storage);

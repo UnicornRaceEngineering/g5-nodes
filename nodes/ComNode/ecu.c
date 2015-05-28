@@ -42,7 +42,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <m41t81s_rtc.h>
 #include <string.h>
 #include <utils.h>
-#include <heap.h>
 #include <system_messages.h>
 #include <can_transport.h>
 

@@ -50,6 +50,7 @@ static uint8_t rx_complete(uint16_t id, uint8_t *msg);
  * @return    A pointer to the node handle
  */
 void init_can_node(enum node_id node) {
+	init_heap();
 	oldest_message = 0;
 	newest_message = 0;
 	queue_length = 0;
@@ -128,4 +129,8 @@ uint8_t get_queue_length(void) {
 void can_free(struct can_message* message) {
 	sfree((void *) message->data);
 	sfree((void *) message);
+}
+
+void * can_malloc(uint8_t size) {
+	return smalloc(size);
 }

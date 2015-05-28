@@ -30,7 +30,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
 
-#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 #include <io.h>
@@ -48,7 +47,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rpm.h"
 #include "shiftlight.h"
 #include "neutral.h"
-#include <heap.h>
 
 #if 0
 #include <avr/fuse.h>
@@ -84,7 +82,6 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 
 static void init(void) {
 	init_can_node(STEERING_NODE);
-	init_heap();
 	usart1_init(115200);
 	sysclock_init();
 	paddle_init();

@@ -28,7 +28,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <string.h>
-#include <heap.h>
 #include <can_transport.h>
 #include <usart.h>
 #include "sysclock.h"
@@ -45,7 +44,6 @@ uint32_t last_heartbeat[N_NODES] = {0};
 
 static void init(void) {
 	usart1_init(115200);
-	init_heap();
 	sysclock_init();
 	init_can_node(COM_NODE);
 
