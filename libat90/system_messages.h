@@ -66,6 +66,7 @@ enum message_id {
 
 	HEARTBEAT,
 	GPS_DATA,
+	NODE_STATUS,
 
 	// Gear node
 	PADDLE_STATUS,
@@ -145,6 +146,7 @@ struct message_detail {
 	\
 	[GPS_DATA]                     = { .id = 295,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
 	[HEARTBEAT]                    = { .id = 296,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[NODE_STATUS]                  = { .id = 297,    .len =  2,    .transport = 0       | XBEE | SD }, \
 	[PADDLE_STATUS]                = { .id = 512,    .len =  1,    .transport = 0 | CAN             }, \
 	[CURRENT_GEAR]                 = { .id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
 	[NEUTRAL_ENABLED]              = { .id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
