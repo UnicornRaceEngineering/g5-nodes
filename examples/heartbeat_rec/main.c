@@ -33,6 +33,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include "sysclock.h"
 
+#define HEARTBEAT_TIMEOUT 100
+
 
 void handle_heartbeat(struct can_message *msg);
 
@@ -76,7 +78,7 @@ int main(void) {
 
 		for (uint8_t i = 0; i < N_NODES; ++i) {
 			if (node_state[i]) {
-				if ((get_tick() - last_heartbeat[i]) > 50) {
+				if ((get_tick() - last_heartbeat[i]) > HEARTBEAT_TIMEOUT) {
 					node_state[i] = 0;
 					printf("node %d is unreachable\n", i);
 				}
