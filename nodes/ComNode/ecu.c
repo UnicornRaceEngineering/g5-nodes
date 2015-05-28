@@ -125,17 +125,7 @@ void ecu_parse_package(void) {
 
 		if (pkt[i].sensor.id != EMPTY) {
 			const uint16_t tx_id = ECU_PKT + pkt[i].sensor.id;
-			enum medium transport = NONE;
-			// Find transport medium by looking up the message_info table
-			{
-				int type = 0;
-				do {
-					if (MESSAGE_INFO(type).id == tx_id) {
-						transport = MESSAGE_INFO(type).transport;
-						break;
-					}
-				} while (MESSAGE_INFO(++type).id);
-			}
+			enum medium transport = MESSAGE_INFO(tx_id).transport;
 
 			uint8_t buf[sizeof(tx_id)+sizeof(pkt[i].sensor.value)];
 			memcpy(buf, &tx_id, sizeof(tx_id));
