@@ -164,19 +164,20 @@ bool usart0_has_data(void){
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
  */
-char usart0_getc(FILE *stream) {
+int usart0_getc(FILE *stream) {
 	char data;
 	while (!usart0_has_data());
 	rb_pop((ringbuffer_t*)&usart0_inBuff, (uint8_t*)&data);
-	return data;
+	return (int)data;
 }
 
-void usart0_putbyte(uint8_t c, FILE *stream) {
+int usart0_putbyte(char c, FILE *stream) {
 	// Wait for free space in buffer
 	while (rb_isFull(&usart0_outBuff));
 	rb_push((ringbuffer_t*)&usart0_outBuff, c);
 
 	USART0_ENABLE_UDRE_INTERRUPT();
+	return 0;
 }
 
 /**
@@ -185,13 +186,14 @@ void usart0_putbyte(uint8_t c, FILE *stream) {
  * @param  c Byte to transmit
  * @return   positive if success
  */
-void usart0_putc(char c, FILE *stream) {
+int usart0_putc(char c, FILE *stream) {
 #ifndef USART0_NON_UNIX_LIKE_LINE_ENDINGS
 	if (c == '\n') {
 		usart0_putbyte('\r', stream);
 	}
 #endif
 	usart0_putbyte(c, stream);
+	return 0;
 }
 
 ISR(USART0_RX_vect){
@@ -284,19 +286,20 @@ bool usart1_has_data(void){
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
  */
-char usart1_getc(FILE *stream) {
+int usart1_getc(FILE *stream) {
 	char data = 0;
 	while (!usart1_has_data());
 	rb_pop((ringbuffer_t*)&usart1_inBuff, (uint8_t*)&data);
-	return data;
+	return (int)data;
 }
 
-void usart1_putbyte(uint8_t b, FILE *stream) {
+int usart1_putbyte(char b, FILE *stream) {
 	// Wait for free space in buffer
 	while (rb_isFull(&usart1_outBuff));
 	rb_push((ringbuffer_t*)&usart1_outBuff, b);
 
 	USART1_ENABLE_UDRE_INTERRUPT();
+	return 0;
 }
 
 /**
@@ -305,11 +308,12 @@ void usart1_putbyte(uint8_t b, FILE *stream) {
  * @param  c Byte to transmit
  * @return   positive if success
  */
-void usart1_putc(char c, FILE *stream) {
+int usart1_putc(char c, FILE *stream) {
 	if (c == '\n') {
 		usart1_putbyte('\r', stream);
 	}
 	usart1_putbyte(c, stream);
+	return 0;
 }
 
 ISR(USART1_RX_vect){
