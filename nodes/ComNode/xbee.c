@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <usart.h>
 #include <utils.h>
+#include <string.h> // memcpy() memset()
 
 #include "xbee.h"
 
@@ -31,22 +32,39 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static FILE *xbee_out = &usart1_byte_output;
 
+static struct payload {
+	// the buffer is the size of uart buffer with package overhead substracted.
+	// This is to avoid filling the uart buffer.
+	uint8_t buf[64 - 3 - 1 - 1];
+	size_t i;
+} p;
+
 void xbee_init(void) {
+	memset(&p, 0, sizeof(p));
 	usart1_init(XBEE_BAUD);
 }
 
 void xbee_send(const uint8_t *arr, uint8_t len) {
-	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
-	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) fputc(start_seq[i], xbee_out);
+	// Check if buffer has room for data
+	if (p.i + len >= ARR_LEN(p.buf)) {
+		// If not then flush the buffer
 
-	fputc(len+1, xbee_out);
+		const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
+		for (size_t i = 0; i < ARR_LEN(start_seq); ++i) fputc(start_seq[i], xbee_out);
 
-	uint8_t chksum = 0;
-	for (int i = 0; i < len; ++i) {
-		fputc(arr[i], xbee_out);
-		chksum ^= arr[i];
+		fputc(p.i+1, xbee_out); // size of payload + chksum
+
+		uint8_t chksum = 0;
+		for (size_t i = 0; i < p.i; ++i) {
+			fputc(p.buf[i], xbee_out);
+			chksum ^= p.buf[i];
+		}
+		fputc(chksum, xbee_out);
+
+		p.i = 0; // Reset payload index
 	}
-	fputc(chksum, xbee_out);
+
+	// Then add it to payload
+	memcpy(&p.buf[p.i], arr, len);
+	p.i += len;
 }
-
-
