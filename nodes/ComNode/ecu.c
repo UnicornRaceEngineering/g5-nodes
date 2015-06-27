@@ -57,15 +57,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static FILE *ecu = &usart0_io;
 
-static inline uint32_t clamp(uint32_t value) {
-	return (value > (1 << 15)) ? -(0xFFFF - value) : value;
+static inline float clamp(float value) {
+	uint32_t u32;
+	memcpy(&u32, &value, sizeof(value));
+	u32 = (u32 > (1 << 15)) ? -(0xFFFF - u32) : u32;
+	memcpy(&value, &u32, sizeof(value));
+	return value;
 }
 
 void ecu_parse_package(void) {
 
 	struct ecu_package {
 		struct sensor sensor;
-		uint32_t raw_value; // The raw data received from the ECU
+		float raw_value; // The raw data received from the ECU
 		size_t length;      // length of the data in bytes
 	} pkt[] = {
 #       include "ecu_package_layout.inc"
