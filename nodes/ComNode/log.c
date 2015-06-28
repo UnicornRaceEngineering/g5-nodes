@@ -25,27 +25,60 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <fatfs/ff.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h> //memcpy() , memset();
+#include <utils.h>
+#include <avr/pgmspace.h>
+
+#include <util/delay.h>
 
 #include "log.h"
 
 static FATFS fs;
 static FIL file;
 
+#define BUF_SIZE	512
+
+static struct payload {
+	uint8_t buf[BUF_SIZE];
+	size_t i;
+} p;
+
 void log_init(void) {
+	memset(&p, 0, sizeof(p));
 	f_mount(&fs, "", 1);
 
 	// increment filename until we have a new file that does not already exists.
 	char file_name[32] = {'\0'};
 	unsigned i = 0;
 	do {
-		sprintf(file_name, "log%u.dat", i++);
+		sprintf_P(file_name, PSTR("log%u.dat"), i++);
 	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) == FR_EXIST);
 }
 
-int log_append(void *buf, size_t n) {
+static int flush_to_sd(void) {
+	int err = 0;
 	unsigned bw;
-	if(f_write(&file, buf, n, &bw) != FR_OK) return -1;
-	return (bw == n) ? 0 : -1;
+	if(f_write(&file, p.buf, p.i, &bw) != FR_OK) err = -1;
+	p.i = 0;
+	err = (bw == p.i) ? 0 : -1;
+	return err;
+}
+
+int log_append(void *data, size_t n) {
+	int err = 0;
+	if (p.i + n > BUF_SIZE) {
+		const size_t reminder = n - ((p.i + n) - BUF_SIZE);
+		memcpy(&p.buf[p.i], data, reminder);
+		p.i += reminder;
+		n -= reminder;
+		data += reminder;
+		log_sync();
+		flush_to_sd();
+	}
+
+	memcpy(&p.buf[p.i], data, n);
+	p.i += n;
+	return err;
 }
 
 void log_sync(void) {

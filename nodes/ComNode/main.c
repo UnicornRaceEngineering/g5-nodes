@@ -41,8 +41,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sysclock.h>
 #include <system_messages.h>
 
-#define SD_SYNC_TIME	1000 // Interval in ms that data is written to SD
-
 static void init(void) {
 	rtc_init();
 	ecu_init();
@@ -72,13 +70,6 @@ int main(void) {
 			}
 
 			can_free(msg);
-		}
-
-		// Sync to sd card at the give interval
-		static uint32_t last_tick = 0;
-		if (get_tick() - last_tick > SD_SYNC_TIME) {
-			log_sync();
-			last_tick = get_tick();
 		}
 
 		ecu_parse_package();
