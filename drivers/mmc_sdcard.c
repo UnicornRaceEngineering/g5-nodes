@@ -399,6 +399,7 @@ static int8_t sd_spi_mode_initialization(void) {
  * @return  1:success 0:failure
  */
 int8_t sd_init(void) {
+	SPSR |= SPI2X; // Doubles spi speed (halves the prescaler)
 	spi_init_master(false, SPI_PRESCALER_64); // SPI_F < 400 kHz
 	if (sd_spi_mode_initialization() != 0) return 1;
 	spi_init_master(false, SPI_PRESCALER_4); // SPI_F max
