@@ -44,6 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>
 #include <system_messages.h>
 #include <can_transport.h>
+#include <util/delay.h>
 
 #include "log.h"
 #include "xbee.h"
@@ -79,51 +80,63 @@ void ecu_parse_package(void) {
 	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = fgetc(ecu);
-			if (pkt[i].sensor.id == EMPTY) continue;
+			if (pkt[i].sensor.id == EMPTY) {
+				// We know these pkts are just zero, if they are not reset
+				if ((i == ARR_LEN(pkt) - 4 || i == 0 || i == 16) && ecu_byte != 0) {
+					// Reset ECU and clear the current corrupt package
+					TIMSK0 &= ~(1 << OCIE0A); // Disable heartbeat isr
+					_delay_ms(50); // About double the heartbeat time.
+					ecu_init();
+					return;
+				}
+				continue;
+			}
 
 			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
 		}
+	}
 
-		// Convert the raw data to usable data
-		{
-			switch (pkt[i].sensor.id) {
-			case STATUS_LAMBDA_V2:
-				pkt[i].sensor.value = (70 - clamp(pkt[i].raw_value) / 64.0);
-				break;
-			case WATER_TEMP:
-			case MANIFOLD_AIR_TEMP:
-				pkt[i].sensor.value = (pkt[i].raw_value * (-150.0 / 3840) + 120);
-				break;
-			case SPEEDER_POTMETER:
-				pkt[i].sensor.value = ((pkt[i].raw_value - 336) / 26.9);
-				break;
-			case RPM:
-				pkt[i].sensor.value = (pkt[i].raw_value * 0.9408);
-				break;
-			case MAP_SENSOR:
-				pkt[i].sensor.value = (pkt[i].raw_value * 0.75);
-				break;
-			case BATTERY_V:
-				pkt[i].sensor.value = (pkt[i].raw_value * (1.0 / 210) + 0);
-				break;
-			case LAMBDA_V:
-				pkt[i].sensor.value = ((70 - clamp(pkt[i].raw_value) / 64.0) / 100);
-				break;
-			case INJECTOR_TIME:
-			case IGNITION_TIME:
-				pkt[i].sensor.value = (-0.75 * pkt[i].raw_value + 120);
-				break;
-			case GX:
-			case GY:
-			case GZ:
-				pkt[i].sensor.value = (clamp(pkt[i].raw_value) * (1.0 / 16384));
-				break;
+	// Convert the raw data to usable data
+	// We have to do this after collecting an entire ECU package to avoid
+	// broadcasting corrupt data
+	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
+		switch (pkt[i].sensor.id) {
+		case STATUS_LAMBDA_V2:
+			pkt[i].sensor.value = (70 - clamp(pkt[i].raw_value) / 64.0);
+			break;
+		case WATER_TEMP:
+		case MANIFOLD_AIR_TEMP:
+			pkt[i].sensor.value = (pkt[i].raw_value * (-150.0 / 3840) + 120);
+			break;
+		case SPEEDER_POTMETER:
+			pkt[i].sensor.value = ((pkt[i].raw_value - 336) / 26.9);
+			break;
+		case RPM:
+			pkt[i].sensor.value = (pkt[i].raw_value * 0.9408);
+			break;
+		case MAP_SENSOR:
+			pkt[i].sensor.value = (pkt[i].raw_value * 0.75);
+			break;
+		case BATTERY_V:
+			pkt[i].sensor.value = (pkt[i].raw_value * (1.0 / 210) + 0);
+			break;
+		case LAMBDA_V:
+			pkt[i].sensor.value = ((70 - clamp(pkt[i].raw_value) / 64.0) / 100);
+			break;
+		case INJECTOR_TIME:
+		case IGNITION_TIME:
+			pkt[i].sensor.value = (-0.75 * pkt[i].raw_value + 120);
+			break;
+		case GX:
+		case GY:
+		case GZ:
+			pkt[i].sensor.value = (clamp(pkt[i].raw_value) * (1.0 / 16384));
+			break;
 
-			default:
-				// No conversion
-				pkt[i].sensor.value = pkt[i].raw_value;
-				break;
-			}
+		default:
+			// No conversion
+			pkt[i].sensor.value = pkt[i].raw_value;
+			break;
 		}
 
 		if (pkt[i].sensor.id != EMPTY) {
