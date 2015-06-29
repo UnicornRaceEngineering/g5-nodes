@@ -37,7 +37,12 @@ void statuslight_init(void) {
 	dmux_init();
 }
 
-void set_rgb_color(int led, enum color_masks color) {
-	dmux_set_y_low(led);
+void set_rgb_color(uint8_t led, enum color_masks color) {
+	// if (led > 8) return;
+	dmux_set_y_low(	(const enum dmux_y_values []) {
+		DMUX_Y0, DMUX_Y1, DMUX_Y2, DMUX_Y3, DMUX_Y4, DMUX_Y5, DMUX_Y6, DMUX_Y7,
+	}[led]);
 	SET_REGISTER_BITS(STATUS_LED_PORT, color, STATUS_LED_MASK);
+	// BITMASK_CLEAR(STATUS_LED_PORT, STATUS_LED_MASK);
+	// BITMASK_SET(STATUS_LED_PORT, color);
 }
