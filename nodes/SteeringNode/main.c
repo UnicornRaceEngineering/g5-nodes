@@ -47,6 +47,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rpm.h"
 #include "shiftlight.h"
 #include "neutral.h"
+#include "rotaryswitch.h"
 
 #if 0
 #include <avr/fuse.h>
@@ -104,6 +105,7 @@ static void init(void) {
 	rpm_init();
 	shiftlight_init();
 	neutral_btn_init();
+	rot_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -149,6 +151,15 @@ int main(void) {
 		for (size_t i = 0; i < ARR_LEN(led_warn); ++i) {
 			set_rgb_color(i, led_warn[i]);
 		}
+
+#if 0
+		// Test rotary switch
+		{
+			char buf[8] = {'\0'};
+			snprintf(buf, ARR_LEN(buf), "%u", rot_read());
+			seg7_disp_str(buf, 0, 2);
+		}
+#endif
 
 #if 0
 		// Test the 7seg

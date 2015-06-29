@@ -7,6 +7,7 @@ set(SRC_FILES
 	rpm.c
 	shiftlight.c
 	neutral.c
+	rotaryswitch.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})
