@@ -49,6 +49,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "shiftlight.h"
 #include "neutral.h"
 #include "rotaryswitch.h"
+#include "dipswitch.h"
 
 #if 0
 #include <avr/fuse.h>
@@ -99,7 +100,7 @@ static void display_gear(uint8_t gear) {
 static void display_right(uint16_t v) {
 	char str[8] = {'\0'};
 	snprintf(str, ARR_LEN(str), "%u", v);
-	seg7_disp_str(str, 4, 7);
+	seg7_disp_str(str, 4, 6);
 }
 
 static void display_left(uint16_t v) {
@@ -127,6 +128,7 @@ static void init(void) {
 	shiftlight_init();
 	neutral_btn_init();
 	rot_init();
+	dip_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -220,6 +222,7 @@ int main(void) {
 			case 10:
 			case 11:
 				// Mode (switch on back of board)
+				display_left(dip_read());
 				break;
 
 			case 12:
@@ -235,6 +238,13 @@ int main(void) {
 			char buf[8] = {'\0'};
 			snprintf(buf, ARR_LEN(buf), "%u", rot_read());
 			seg7_disp_str(buf, 0, 2);
+		}
+#endif
+
+#if 0
+		// Test dip switch
+		{
+			display_left(dip_read());
 		}
 #endif
 
