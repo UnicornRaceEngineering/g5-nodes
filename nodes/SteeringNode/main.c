@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h> // memset()
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -95,6 +96,26 @@ static void display_gear(uint8_t gear) {
 	seg7_disp_char(3, (gear != 0) ? ('0' + gear) : 'n', false);
 }
 
+static void display_right(uint16_t v) {
+	char str[8] = {'\0'};
+	snprintf(str, ARR_LEN(str), "%u", v);
+	seg7_disp_str(str, 4, 7);
+}
+
+static void display_left(uint16_t v) {
+	char str[8] = {'\0'};
+	snprintf(str, ARR_LEN(str), "%u", v);
+	seg7_disp_str(str, 0, 2);
+}
+
+static void display_left_f(float f) {
+	char str[8]= {'\0'};
+	// add the 0.01 to avoid rounding errors
+	uint8_t d = (uint8_t)((f + 0.01 - (int)f) * 10);
+	snprintf(str, ARR_LEN(str), "%u.%u", (uint16_t)f, d);
+	seg7_disp_str(str, 0, 2);
+}
+
 static void init(void) {
 	init_can_node(STEERING_NODE);
 	usart1_init(115200);
@@ -111,8 +132,17 @@ static void init(void) {
 	puts_P(PSTR("Init complete\n\n"));
 }
 
+static struct foreign_state {
+	float battery_volt;
+	float water_temp;
+	uint8_t gear;
+	int16_t rpm;
+} fstate;
+
 int main(void) {
 	init();
+	memset(&fstate, 0, sizeof(fstate));
+	display_gear(fstate.gear);
 
 	while (1) {
 		// Main work loop
@@ -120,13 +150,21 @@ int main(void) {
 		while (get_queue_length()) {
 			struct can_message *msg = read_inbox();
 			switch (msg->index) {
-				case CURRENT_GEAR: display_gear(*(uint8_t*)msg->data);
-				case ECU_PKT + RPM: set_rpm(*(int16_t*)msg->data); break;
+				case CURRENT_GEAR:
+					fstate.gear = *(uint8_t*)msg->data;
+					display_gear(fstate.gear);
+					break;
+				case ECU_PKT + RPM:
+					fstate.rpm = (int16_t)*(float*)msg->data;
+					set_rpm(fstate.rpm);
+					break;
 				case ECU_PKT + BATTERY_V:
-					update_warning_light(WARN_BATTERY_VOLT_LED, *(float*)msg->data);
+					fstate.battery_volt = *(float*)msg->data;
+					update_warning_light(WARN_BATTERY_VOLT_LED, fstate.battery_volt);
 					break;
 				case ECU_PKT + WATER_TEMP:
-					update_warning_light(WARN_WATER_TEMP_LED, *(float*)msg->data);
+					fstate.water_temp = *(float*)msg->data;
+					update_warning_light(WARN_WATER_TEMP_LED, fstate.water_temp);
 					break;
 			}
 			can_free(msg);
@@ -150,6 +188,45 @@ int main(void) {
 		// Set the warning lights to their values
 		for (size_t i = 0; i < ARR_LEN(led_warn); ++i) {
 			set_rgb_color(i, led_warn[i]);
+		}
+
+		display_right((uint16_t)fstate.water_temp);
+		switch (rot_read()) {
+			case 0:
+			case 1:
+				display_left_f(fstate.battery_volt);
+				break;
+
+			case 2:
+			case 3:
+				// Cooler temp difference (no sensor yet)
+				break;
+
+			case 4:
+			case 5:
+				// Potmeter
+				break;
+
+			case 6:
+			case 7:
+				// Lambda
+				break;
+
+			case 8:
+			case 9:
+				// Error codes
+				break;
+
+			case 10:
+			case 11:
+				// Mode (switch on back of board)
+				break;
+
+			case 12:
+			case 13:
+				// RPM/100
+				display_left(fstate.rpm/100);
+				break;
 		}
 
 #if 0
