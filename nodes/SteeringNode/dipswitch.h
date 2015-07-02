@@ -28,6 +28,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define DIP_PORT PORTA
 
+#define RPM_3_STATE	(1 << 0)
+
 void dip_init(void);
 uint8_t dip_read(void);
 

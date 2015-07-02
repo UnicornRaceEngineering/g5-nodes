@@ -29,9 +29,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/io.h>
 #include <io.h>
 
+#include "dipswitch.h"
 #include "rpm.h"
 
 #define CALIBRATION 80
+
+#define SEGMENT_1	65
+#define SEGMENT_2	125
+#define SEGMENT_3	0xFF
+#define SEGMENT_OFF	0
 
 void rpm_init(void) {
 	// init Timer0 PWM PB4 for the RPM-counter
@@ -47,9 +53,22 @@ void rpm_init(void) {
 }
 
 void set_rpm(int16_t rpm) {
-	// Because the PWM signal goes through a low pass filter we loose some
-	// granularity so we must lower the max value or the RPM meter will max out
-	// too soon. The value is determined by increasing the calibration value
-	// until it "looked right".
-	RPM_OCR = map(rpm, RPM_MIN_VALUE, RPM_MAX_VALUE, 0, 0xFF - CALIBRATION);
+	if (dip_read() & RPM_3_STATE) {
+		if (rpm > 12500) {
+			RPM_OCR = SEGMENT_3;
+		} else if (rpm > 12000) {
+			RPM_OCR = SEGMENT_2;
+		} else if (rpm > 11500) {
+			RPM_OCR = SEGMENT_1;
+		} else {
+			RPM_OCR = SEGMENT_OFF;
+		}
+	} else {
+		// Because the PWM signal goes through a low pass filter we loose some
+		// granularity so we must lower the max value or the RPM meter will max out
+		// too soon. The value is determined by increasing the calibration value
+		// until it "looked right".
+		RPM_OCR = map(rpm, RPM_MIN_VALUE, RPM_MAX_VALUE, 0, 0xFF - CALIBRATION);
+	}
+
 }
