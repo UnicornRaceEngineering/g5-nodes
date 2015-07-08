@@ -94,7 +94,7 @@ enum medium {
 
 
 struct message_detail {
-	const uint16_t id;
+	const uint16_t id; // Should this be CAN_id?
 	const uint8_t len;
 	const uint8_t transport;
 };
@@ -109,10 +109,10 @@ struct message_detail {
 	[ECU_PKT + FUEL_PRESSURE]      = { .id = 258,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_LAP_COUNT]   = { .id = 259,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_INJ_SUM]     = { .id = 260,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + LAST_GEAR_SHIFT]    = { .id = 261,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + LAST_GEAR_SHIFT]    = { .id = 261,    .len =  4,    .transport = 0 |      XBEE       }, \
 	[ECU_PKT + MOTOR_OILTEMP]      = { .id = 262,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + OIL_PRESSURE]       = { .id = 263,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_TIME]        = { .id = 264,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_TIME]        = { .id = 264,    .len =  4,    .transport = 0 |              SD }, \
 	[ECU_PKT + STATUS_LAP_TIME]    = { .id = 265,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + GEAR_OIL_TEMP]      = { .id = 266,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_TRACTION]    = { .id = 267,    .len =  4,    .transport = 0                   }, \
@@ -120,7 +120,7 @@ struct message_detail {
 	[ECU_PKT + STATUS_LAMBDA_V2]   = { .id = 269,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_CAM_TRIG_P1] = { .id = 270,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_CAM_TRIG_P2] = { .id = 271,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0 |       XBEE      }, \
 	[ECU_PKT + STATUS_LAMBDA_PWM]  = { .id = 273,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + WATER_TEMP]         = { .id = 274,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
 	[ECU_PKT + MANIFOLD_AIR_TEMP]  = { .id = 275,    .len =  4,    .transport = 0       | XBEE | SD }, \
@@ -129,7 +129,7 @@ struct message_detail {
 	[ECU_PKT + TRIGGER_ERR]        = { .id = 278,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + CAM_ANGLE1]         = { .id = 279,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + CAM_ANGLE2]         = { .id = 280,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + ROAD_SPEED]         = { .id = 281,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + ROAD_SPEED]         = { .id = 281,    .len =  4,    .transport = 0       | XBEE | SD }, /* Check if this contains any data */ \
 	[ECU_PKT + MAP_SENSOR]         = { .id = 282,    .len =  4,    .transport = 0       | XBEE | SD }, \
 	[ECU_PKT + BATTERY_V]          = { .id = 283,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
 	[ECU_PKT + LAMBDA_V]           = { .id = 284,    .len =  4,    .transport = 0       | XBEE | SD }, \
