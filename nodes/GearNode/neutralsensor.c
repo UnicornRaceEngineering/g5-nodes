@@ -13,11 +13,16 @@ void init_neutral_gear_sensor(void) {
 	NEUT_EICR |= (0<<NEUT_ISC1|1<<NEUT_ISC0);
 
 	BIT_SET(NEUT_EIMSK, NEUT_INT); // Enables external interrupt request
+
+	gear_shift_dir = 0;
+	real_gear_pos = 0;
 }
 
 // Gear neutral interrupt
 ISR(NEUT_INT_vect) {
-	// TODO: Implement this
-	while(USART1_TX_IS_BUSY());
-	UDR1 = '!';
+	if (gear_shift_dir == DOWN) {
+		real_gear_pos = 1;
+	} else if (gear_shift_dir == UP) {
+		real_gear_pos = 2;
+	}
 }
