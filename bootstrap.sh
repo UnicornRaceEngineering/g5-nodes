@@ -73,27 +73,37 @@ compile_avr_gcc() {
 # If we want to compile avr-gcc ourselves uncomment the line below
 # compile_avr_gcc ftp://ftp.gwdg.de/pub/misc/gcc/releases/gcc-4.9.1/gcc-4.9.1.tar.bz2
 
-ln -s /vagrant $HOME_FOLDER/g5-nodes
+# ln -s /vagrant $HOME_FOLDER/g5-nodes
+#
+# cat <<EOF
+# *****************************
+#
+# Bootstrapping Done
+# EOF
+#
+#
+# cat >$HOME_FOLDER/README <<EOL
+# The vm should now be ready to be used for embedded avr development.
+#
+# Since the vm is created using vagrant the folder /vagrant is syncronized with
+# the development folder on the host. This means you can do the development on the
+# host using your favorit editor and compiled in this vm. In the homefolder you
+# will see a symlink called "g5-nodes" to the /vagrant folder.
+# EOL
+#
+# cat $HOME_FOLDER/README
+#
+# cat << EOF
+#
+# *****************************
+# EOF
 
-cat <<EOF
-*****************************
+ROOT_DIR=$PWD
+cd third_party
+sh get_fatfs.sh
+cd $ROOT_DIR
 
-Bootstrapping Done
-EOF
-
-
-cat >$HOME_FOLDER/README <<EOL
-The vm should now be ready to be used for embedded avr development.
-
-Since the vm is created using vagrant the folder /vagrant is syncronized with
-the development folder on the host. This means you can do the development on the
-host using your favorit editor and compiled in this vm. In the homefolder you
-will see a symlink called "g5-nodes" to the /vagrant folder.
-EOL
-
-cat $HOME_FOLDER/README
-
-cat << EOF
-
-*****************************
-EOF
+mkdir -p build
+cd build
+cmake ..
+make
