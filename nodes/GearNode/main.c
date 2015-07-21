@@ -31,9 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <io.h>
 #include <utils.h>
-#include <io.h>
 #include <can_transport.h>
-#include <sysclock.h>
 #include "../SteeringNode/paddleshift.h"
 
 #include "dewalt.h"
@@ -60,6 +58,11 @@ static volatile uint16_t poslist [MEASUREMENTS] = {0};
 static volatile uint16_t limit_time = 0;
 static volatile uint8_t on_off = 0;
 volatile uint8_t current_gear = 0;
+volatile uint8_t gear_request = 0;
+
+int maxcounter;
+int numbermess;
+int done;
 
 static int shift_gear(int gear_dir) {
 	//!< TODO: check the right way to slow down
@@ -88,10 +91,6 @@ void timer_init(void) {
 	TIMSK0 |= 1<<OCIE0A; // Enable timer compare match interrupt
 	TCCR0A |= 0<<CS02 | 1<<CS01 | 0<<CS00; // Set prescaler 8
 }
-
-int maxcounter;
-int numbermess;
-int done;
 
 ISR (TIMER0_COMP_vect) {
 	if (on_off == 1)
@@ -135,49 +134,31 @@ ISR (TIMER0_COMP_vect) {
 	}
 }
 
-//void newline(uint32_t milliseconds);
-
 static void init(void) {
 	usart1_init(115200);
-	//tick_init();
 	timer_init();
 	init_neutral_gear_sensor();
 	adc_init(1, AVCC, 4);
 	init_can_node(GEAR_NODE);
-	//set_tick_callback(newline);
 
 	dewalt_init();
 	dewalt_kill();
 
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
 	IGNITION_UNCUT();
-	//SET_PIN_MODE(PORTF, PIN6, OUTPUT);
-	//SET_PIN_MODE(PORTF, PIN7, OUTPUT);
-
-	//IO_SET_LOW(PORTF, PIN6);
-	//IO_SET_LOW(PORTF, PIN7);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }
-
-uint8_t gear_request = 0;
-
-// void newline(uint32_t milliseconds) {
-// 	if (milliseconds % 1000 == 0)
-// 		printf("\n");
-// }
 
 int main(void) {
 	init();
 	//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
 	while (1) {
-		//printf("Ne %d\n", GEAR_IS_NEUTRAL());
-		//_delay_ms(10);
 		while(get_queue_length()) {
 			struct can_message *message = read_inbox();
-			//printf("Got id: %d and data: %d\n", message->info.id, message->data[0]);
+			//printf("Got id: %d and data: %d\n", MESSAGE_INFO(message->index).id, message->data[0]);
 			if (MESSAGE_INFO(message->index).id == 512)
 				gear_request = message->data[0];
 			can_free(message);
@@ -186,75 +167,22 @@ int main(void) {
 		if (gear_request) {
 
 			if (gear_request & PADDLE_UP){
-				//IO_SET_HIGH(PORTF, PIN6);
 				IGNITION_CUT();
-				shift_gear(GEAR_DOWN);
+				shift_gear(GEAR_UP);
+				gear_shift_dir = UP;
 				if (current_gear < 6)
 					++current_gear;
 			}
 			else if(gear_request & PADDLE_DOWN){
-				//IO_SET_HIGH(PORTF, PIN7);
 				IGNITION_CUT();
-				shift_gear(GEAR_UP);
+				shift_gear(GEAR_DOWN);
+				gear_shift_dir = DOWN;
 				if (current_gear > 1)
 					--current_gear;
 			}
 
-			printf("current_gear = %d\n", current_gear);
-
 			gear_request = 0;
 
-			// Before starting measurements we have a small delay. Not for any
-			// testable reason, but it takes a while before the motor starts
-			// moving. This delay can probably be increased as it takes a while
-			// before we get any usable data.
-			_delay_us(100);
-
-			// Done being set to 1 indicates that the motor is deactivated and
-			// it's done changing gear.
-			done = 0;
-
-			// counts the number of times that the ampere reaches a set maximum.
-			maxcounter = 0;
-
-			// The timer interrupt only does something when on_off = 1;
-			on_off = 1;
-
-			// counts number of measurements executed.
-			mesnumber= 0;
-		}
-
-		if (usart1_has_data()) {
-			char c = getchar();
-			switch (c) {
-				case 'q':
-					printf("\n\nGear Down\n\n");
-					IGNITION_CUT();
-					shift_gear(GEAR_DOWN);
-					//IO_SET_HIGH(PORTF, PIN6);
-
-					break;
-				case 'w':
-					//printf("\n\nGear Neutral\n\n");
-					//shift_gear(GEAR_NEUTRAL);
-					break;
-				case 'e':
-					printf("\n\nGear Up\n\n");
-					IGNITION_CUT();
-					shift_gear(GEAR_UP);
-					//IO_SET_HIGH(PORTF, PIN7);
-					break;
-				case ' ':
-				case 'z':
-					//printf("\n\nKILL!\n\n");
-					//dewalt_kill();
-					printf("ign cut\n");
-					IGNITION_CUT();
-					_delay_ms(2000);
-					IGNITION_UNCUT();
-					printf("ign cut done\n");
-					break;
-			}
 			// Before starting measurements we have a small delay. Not for any
 			// testable reason, but it takes a while before the motor starts
 			// moving. This delay can probably be increased as it takes a while
@@ -280,31 +208,26 @@ int main(void) {
 			on_off = 0;
 			dewalt_kill();
 
-			//IO_SET_LOW(PORTF, PIN6);
-			//IO_SET_LOW(PORTF, PIN7);
-			//printf("\nTimed out\n");
-
-			// prints put all the measured ampere data.
-			//printf("current measurements\n");
 			int i;
 			for (i = 0; i < MEASUREMENTS; i++) {
-				//printf("%d\n", cslist[i]);
 				cslist[i] = 0;
 			}
 
 			// prints out the position meter data.
-			//printf("position measurements\n");
 			for (i = 0; i < MEASUREMENTS; i++) {
-				//printf("%d\n", poslist[i]);
 				poslist[i] = 0;
 			}
 
 			// prints out diagnosis pins
 			//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
-			//number of measurements executed
-			//printf("I done %d measurements!\n", numbermess);
-			mesnumber= 0;
+			mesnumber = 0;
+
+			if (real_gear_pos) {
+				current_gear = real_gear_pos;
+			}
+
+			real_gear_pos = 0;
 
 			uint8_t msg[1] = {current_gear};
 			can_broadcast(CURRENT_GEAR, msg);
