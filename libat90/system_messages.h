@@ -39,6 +39,8 @@ enum node_id {
 	GEAR_NODE,
 	STEERING_NODE,
 	GPS_NODE,
+	SPY_NODE,
+	TEST_NODE,
 
 	N_NODES,
 };
@@ -56,6 +58,8 @@ struct can_filter {
 	[GEAR_NODE]     = { .lower_bound =  512	, .upper_bound =  767 }, \
 	[STEERING_NODE] = { .lower_bound =  768	, .upper_bound = 1023 }, \
 	[GPS_NODE]      = { .lower_bound = 1024	, .upper_bound = 1275 }, \
+	[TEST_NODE]     = { .lower_bound = 1275	, .upper_bound = 1530 }, \
+	[SPY_NODE]      = { .lower_bound =  256	, .upper_bound = 2047 }, \
 }[node_id])
 
 

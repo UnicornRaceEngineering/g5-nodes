@@ -36,7 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static void init(void) {
 	usart1_init(115200);
 	sysclock_init();
-	init_can_node(STEERING_NODE);
+	init_can_node(TEST_NODE);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -46,7 +46,7 @@ int main(void) {
 	init();
 
 	while (1) {
-		uint8_t node_id = STEERING_NODE;
+		uint8_t node_id = TEST_NODE;
 		can_broadcast(HEARTBEAT, &node_id);
 		_delay_ms(30);
 	}
