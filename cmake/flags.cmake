@@ -27,7 +27,7 @@ set(CTUNING "-fpack-struct -fshort-enums -funsigned-bitfields -funsigned-char ${
 set(COPT "-Os")
 
 add_definitions(-DF_CPU=${F_CPU} -DCAN_BAUDRATE=${CAN_BAUDRATE})
-set(CFLAGS "${CMCU} ${CINCS} ${CSTANDARD} ${CDEBUG} ${CWARN} ${CTUNING} ${COPT} ${CEXTRA}")
+set(CFLAGS "${CMCU} ${CINCS} ${CSTANDARD} ${CDEBUG} ${CWARN} ${CTUNING} ${COPT} ${CEXTRA} -Wl,-u,vfprintf -lprintf_flt")
 
 # Without the "CACHE STRING "" FORCE" the CMAKE_C_FLAGS variable is empty when
 # entering subdirectories (where we want to do the build). The only other work
