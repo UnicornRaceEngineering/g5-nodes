@@ -48,6 +48,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <pwm.h>
 #include <adc.h>
 #include <io.h>
+#include <stdbool.h>
 
 #define VNH2SP30_INA_PORT	(PORTA)
 #define VNH2SP30_INA_PIN	(PIN0)
@@ -70,6 +71,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 void vnh2sp30_init(void);
 void vnh2sp30_active_break_to_GND(void);
 void vnh2sp30_active_break_to_Vcc(void);
+bool vnh2sp30_is_faulty(void);
+void vnh2sp30_reset(void);
 
 #define vnh2sp30_set_INA() \
 	IO_SET_HIGH(VNH2SP30_INA_PORT, VNH2SP30_INA_PIN)

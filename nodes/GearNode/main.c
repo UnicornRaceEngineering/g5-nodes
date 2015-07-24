@@ -151,9 +151,14 @@ int main(void) {
 		// to work. That's a problem with the CAN and this is a temporary workaround.
 		if (GEAR_IS_NEUTRAL()) {
 			can_broadcast(CURRENT_GEAR, &(uint8_t){0});
+			_delay_ms(100);
 		}
 
-		_delay_ms(100);
+		if (vnh2sp30_is_faulty()) {
+			printf("faulty H-Bridge!!");
+			vnh2sp30_reset();
+			_delay_ms(1000); // 1 second to cool off
+		}
 	}
 
 	return 0;

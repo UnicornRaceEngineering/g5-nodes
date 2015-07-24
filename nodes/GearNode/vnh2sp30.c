@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <adc.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @name vnh2sp30_init
@@ -77,4 +78,22 @@ void vnh2sp30_active_break_to_Vcc(void) {
 	vnh2sp30_set_INA();
 }
 
+bool vnh2sp30_is_faulty(void) {
+	return !vnh2sp30_read_DIAGA() || !vnh2sp30_read_DIAGB();
+}
 
+void vnh2sp30_reset(void) {
+	SET_PIN_MODE(VNH2SP30_DIAGA_PORT, VNH2SP30_DIAGA_PIN, OUTPUT);
+	SET_PIN_MODE(VNH2SP30_DIAGB_PORT, VNH2SP30_DIAGB_PIN, OUTPUT);
+
+	vnh2sp30_clear_INA();
+	vnh2sp30_clear_INB();
+	vnh2sp30_set_PWM_dutycycle(0);
+
+	IO_SET_LOW(VNH2SP30_DIAGA_PORT, VNH2SP30_DIAGA_PIN);
+	IO_SET_LOW(VNH2SP30_DIAGB_PORT, VNH2SP30_DIAGB_PIN);
+
+	vnh2sp30_init_DIAGA();
+	vnh2sp30_init_DIAGB();
+
+}
