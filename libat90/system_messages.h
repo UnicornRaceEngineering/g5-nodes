@@ -55,7 +55,7 @@ struct can_filter {
 #define filter_info(node_id) ((const struct can_filter []) { \
 	[PUBLIC]        = { .lower_bound =    0	, .upper_bound =  255 }, \
 	[COM_NODE]      = { .lower_bound =  256	, .upper_bound = 2047 }, \
-	[GEAR_NODE]     = { .lower_bound =  512	, .upper_bound =  767 }, \
+	[GEAR_NODE]     = { .lower_bound =  512	, .upper_bound =  770 }, \
 	[STEERING_NODE] = { .lower_bound =  768	, .upper_bound = 1023 }, \
 	[GPS_NODE]      = { .lower_bound = 1024	, .upper_bound = 1275 }, \
 	[TEST_NODE]     = { .lower_bound = 1275	, .upper_bound = 1530 }, \

@@ -55,7 +55,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PADDLE_DOWN_ISC0        ISC60
 /** @} */
 
-#define DEBOUNCE_TIME	25
+#define DEBOUNCE_TIME	100
 
 static volatile uint8_t state;
 
