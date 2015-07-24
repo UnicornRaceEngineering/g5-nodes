@@ -39,9 +39,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>
 #include "gps.h"
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 static void init(void) {
 	gps_set_getc(&usart1_io);
-	usart1_init(GPS_BAUDRATE);
+	usart1_init(GPS_BAUDRATE, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 
 	init_can_node(GPS_NODE);
 	sei();	//Enable interrupt

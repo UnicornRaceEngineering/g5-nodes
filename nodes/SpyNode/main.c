@@ -33,12 +33,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 void read_message(struct can_message *message);
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 static uint16_t msg_num;
 
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	init_can_node(COM_NODE);
 
 	msg_num = 0;

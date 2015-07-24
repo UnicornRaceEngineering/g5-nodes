@@ -57,9 +57,6 @@ enum usart_charSelect_t {
 	static volatile ringbuffer_t usart0_rb_in;
 	static volatile ringbuffer_t usart0_rb_out;
 
-	static volatile uint8_t usart0_buf_in[64];
-	static volatile uint8_t usart0_buf_out[64];
-
 	FILE usart0_io = FDEV_SETUP_STREAM(usart0_putc, usart0_getc, _FDEV_SETUP_RW);
 	FILE usart0_byte_output = FDEV_SETUP_STREAM(usart0_putbyte, NULL, _FDEV_SETUP_WRITE);
 #endif
@@ -68,9 +65,6 @@ enum usart_charSelect_t {
 #	include "ringbuffer.h"
 	static volatile ringbuffer_t usart1_rb_in;
 	static volatile ringbuffer_t usart1_rb_out;
-
-	static volatile uint8_t usart1_buf_in[64];
-	static volatile uint8_t usart1_buf_out[64];
 
 	FILE usart1_io = FDEV_SETUP_STREAM(usart1_putc, usart1_getc, _FDEV_SETUP_RW);
 	FILE usart1_byte_output = FDEV_SETUP_STREAM(usart1_putbyte, NULL, _FDEV_SETUP_WRITE);
@@ -115,18 +109,18 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operat
  * zero value baudrate is give it will default to 115200.
  * @param baudrate the desired baudrate
  */
-int usart0_init(uint32_t baudrate) {
+int usart0_init(uint32_t baudrate, uint8_t* in_buf, size_t in_size, uint8_t* out_buf, size_t out_size) {
 	if (baudrate == 0) {
 		baudrate = 115200;
 	}
 
 	int rc;
 
-	rc = rb_init((ringbuffer_t*)&usart0_rb_in, (uint8_t*)usart0_buf_in, ARR_LEN(usart0_buf_in));
+	rc = rb_init((ringbuffer_t*)&usart0_rb_in, in_buf, in_size);
 	if (rc != 0) return rc;
 	USART0_ENABLE_RX_INTERRUPT();
 
-	rc = rb_init((ringbuffer_t*)&usart0_rb_out, (uint8_t*)usart0_buf_out, ARR_LEN(usart0_buf_out));
+	rc = rb_init((ringbuffer_t*)&usart0_rb_out, out_buf, out_size);
 	if (rc != 0) return rc;
 
 	//Enable TXen and RXen
@@ -250,18 +244,18 @@ ISR(USART0_UDRE_vect){
  * zero value baudrate is give it will default to 115200.
  * @param baudrate the desired baudrate
  */
-int usart1_init(uint32_t baudrate) {
+int usart1_init(uint32_t baudrate, uint8_t* in_buf, size_t in_size, uint8_t* out_buf, size_t out_size) {
 	if (baudrate == 0) {
 		baudrate = 115200;
 	}
 
 	int rc;
 
-	rc = rb_init((ringbuffer_t*)&usart1_rb_in, (uint8_t*)usart1_buf_in, ARR_LEN(usart1_buf_in));
+	rc = rb_init((ringbuffer_t*)&usart1_rb_in, in_buf, in_size);
 	if (rc != 0) return rc;
 	USART1_ENABLE_RX_INTERRUPT();
 
-	rc = rb_init((ringbuffer_t*)&usart1_rb_out, (uint8_t*)usart1_buf_out, ARR_LEN(usart1_buf_out));
+	rc = rb_init((ringbuffer_t*)&usart1_rb_out, out_buf, out_size);
 	if (rc != 0) return rc;
 
 	//Enable TXen and RXen

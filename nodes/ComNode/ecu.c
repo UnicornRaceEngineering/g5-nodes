@@ -60,6 +60,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static FILE *ecu = &usart0_io;
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 static inline float clamp(float value) {
 	uint32_t u32;
 	memcpy(&u32, &value, sizeof(value));
@@ -172,7 +175,7 @@ void ecu_parse_package(void) {
 }
 
 void ecu_init(void) {
-	usart0_init(ECU_BAUD);  // ECU
+	usart0_init(ECU_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));  // ECU
 
 	// setup timer 0 which periodically sends heartbeat to the ECU
 	{

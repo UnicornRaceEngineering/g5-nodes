@@ -30,9 +30,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <m41t81s_rtc.h>
 #include <io.h>
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	rtc_init();
 
 	sei();
@@ -60,4 +62,3 @@ int main(void) {
 
     return 0;
 }
-

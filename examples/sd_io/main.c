@@ -31,6 +31,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>
 #include <util/delay.h>
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 uint32_t sector = 0;
 
 #define uart_raw(c) do { \
@@ -39,7 +42,7 @@ uint32_t sector = 0;
 } while (0)
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sei();
 	printf("Running init\n");
 	int rc = sd_init();

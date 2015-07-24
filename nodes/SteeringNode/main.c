@@ -60,6 +60,9 @@ FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #define WARN_BAD	RED
 #define WARN_CRIT	BLUE
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 enum warn_leds {
 	WARN_BATTERY_VOLT_LED,
 	WARN_WATER_TEMP_LED,
@@ -119,7 +122,7 @@ static void display_left_f(float f) {
 
 static void init(void) {
 	init_can_node(STEERING_NODE);
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
 	paddle_init();
 	statuslight_init();

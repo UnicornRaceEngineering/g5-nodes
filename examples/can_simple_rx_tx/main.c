@@ -31,18 +31,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <heap.h>
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 static uint8_t rx_complete(uint16_t id, uint8_t *msg);
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	init_heap();
 
 	can_filter_t filter1 = { .lower_bound =   0, .upper_bound = 255 };
 	can_filter_t filter2 = { .lower_bound = 256, .upper_bound = 511 };
 	can_init(filter1, filter2);
 	set_canrec_callback(rx_complete);
-	
+
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }

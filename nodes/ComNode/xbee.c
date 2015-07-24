@@ -32,6 +32,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static FILE *xbee_out = &usart1_byte_output;
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 static struct payload {
 	// the buffer is the size of uart buffer with package overhead substracted.
 	// This is to avoid filling the uart buffer.
@@ -41,7 +44,7 @@ static struct payload {
 
 void xbee_init(void) {
 	memset(&p, 0, sizeof(p));
-	usart1_init(XBEE_BAUD);
+	usart1_init(XBEE_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 }
 
 void xbee_send(const uint8_t *arr, uint8_t len) {

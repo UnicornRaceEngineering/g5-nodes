@@ -47,6 +47,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define HOLES_PR_WHEEL	56
 #define WHEEL_CIRC		1.62 // Circumference in meters
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 static volatile uint16_t wheel_tick = 0;
 
 void wheel_tick_init(void) {
@@ -61,7 +64,7 @@ ISR(WHEEL_TICK_ISR_vect) {
 }
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
 	wheel_tick_init();
 	init_can_node(SENSOR_FRONT_NODE);

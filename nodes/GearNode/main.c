@@ -54,6 +54,9 @@ void start_gearshift(uint8_t gear_request);
 void stop_gearshift(void);
 void gearshift_procedure(uint8_t gear_request);
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
+
 static volatile uint16_t mesnumber= 0;
 static volatile uint16_t maxCS = 0;
 static volatile uint16_t time_counter = 0;
@@ -138,7 +141,7 @@ ISR (TIMER0_COMP_vect) {
 }
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	timer_init();
 	init_neutral_gear_sensor();
 	adc_init(1, AVCC, 4);

@@ -29,11 +29,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <sysclock.h>
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 unsigned int seconds;
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
 
 	seconds = 0;

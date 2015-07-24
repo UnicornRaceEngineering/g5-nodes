@@ -37,13 +37,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 void handle_heartbeat(struct can_message *msg);
 
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 uint8_t node_state[N_NODES] = {0};
 uint32_t last_heartbeat[N_NODES] = {0};
 
 
 static void init(void) {
-	usart1_init(115200);
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
 	init_can_node(SPY_NODE);
 

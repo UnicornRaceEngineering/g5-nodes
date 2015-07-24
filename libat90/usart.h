@@ -58,9 +58,6 @@ enum usart_operationModes_t {
  * @{
  */
 #ifndef NO_USART0_SUPPORT
-
-	#define USART0_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
-
 	#define USART0_ENABLE_RX()	BIT_SET(UCSR0B, RXEN)
 	#define USART0_ENABLE_TX()	BIT_SET(UCSR0B, TXEN)
 
@@ -88,7 +85,7 @@ enum usart_operationModes_t {
 	} while (0)
 
 
-	int usart0_init(uint32_t baudrate);
+	int usart0_init(uint32_t baudrate, uint8_t* in_buf, size_t in_size, uint8_t* out_buf, size_t out_size);
 	void usart0_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
 
@@ -112,9 +109,6 @@ enum usart_operationModes_t {
  * @{
  */
 #ifndef NO_USART1_SUPPORT
-
-	#define USART1_PRNT_BUFF_SIZE (256) //!< The size of the uart print buffer
-
 	#define USART1_ENABLE_RX()	BIT_SET(UCSR1B, RXEN1)
 	#define USART1_ENABLE_TX()	BIT_SET(UCSR1B, TXEN1)
 
@@ -141,7 +135,7 @@ enum usart_operationModes_t {
 		UCSR1C |= (size << UCSZ1); \
 	} while (0)
 
-	int usart1_init(uint32_t baudrate);
+	int usart1_init(uint32_t baudrate, uint8_t* in_buf, size_t in_size, uint8_t* out_buf, size_t out_size);
 	void usart1_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
 
