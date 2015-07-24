@@ -39,6 +39,7 @@ enum node_id {
 	GEAR_NODE,
 	STEERING_NODE,
 	GPS_NODE,
+	SENSOR_FRONT_NODE,
 
 	N_NODES,
 };
@@ -54,8 +55,9 @@ struct can_filter {
 	[PUBLIC]        = { .lower_bound =    0	, .upper_bound =  255 }, \
 	[COM_NODE]      = { .lower_bound =  256	, .upper_bound = 2047 }, \
 	[GEAR_NODE]     = { .lower_bound =  512	, .upper_bound =  767 }, \
-	[STEERING_NODE] = { .lower_bound =  768	, .upper_bound = 1023 }, \
+	[STEERING_NODE] = { .lower_bound =  257	, .upper_bound = 1023 }, \
 	[GPS_NODE]      = { .lower_bound = 1024	, .upper_bound = 1275 }, \
+	[SENSOR_FRONT_NODE] = { .lower_bound = 1276	, .upper_bound = 1276+255 }, \
 }[node_id])
 
 
@@ -74,6 +76,10 @@ enum message_id {
 	// Steerinng node
 	CURRENT_GEAR,
 	NEUTRAL_ENABLED,
+
+	// WHEEL Sensors
+	FRONT_RIGHT_WHEEL_SPEED,
+	FRONT_LEFT_WHEEL_SPEED,
 
 	// Public
 	TRANSPORT_TEST_SHORT,
@@ -120,7 +126,7 @@ struct message_detail {
 	[ECU_PKT + STATUS_LAMBDA_V2]   = { .id = 269,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_CAM_TRIG_P1] = { .id = 270,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + STATUS_CAM_TRIG_P2] = { .id = 271,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0 |       XBEE      }, \
+	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0 | CAN | XBEE      }, \
 	[ECU_PKT + STATUS_LAMBDA_PWM]  = { .id = 273,    .len =  4,    .transport = 0                   }, \
 	[ECU_PKT + WATER_TEMP]         = { .id = 274,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
 	[ECU_PKT + MANIFOLD_AIR_TEMP]  = { .id = 275,    .len =  4,    .transport = 0       | XBEE | SD }, \
@@ -150,6 +156,8 @@ struct message_detail {
 	[PADDLE_STATUS]                = { .id = 512,    .len =  1,    .transport = 0 | CAN             }, \
 	[CURRENT_GEAR]                 = { .id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
 	[NEUTRAL_ENABLED]              = { .id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[FRONT_RIGHT_WHEEL_SPEED]      = { .id = 800,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[FRONT_LEFT_WHEEL_SPEED]       = { .id = 801,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
 	\
 	[END_OF_LIST]                  = { .id =   0,    .len =  0,    .transport = 0                   }, \
 }[type])
