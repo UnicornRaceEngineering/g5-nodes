@@ -42,7 +42,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGN_PIN		(PIN4)
 #define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
-#define TIMEOUT 700
+
+#define TIMEOUT 		700 	// Timeout for gearshift given in timer ticks
+#define TIMEOUT_SLOW	2000	// Like TIMEOUT just for when going to neutral
 
 enum {
 	GEAR_DOWN = -1,
@@ -147,9 +149,7 @@ int main(void) {
 		// It should be enough to do this once only, but it doesn't allways seem
 		// to work. That's a problem with the CAN and this is a temporary workaround.
 		if (GEAR_IS_NEUTRAL()) {
-			current_gear = 0;
-			uint8_t msg[1] = {current_gear};
-			can_broadcast(CURRENT_GEAR, msg);
+			can_broadcast(CURRENT_GEAR, &(uint8_t){0});
 		}
 
 		_delay_ms(100);
@@ -159,9 +159,8 @@ int main(void) {
 }
 
 void gearshift_procedure(uint8_t gear_request) {
-
 	if (gear_request == (PADDLE_UP | PADDLE_DOWN)) {
-		return;
+		return; // We cant do both so ignore it
 	}
 
 	if (neutral_button) {
@@ -254,36 +253,25 @@ void stop_gearshift() {
 }
 
 void gear_estimate(uint8_t gear_request) {
-	if (gear_request & PADDLE_UP){
-		if (current_gear < 6)
-			++current_gear;
+	if (gear_request & PADDLE_UP) {
+		if (current_gear < 6) ++current_gear;
+		if (!current_gear)      current_gear = 2;
+		if (neutral_flag)       current_gear = 2;
 
-		if (!current_gear)
-			current_gear = 2;
-
-		if (neutral_flag)
-			current_gear = 2;
-
-	} else if(gear_request & PADDLE_DOWN){
-		if (current_gear > 1)
-			--current_gear;
-
-		if (!current_gear)
-			current_gear = 1;
-
-		if (neutral_flag)
-			current_gear = 1;
+	} else if(gear_request & PADDLE_DOWN) {
+		if (current_gear > 1) --current_gear;
+		if (!current_gear)      current_gear = 1;
+		if (neutral_flag)       current_gear = 1;
 	}
 
-	uint8_t msg[1] = {current_gear};
-	can_broadcast(CURRENT_GEAR, msg);
+	can_broadcast(CURRENT_GEAR, &(uint8_t){current_gear});
 }
 
 void go_slow(uint8_t gear_request) {
 	IGNITION_CUT();
-	if (gear_request & PADDLE_UP){
+	if (gear_request & PADDLE_UP) {
 		shift_gear(GEAR_NEUTRAL_UP);
-	} else if(gear_request & PADDLE_DOWN){
+	} else if(gear_request & PADDLE_DOWN) {
 		shift_gear(GEAR_NEUTRAL_DOWN);
 	}
 
@@ -291,7 +279,7 @@ void go_slow(uint8_t gear_request) {
 
 	// The gear shifting motor is allowed to run for 370 ms on 50% PWM.
 	// This number has been found by trial and error and can be changed.
-	while(tick <= 2000) {
+	while(tick <= TIMEOUT_SLOW) {
 		if (GEAR_IS_NEUTRAL()) {
 			break;
 		}
