@@ -125,11 +125,14 @@ int main(void) {
 	//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
 	while (1) {
-		if (get_queue_length()) {
+
+		bool has_changed_gear = false; // We dont want two gear in a row
+		while (get_queue_length()) {
 			struct can_message *message = read_inbox();
-			//printf("Got id: %d and data: %d\n", MESSAGE_INFO(message->index).id, message->data[0]);
-			if (message->index == PADDLE_STATUS) {
+
+			if (message->index == PADDLE_STATUS && !has_changed_gear) {
 				gearshift_procedure(message->data[0]);
+				has_changed_gear = true;
 			}
 
 			if (message->index == NEUTRAL_ENABLED) {
@@ -137,11 +140,6 @@ int main(void) {
 			}
 
 			can_free(message);
-
-			while(get_queue_length()) {
-				struct can_message *crap = read_inbox();
-				can_free(crap);
-			}
 		}
 
 		// As long as the gear is in neutral state the GearNode will broadcast
