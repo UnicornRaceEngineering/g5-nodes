@@ -88,7 +88,7 @@ enum usart_operationModes_t {
 	} while (0)
 
 
-	void usart0_init(uint32_t baudrate);
+	int usart0_init(uint32_t baudrate);
 	void usart0_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
 
@@ -141,7 +141,7 @@ enum usart_operationModes_t {
 		UCSR1C |= (size << UCSZ1); \
 	} while (0)
 
-	void usart1_init(uint32_t baudrate);
+	int usart1_init(uint32_t baudrate);
 	void usart1_setBaudrate(const uint32_t baudrate,
 							enum usart_operationModes_t mode);
 

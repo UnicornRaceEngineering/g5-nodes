@@ -54,8 +54,11 @@ enum usart_charSelect_t {
 
 #ifndef NO_USART0_SUPPORT
 #	include "ringbuffer.h"
-	static volatile ringbuffer_t usart0_inBuff = {{0}};
-	static volatile ringbuffer_t usart0_outBuff = {{0}};
+	static volatile ringbuffer_t usart0_rb_in;
+	static volatile ringbuffer_t usart0_rb_out;
+
+	static volatile uint8_t usart0_buf_in[64];
+	static volatile uint8_t usart0_buf_out[64];
 
 	FILE usart0_io = FDEV_SETUP_STREAM(usart0_putc, usart0_getc, _FDEV_SETUP_RW);
 	FILE usart0_byte_output = FDEV_SETUP_STREAM(usart0_putbyte, NULL, _FDEV_SETUP_WRITE);
@@ -63,8 +66,11 @@ enum usart_charSelect_t {
 
 #ifndef NO_USART1_SUPPORT
 #	include "ringbuffer.h"
-	static volatile ringbuffer_t usart1_inBuff = {{0}};
-	static volatile ringbuffer_t usart1_outBuff = {{0}};
+	static volatile ringbuffer_t usart1_rb_in;
+	static volatile ringbuffer_t usart1_rb_out;
+
+	static volatile uint8_t usart1_buf_in[64];
+	static volatile uint8_t usart1_buf_out[64];
 
 	FILE usart1_io = FDEV_SETUP_STREAM(usart1_putc, usart1_getc, _FDEV_SETUP_RW);
 	FILE usart1_byte_output = FDEV_SETUP_STREAM(usart1_putbyte, NULL, _FDEV_SETUP_WRITE);
@@ -109,15 +115,19 @@ static inline uint16_t uart_baud2ubrr(const uint32_t baudrate, enum usart_operat
  * zero value baudrate is give it will default to 115200.
  * @param baudrate the desired baudrate
  */
-void usart0_init(uint32_t baudrate) {
+int usart0_init(uint32_t baudrate) {
 	if (baudrate == 0) {
 		baudrate = 115200;
 	}
 
-	rb_init((ringbuffer_t*)&usart0_inBuff);
+	int rc;
+
+	rc = rb_init((ringbuffer_t*)&usart0_rb_in, (uint8_t*)usart0_buf_in, ARR_LEN(usart0_buf_in));
+	if (rc != 0) return rc;
 	USART0_ENABLE_RX_INTERRUPT();
 
-	rb_init((ringbuffer_t*)&usart0_outBuff);
+	rc = rb_init((ringbuffer_t*)&usart0_rb_out, (uint8_t*)usart0_buf_out, ARR_LEN(usart0_buf_out));
+	if (rc != 0) return rc;
 
 	//Enable TXen and RXen
 	USART0_ENABLE_RX();
@@ -130,6 +140,7 @@ void usart0_init(uint32_t baudrate) {
 	usart0_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 
 	stdout = stdin = &usart0_io;
+	return rc;
 }
 
 /**
@@ -156,7 +167,7 @@ void usart0_setBaudrate(const uint32_t baudrate,
  * @return  true if it as data. Else false
  */
 bool usart0_has_data(void){
-	return !rb_isEmpty(&usart0_inBuff);
+	return !rb_isEmpty(&usart0_rb_in);
 }
 
 /**
@@ -167,14 +178,14 @@ bool usart0_has_data(void){
 int usart0_getc(FILE *stream) {
 	char data;
 	while (!usart0_has_data());
-	rb_pop((ringbuffer_t*)&usart0_inBuff, (uint8_t*)&data);
+	rb_pop((ringbuffer_t*)&usart0_rb_in, (uint8_t*)&data);
 	return (int)data;
 }
 
 int usart0_putbyte(char c, FILE *stream) {
 	// Wait for free space in buffer
-	while (rb_isFull(&usart0_outBuff));
-	rb_push((ringbuffer_t*)&usart0_outBuff, c);
+	while (rb_isFull(&usart0_rb_out));
+	rb_push((ringbuffer_t*)&usart0_rb_out, c);
 
 	USART0_ENABLE_UDRE_INTERRUPT();
 	return 0;
@@ -197,22 +208,22 @@ int usart0_putc(char c, FILE *stream) {
 }
 
 unsigned usart0_recv_size(void) {
-	return rb_used((ringbuffer_t*)&usart0_inBuff);
+	return rb_used((ringbuffer_t*)&usart0_rb_in);
 }
 
 unsigned usart0_send_size(void) {
-	return rb_used((ringbuffer_t*)&usart0_outBuff);
+	return rb_used((ringbuffer_t*)&usart0_rb_out);
 }
 
 ISR(USART0_RX_vect){
 	uint8_t data = UDR0;
 	//!< @TODO should we not check if the rb is full here!?
-	rb_push((ringbuffer_t*)&usart0_inBuff, data);
+	rb_push((ringbuffer_t*)&usart0_rb_in, data);
 }
 
 ISR(USART0_UDRE_vect){
 	uint8_t data;
-	if (rb_pop((ringbuffer_t*)&usart0_outBuff, &data) == 0) {
+	if (rb_pop((ringbuffer_t*)&usart0_rb_out, &data) == 0) {
 		UDR0 = data;
 	} else {
 		// output buffer is empty so disable UDRE interrupt flag
@@ -239,15 +250,19 @@ ISR(USART0_UDRE_vect){
  * zero value baudrate is give it will default to 115200.
  * @param baudrate the desired baudrate
  */
-void usart1_init(uint32_t baudrate) {
+int usart1_init(uint32_t baudrate) {
 	if (baudrate == 0) {
 		baudrate = 115200;
 	}
 
-	rb_init((ringbuffer_t*)&usart1_inBuff);
+	int rc;
+
+	rc = rb_init((ringbuffer_t*)&usart1_rb_in, (uint8_t*)usart1_buf_in, ARR_LEN(usart1_buf_in));
+	if (rc != 0) return rc;
 	USART1_ENABLE_RX_INTERRUPT();
 
-	rb_init((ringbuffer_t*)&usart1_outBuff);
+	rc = rb_init((ringbuffer_t*)&usart1_rb_out, (uint8_t*)usart1_buf_out, ARR_LEN(usart1_buf_out));
+	if (rc != 0) return rc;
 
 	//Enable TXen and RXen
 	USART1_ENABLE_RX();
@@ -260,6 +275,7 @@ void usart1_init(uint32_t baudrate) {
 	usart1_setBaudrate(baudrate, USART_MODE_ASYNC_NORMAL);
 
 	stdout = stdin = &usart1_io;
+	return rc;
 }
 
 /**
@@ -286,7 +302,7 @@ void usart1_setBaudrate(const uint32_t baudrate,
  * @return  true if it as data. Else false
  */
 bool usart1_has_data(void){
-	return !rb_isEmpty(&usart1_inBuff);
+	return !rb_isEmpty(&usart1_rb_in);
 }
 
 /**
@@ -297,14 +313,14 @@ bool usart1_has_data(void){
 int usart1_getc(FILE *stream) {
 	char data = 0;
 	while (!usart1_has_data());
-	rb_pop((ringbuffer_t*)&usart1_inBuff, (uint8_t*)&data);
+	rb_pop((ringbuffer_t*)&usart1_rb_in, (uint8_t*)&data);
 	return (int)data;
 }
 
 int usart1_putbyte(char b, FILE *stream) {
 	// Wait for free space in buffer
-	while (rb_isFull(&usart1_outBuff));
-	rb_push((ringbuffer_t*)&usart1_outBuff, b);
+	while (rb_isFull(&usart1_rb_out));
+	rb_push((ringbuffer_t*)&usart1_rb_out, b);
 
 	USART1_ENABLE_UDRE_INTERRUPT();
 	return 0;
@@ -325,21 +341,21 @@ int usart1_putc(char c, FILE *stream) {
 }
 
 unsigned usart1_recv_size(void) {
-	return rb_used((ringbuffer_t*)&usart1_inBuff);
+	return rb_used((ringbuffer_t*)&usart1_rb_in);
 }
 
 unsigned usart1_send_size(void) {
-	return rb_used((ringbuffer_t*)&usart1_outBuff);
+	return rb_used((ringbuffer_t*)&usart1_rb_out);
 }
 
 ISR(USART1_RX_vect){
 	uint8_t data = UDR1;
-	rb_push((ringbuffer_t*)&usart1_inBuff, data);
+	rb_push((ringbuffer_t*)&usart1_rb_in, data);
 }
 
 ISR(USART1_UDRE_vect){
 	uint8_t data;
-	if (rb_pop((ringbuffer_t*)&usart1_outBuff, &data) == 0) {
+	if (rb_pop((ringbuffer_t*)&usart1_rb_out, &data) == 0) {
 		UDR1 = data;
 	} else {
 		// output buffer is empty so disable UDRE interrupt flag

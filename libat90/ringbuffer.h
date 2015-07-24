@@ -46,63 +46,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <string.h> // memset()
 
-#ifndef RB_BUFFER_SIZE
-	#define RB_BUFFER_SIZE (64)
-#endif
+#include "utils.h"
 
-#define RB_BUFFER_MASK	(RB_BUFFER_SIZE-1)
-
-#if RB_BUFFER_SIZE < (1 << 8)
- 	typedef uint8_t rb_index_t;
-#elif RB_BUFFER_SIZE < (1 << 16)
- 	typedef uint16_t rb_index_t;
-#elif RB_BUFFER_SIZE < (1 << 32)
- 	typedef uint32_t rb_index_t;
-#else
- 	#error RB_BUFFER_SIZE is too big
-#endif
-
-// Determine if the buffer size is a power of 2
-#if RB_BUFFER_SIZE  == (1 << 2)  || \
-	RB_BUFFER_SIZE  == (1 << 3)  || \
-	RB_BUFFER_SIZE  == (1 << 4)  || \
-	RB_BUFFER_SIZE  == (1 << 5)  || \
-	RB_BUFFER_SIZE  == (1 << 6)  || \
-	RB_BUFFER_SIZE  == (1 << 7)  || \
-	RB_BUFFER_SIZE  == (1 << 8)  || \
-	RB_BUFFER_SIZE  == (1 << 9)  || \
-	RB_BUFFER_SIZE  == (1 << 10) || \
-	RB_BUFFER_SIZE  == (1 << 11) || \
-	RB_BUFFER_SIZE  == (1 << 12) || \
-	RB_BUFFER_SIZE  == (1 << 13) || \
-	RB_BUFFER_SIZE  == (1 << 14) || \
-	RB_BUFFER_SIZE  == (1 << 15) || \
-	RB_BUFFER_SIZE  == (1 << 16)
-
-	#define RB_BUFFER_SIZE_IS_POW2
-#endif
-
-
-#ifndef RB_DATA_t
-#define RB_DATA_t uint8_t
-#endif
-
+// #define RB_BUFFER_MASK	(RB_BUFFER_SIZE-1)
+#define RB_BUFFER_MASK(B)	((B)->size-1)
 
 typedef struct ringbuffer_t{
-	RB_DATA_t buffer[RB_BUFFER_SIZE]; //!< The actual buffer
-	rb_index_t start; //!< Index of the start of valid data in the buffer
-	rb_index_t end; //!< Index of the end of valid data in the buffer
+	uint8_t *buffer; //!< Pointer to the actual buffer
+	size_t start; //!< Index of the start of valid data in the buffer
+	size_t end; //!< Index of the end of valid data in the buffer
+	size_t size; //!< Size of the buffer @note muster be pow2 value
 } ringbuffer_t;
 
 
-#ifdef RB_BUFFER_SIZE_IS_POW2
-	#define rb_nextStart(B)		(((B)->start+1) & RB_BUFFER_MASK)
-	#define rb_nextEnd(B)		(((B)->end+1) & RB_BUFFER_MASK)
-#else
-	#define rb_nextStart(B)		((((B)->start+1) % RB_BUFFER_SIZE))
-	#define rb_nextEnd(B)		((((B)->end+1) % RB_BUFFER_SIZE))
-#endif
-
+#define rb_nextStart(B)		(((B)->start+1) & RB_BUFFER_MASK((B)))
+#define rb_nextEnd(B)		(((B)->end+1) & RB_BUFFER_MASK((B)))
 
 /**
  * Check if the ring buffer is empty.
@@ -125,9 +83,14 @@ typedef struct ringbuffer_t{
  * Initializes the ring buffer to it's initial values and zero the buffer.
  * @param buffer The buffer to initialize
  */
-static inline void rb_init(ringbuffer_t* const buffer){
-	buffer->end = buffer->start = 0;
-	memset(buffer->buffer, 0, sizeof(buffer->buffer));
+static inline int rb_init(ringbuffer_t* const rb, uint8_t *buf, size_t size){
+	if (!IS_POW2(size)) return -1;
+
+	rb->buffer = buf;
+	rb->end = rb->start = 0;
+	memset(rb->buffer, 0, sizeof(rb->size));
+
+	return 0;
 }
 
 /**
@@ -138,14 +101,12 @@ static inline void rb_init(ringbuffer_t* const buffer){
  * @param  data   The data point that is added to buffer
  * @return        1 on overflow error and 0 on success
  */
-static inline void rb_push(ringbuffer_t *buffer, RB_DATA_t data) {
-	buffer->buffer[buffer->end] = data;
-	buffer->end = rb_nextEnd(buffer);
-	if (rb_isEmpty(buffer)) {
-		buffer->start = rb_nextStart(buffer);
+static inline void rb_push(ringbuffer_t *rb, uint8_t data) {
+	rb->buffer[rb->end] = data;
+	rb->end = rb_nextEnd(rb);
+	if (rb_isEmpty(rb)) {
+		rb->start = rb_nextStart(rb);
 	}
-
-	//return 0; // Success
 }
 
 /**
@@ -155,19 +116,17 @@ static inline void rb_push(ringbuffer_t *buffer, RB_DATA_t data) {
  * @param  data   pointer where returned byte is stored
  * @return        1 if no data is available and 0 on success
  */
-static inline int rb_pop(ringbuffer_t *buffer, RB_DATA_t *data) {
-	if (rb_isEmpty(buffer)) {
-		return 1; // No data available
-	}
+static inline int rb_pop(ringbuffer_t *rb, uint8_t *data) {
+	if (rb_isEmpty(rb)) return -1; // No data available
 
-	*data = buffer->buffer[buffer->start];
-	buffer->start = rb_nextStart(buffer);
+	*data = rb->buffer[rb->start];
+	rb->start = rb_nextStart(rb);
 
 	return 0; // Success
 }
 
 static inline unsigned rb_used(ringbuffer_t *rb) {
-	return (rb->start > rb->end) ? (rb->start - rb->end) : (RB_BUFFER_SIZE - (rb->end - rb->start));
+	return (rb->start > rb->end) ? (rb->start - rb->end) : (rb->size - (rb->end - rb->start));
 }
 
 /**
@@ -179,12 +138,10 @@ static inline unsigned rb_used(ringbuffer_t *rb) {
  * @param  data   pointer where returned byte is stored
  * @return        1 if no data is available and 0 on success
  */
-static inline int rb_peek(ringbuffer_t *buffer, RB_DATA_t *data) {
-	if (rb_isEmpty(buffer)) {
-		return 1; // No data available
-	}
+static inline int rb_peek(ringbuffer_t *rb, uint8_t *data) {
+	if (rb_isEmpty(rb)) return -1; // No data available
 
-	*data = buffer->buffer[buffer->start];
+	*data = rb->buffer[rb->start];
 	return 0; // Success
 }
 
