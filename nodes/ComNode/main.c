@@ -45,7 +45,7 @@ static void init(void) {
 	rtc_init();
 	ecu_init();
 	xbee_init();
-	log_init();
+	// log_init();
 	sysclock_init();
 
 	init_can_node(COM_NODE);
@@ -63,10 +63,25 @@ int main(void) {
 		while (get_queue_length()) {
 			struct can_message *msg = read_inbox();
 			struct message_detail msg_info = MESSAGE_INFO(msg->index);
+
 			if (msg_info.transport & SD) {
-				uint16_t id_data = msg_info.id;
-				log_append(&id_data, sizeof(id_data));
-				log_append(msg->data, msg_info.len);
+				// log_append(&msg->index, sizeof(msg->index));
+				// log_append(msg->data, msg_info.len);
+			}
+
+			if (msg_info.transport & XBEE) {
+				uint8_t buf[sizeof(msg->index) + msg_info.len];
+				size_t buf_i = 0;
+
+				for (size_t i = 0; i < sizeof(msg->index); i++) {
+					buf[buf_i++] = ((uint8_t*)&msg->index)[i];
+				}
+
+				for (size_t i = 0; i < msg_info.len; i++) {
+					buf[buf_i++] = msg->data[i];
+				}
+
+				xbee_send(buf, sizeof(msg->index) + msg_info.len);
 			}
 
 			can_free(msg);

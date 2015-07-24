@@ -51,6 +51,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bson.h"
 #include "ecu.h"
 
+#define FAULTY_BATTERY_V_SENSOR 0
+
 #define ECU_BAUD    (19200)
 
 #define ECU_HEARTBEAT_ISR_VECT  TIMER0_COMP_vect
@@ -81,6 +83,7 @@ void ecu_parse_package(void) {
 		while (pkt[i].length--) {
 			const uint8_t ecu_byte = fgetc(ecu);
 			if (pkt[i].sensor.id == EMPTY) {
+#if 0
 				// We know these pkts are just zero, if they are not reset
 				if ((i == ARR_LEN(pkt) - 4 || i == 0 || i == 16) && ecu_byte != 0) {
 					// Reset ECU and clear the current corrupt package
@@ -89,6 +92,7 @@ void ecu_parse_package(void) {
 					ecu_init();
 					return;
 				}
+#endif
 				continue;
 			}
 
@@ -150,11 +154,19 @@ void ecu_parse_package(void) {
 			if (transport & CAN) {
 				// CAN sends the id as message id, so it is not needed in the
 				// payload.
+#if FAULTY_BATTERY_V_SENSOR
+				// Hot fix faulty sensor data
+				if (pkt[i].sensor.id == BATTERY_V) {
+					pkt[i].sensor.value = 13.0;
+				}
+#endif
+
 				can_broadcast(tx_id, &pkt[i].sensor.value);
+				_delay_ms(1); // TODO: can lib cant handle burst data so we have this ugly delay hack
 			}
 
 			if (transport & XBEE) xbee_send(buf, ARR_LEN(buf));
-			if (transport & SD) log_append(buf, ARR_LEN(buf));
+			// if (transport & SD) log_append(buf, ARR_LEN(buf));
 		}
 	}
 }
@@ -187,4 +199,3 @@ ISR(ECU_HEARTBEAT_ISR_VECT) {
 	}
 
 }
-

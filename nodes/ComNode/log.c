@@ -84,4 +84,3 @@ int log_append(void *data, size_t n) {
 void log_sync(void) {
 	f_sync(&file);
 }
-
