@@ -50,6 +50,10 @@ enum {
 	GEAR_UP = 1
 };
 
+void start_gearshift(uint8_t gear_request);
+void stop_gearshift(void);
+void gearshift_procedure(uint8_t gear_request);
+
 static volatile uint16_t mesnumber= 0;
 static volatile uint16_t maxCS = 0;
 static volatile uint16_t time_counter = 0;
@@ -58,7 +62,6 @@ static volatile uint16_t poslist [MEASUREMENTS] = {0};
 static volatile uint16_t limit_time = 0;
 static volatile uint8_t on_off = 0;
 volatile uint8_t current_gear = 0;
-volatile uint8_t gear_request = 0;
 
 int maxcounter;
 int numbermess;
@@ -160,79 +163,86 @@ int main(void) {
 			struct can_message *message = read_inbox();
 			//printf("Got id: %d and data: %d\n", MESSAGE_INFO(message->index).id, message->data[0]);
 			if (MESSAGE_INFO(message->index).id == 512)
-				gear_request = message->data[0];
+				gearshift_procedure(message->data[0]);
 			can_free(message);
-		}
-
-		if (gear_request) {
-
-			if (gear_request & PADDLE_UP){
-				IGNITION_CUT();
-				shift_gear(GEAR_UP);
-				gear_shift_dir = UP;
-				if (current_gear < 6)
-					++current_gear;
-			}
-			else if(gear_request & PADDLE_DOWN){
-				IGNITION_CUT();
-				shift_gear(GEAR_DOWN);
-				gear_shift_dir = DOWN;
-				if (current_gear > 1)
-					--current_gear;
-			}
-
-			gear_request = 0;
-
-			// Before starting measurements we have a small delay. Not for any
-			// testable reason, but it takes a while before the motor starts
-			// moving. This delay can probably be increased as it takes a while
-			// before we get any usable data.
-			_delay_us(100);
-
-			// Done being set to 1 indicates that the motor is deactivated and
-			// it's done changing gear.
-			done = 0;
-
-			// counts the number of times that the ampere reaches a set maximum.
-			maxcounter = 0;
-
-			// The timer interrupt only does something when on_off = 1;
-			on_off = 1;
-
-			// counts number of measurements executed.
-			mesnumber= 0;
-		}
-
-		if (mesnumber == MEASUREMENTS) {
-			IGNITION_UNCUT();
-			on_off = 0;
-			dewalt_kill();
-
-			int i;
-			for (i = 0; i < MEASUREMENTS; i++) {
-				cslist[i] = 0;
-			}
-
-			// prints out the position meter data.
-			for (i = 0; i < MEASUREMENTS; i++) {
-				poslist[i] = 0;
-			}
-
-			// prints out diagnosis pins
-			//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
-
-			mesnumber = 0;
-
-			if (real_gear_pos) {
-				current_gear = real_gear_pos;
-			}
-
-			real_gear_pos = 0;
-
-			uint8_t msg[1] = {current_gear};
-			can_broadcast(CURRENT_GEAR, msg);
 		}
 	}
 
 	return 0;
+}
+
+void gearshift_procedure(uint8_t gear_request) {
+	start_gearshift(gear_request);
+
+	while(mesnumber != MEASUREMENTS);
+
+	stop_gearshift();
+}
+
+void start_gearshift(uint8_t gear_request) {
+	if (gear_request & PADDLE_UP){
+		IGNITION_CUT();
+		shift_gear(GEAR_UP);
+		gear_shift_dir = UP;
+		if (current_gear < 6)
+			++current_gear;
+	}
+	else if(gear_request & PADDLE_DOWN){
+		IGNITION_CUT();
+		shift_gear(GEAR_DOWN);
+		gear_shift_dir = DOWN;
+		if (current_gear > 1)
+			--current_gear;
+	}
+
+	gear_request = 0;
+
+	// Before starting measurements we have a small delay. Not for any
+	// testable reason, but it takes a while before the motor starts
+	// moving. This delay can probably be increased as it takes a while
+	// before we get any usable data.
+	_delay_ms(1);
+
+	// Done being set to 1 indicates that the motor is deactivated and
+	// it's done changing gear.
+	done = 0;
+
+	// counts the number of times that the ampere reaches a set maximum.
+	maxcounter = 0;
+
+	// The timer interrupt only does something when on_off = 1;
+	on_off = 1;
+
+	// counts number of measurements executed.
+	mesnumber= 0;
+}
+
+void stop_gearshift() {
+	IGNITION_UNCUT();
+	on_off = 0;
+	dewalt_kill();
+
+	int i;
+	for (i = 0; i < MEASUREMENTS; i++) {
+		cslist[i] = 0;
+	}
+
+	// prints out the position meter data.
+	for (i = 0; i < MEASUREMENTS; i++) {
+		poslist[i] = 0;
+	}
+
+	// prints out diagnosis pins
+	//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
+
+	mesnumber = 0;
+
+	if (real_gear_pos) {
+		current_gear = real_gear_pos;
+	}
+
+	real_gear_pos = 0;
+
+	uint8_t msg[1] = {current_gear};
+	can_broadcast(CURRENT_GEAR, msg);
 }

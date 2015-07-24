@@ -21,35 +21,23 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
-#include <stdint.h>
-#include <stdio.h>
-#include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <util/delay.h>
-#include <string.h>
-#include <can_transport.h>
+#include <avr/interrupt.h>
+
 #include <usart.h>
-#include "sysclock.h"
 
 
 static void init(void) {
-	usart1_init(115200);
-	sysclock_init();
-	init_can_node(TEST_NODE);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }
 
+
 int main(void) {
 	init();
 
-	while (1) {
-		uint8_t node_id = TEST_NODE;
-		can_broadcast(HEARTBEAT, &node_id);
-		_delay_ms(30);
-	}
+	while (1);
 
 	return 0;
 }

@@ -26,8 +26,8 @@ set(CTUNING "-fpack-struct -fshort-enums -funsigned-bitfields -funsigned-char ${
 
 set(COPT "-Os")
 
-#-Wl,-u,vfprintf -lprintf_flt
-set(FLOAT_PRINT "-Wl,-u,vfprintf -lprintf_flt")
+set(FLOAT_PRINT "-Wl,-u,vfprintf -lprintf_flt") # TODO: This should be an optional flag
+
 add_definitions(-DF_CPU=${F_CPU} -DCAN_BAUDRATE=${CAN_BAUDRATE})
 set(CFLAGS "${CMCU} ${CINCS} ${CSTANDARD} ${CDEBUG} ${CWARN} ${CTUNING} ${COPT} ${CEXTRA} ${FLOAT_PRINT}")
 

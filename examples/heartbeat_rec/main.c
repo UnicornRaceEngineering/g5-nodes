@@ -45,7 +45,7 @@ uint32_t last_heartbeat[N_NODES] = {0};
 static void init(void) {
 	usart1_init(115200);
 	sysclock_init();
-	init_can_node(COM_NODE);
+	init_can_node(SPY_NODE);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
