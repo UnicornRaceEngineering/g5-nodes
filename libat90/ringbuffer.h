@@ -166,6 +166,10 @@ static inline int rb_pop(ringbuffer_t *buffer, RB_DATA_t *data) {
 	return 0; // Success
 }
 
+static inline unsigned rb_used(ringbuffer_t *rb) {
+	return (rb->start > rb->end) ? (rb->start - rb->end) : (RB_BUFFER_SIZE - (rb->end - rb->start));
+}
+
 /**
  * @brief
  * Get the next byte in the ring buffer without removing it from the buffer.

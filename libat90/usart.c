@@ -196,6 +196,14 @@ int usart0_putc(char c, FILE *stream) {
 	return 0;
 }
 
+unsigned usart0_recv_size(void) {
+	return rb_used((ringbuffer_t*)&usart0_inBuff);
+}
+
+unsigned usart0_send_size(void) {
+	return rb_used((ringbuffer_t*)&usart0_outBuff);
+}
+
 ISR(USART0_RX_vect){
 	uint8_t data = UDR0;
 	//!< @TODO should we not check if the rb is full here!?
@@ -316,6 +324,14 @@ int usart1_putc(char c, FILE *stream) {
 	return 0;
 }
 
+unsigned usart1_recv_size(void) {
+	return rb_used((ringbuffer_t*)&usart1_inBuff);
+}
+
+unsigned usart1_send_size(void) {
+	return rb_used((ringbuffer_t*)&usart1_outBuff);
+}
+
 ISR(USART1_RX_vect){
 	uint8_t data = UDR1;
 	rb_push((ringbuffer_t*)&usart1_inBuff, data);
@@ -333,4 +349,3 @@ ISR(USART1_UDRE_vect){
 
 #endif /* NO_USART1_SUPPORT */
 /** @} */
-

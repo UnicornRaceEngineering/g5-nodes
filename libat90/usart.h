@@ -97,6 +97,9 @@ enum usart_operationModes_t {
 	int usart0_putbyte(char c, FILE *stream);
 	int usart0_putc(char c, FILE *stream);
 
+	unsigned usart0_recv_size(void);
+	unsigned usart0_send_size(void);
+
 	extern FILE usart0_io;
 	extern FILE usart0_byte_output;
 #endif
@@ -146,6 +149,9 @@ enum usart_operationModes_t {
 	int usart1_getc(FILE *stream);
 	int usart1_putbyte(char b, FILE *stream);
 	int usart1_putc(char c, FILE *stream);
+
+	unsigned usart1_recv_size(void);
+	unsigned usart1_send_size(void);
 
 	extern FILE usart1_io;
 	extern FILE usart1_byte_output;
