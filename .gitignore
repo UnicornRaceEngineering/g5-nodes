@@ -39,3 +39,7 @@ build/*
 #ignore dot-folders / files
 .*
 !/.gitignore # but not the .gitignore file
+
+
+# ctag generated tags
+tags
