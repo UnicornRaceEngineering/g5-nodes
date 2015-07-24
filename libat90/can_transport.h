@@ -48,6 +48,5 @@ struct can_message* read_inbox(void);
 uint8_t get_queue_length(void);
 void can_free(struct can_message*);
 void * can_malloc(uint8_t size);
-void can_cleanup(void);
 
 #endif /* CAN_TRANSPORT_H */

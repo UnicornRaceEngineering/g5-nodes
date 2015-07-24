@@ -135,7 +135,3 @@ void can_free(struct can_message* message) {
 void * can_malloc(uint8_t size) {
 	return smalloc(size);
 }
-
-void can_cleanup() {
-	mob_cleanup(get_tick());
-}
