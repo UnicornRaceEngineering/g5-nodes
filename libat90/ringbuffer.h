@@ -87,6 +87,8 @@ static inline int rb_init(ringbuffer_t* const rb, uint8_t *buf, size_t size){
 	if (!IS_POW2(size)) return -1;
 
 	rb->buffer = buf;
+	rb->size = size;
+
 	rb->end = rb->start = 0;
 	memset(rb->buffer, 0, sizeof(rb->size));
 
