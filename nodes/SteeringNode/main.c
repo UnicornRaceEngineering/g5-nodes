@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h> // memset()
 
 #include <avr/interrupt.h>
@@ -152,27 +153,28 @@ int main(void) {
 	while (1) {
 		// Main work loop
 
-		while (get_queue_length()) {
-			struct can_message *msg = read_inbox();
-			switch (msg->index) {
+
+		while (can_has_data()) {
+			struct can_message msg = read_inbox();
+			void* data = &msg.data[0];
+			switch (msg.id) {
 				case CURRENT_GEAR:
-					fstate.gear = *(uint8_t*)msg->data;
+					fstate.gear = *(uint8_t*)msg.data;
 					display_gear(fstate.gear);
 					break;
 				case ECU_PKT + RPM:
-					fstate.rpm = (int16_t)*(float*)msg->data;
+					fstate.rpm = (int16_t)*(float*)data;
 					set_rpm(fstate.rpm);
 					break;
 				case ECU_PKT + BATTERY_V:
-					fstate.battery_volt = *(float*)msg->data;
+					fstate.battery_volt = *(float*)data;
 					update_warning_light(WARN_BATTERY_VOLT_LED, fstate.battery_volt);
 					break;
 				case ECU_PKT + WATER_TEMP:
-					fstate.water_temp = *(float*)msg->data;
+					fstate.water_temp = *(float*)data;
 					update_warning_light(WARN_WATER_TEMP_LED, fstate.water_temp);
 					break;
 			}
-			can_free(msg);
 		}
 
 		// First lets store the current status of the paddleshifters

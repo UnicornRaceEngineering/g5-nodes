@@ -23,15 +23,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 
+#include <can.h>
 #include <usart.h>
 #include <can_transport.h>
 
 
-void read_message(struct can_message *message);
+void read_msg(struct can_message message);
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
@@ -54,10 +56,11 @@ int main(void) {
 	init();
 
 	while (1) {
-		while(get_queue_length()) {
-			struct can_message *message = read_inbox();
-			read_message(message);
-			can_free(message);
+		while(can_has_data()) {
+			read_inbox();
+			printf("recieved: %d error: %d\n", get_counter(RX_COMP), get_counter(TOTAL_ERR));
+			//struct can_message message = read_inbox();
+			//read_msg(message);
 		}
 	}
 
@@ -65,22 +68,13 @@ int main(void) {
 }
 
 
-void read_message(struct can_message *msg) {
-	const uint8_t len = MESSAGE_INFO(msg->index).len;
-	const uint16_t id  = MESSAGE_INFO(msg->index).id;
-
-	float fdata = 0;
-	if (len >= 4) {
-		fdata = (float)*(float*)msg->data;
-	}
+void read_msg(struct can_message msg) {
+	const uint8_t len = MESSAGE_INFO(msg.id).len;
+	const uint16_t id  = MESSAGE_INFO(msg.id).can_id;
 
 	printf("MSG:%4d  Got id: %4d and length: %1d\t", msg_num++, id, len);
 	for (uint8_t i = 0; i < len; ++i) {
-		printf("%3d; 0x%02x  |  ", msg->data[i], msg->data[i]);
-	}
-
-	if (len >= 4) {
-		printf("\tas float: %10.3f", (double)fdata);
+		printf("%3d; 0x%02x  |  ", msg.data[i], msg.data[i]);
 	}
 	printf("\n");
 }

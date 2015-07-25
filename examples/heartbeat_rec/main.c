@@ -28,14 +28,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <string.h>
+#include <stdbool.h>
 #include <can_transport.h>
 #include <usart.h>
 #include "sysclock.h"
+#include <can.h>
 
 #define HEARTBEAT_TIMEOUT 100
 
 
-void handle_heartbeat(struct can_message *msg);
+void handle_heartbeat(struct can_message msg);
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
@@ -56,24 +58,15 @@ static void init(void) {
 int main(void) {
 	init();
 
+
 	while (1) {
-		while (get_queue_length()) {
-			struct can_message *msg = read_inbox();
-			struct message_detail msg_info = MESSAGE_INFO(msg->index);
+		while (can_has_data()) {
+			struct can_message msg = read_inbox();
 
-			uint16_t index = 0;
-			do {
-				if (MESSAGE_INFO(index).id == msg_info.id) {
-					break;
-				}
-			} while(++index < END_OF_LIST);
-
-			switch(index) {
+			switch(msg.id) {
 				case HEARTBEAT: handle_heartbeat(msg); break;
 				default: break;
 			}
-
-			can_free(msg);
 		}
 
 		for (uint8_t i = 0; i < N_NODES; ++i) {
@@ -83,6 +76,7 @@ int main(void) {
 					printf("node %d is unreachable\n", i);
 				}
 			}
+
 		}
 	}
 
@@ -90,8 +84,8 @@ int main(void) {
 }
 
 
-void handle_heartbeat(struct can_message *msg) {
-	uint8_t node_id = msg->data[0];
+void handle_heartbeat(struct can_message msg) {
+	uint8_t node_id = msg.data[0];
 
 	last_heartbeat[node_id] = get_tick();
 	if (!node_state[node_id]) {

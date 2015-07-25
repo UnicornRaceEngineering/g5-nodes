@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
@@ -100,10 +101,8 @@ int main(void) {
 	init();
 
 	while (1) {
-		while (get_queue_length()) {
-			struct can_message *msg = read_inbox();
-
-			can_free(msg);
+		while (can_has_data()) {
+			read_inbox();
 		}
 
 		wheel_speed(FRONT_LEFT_WHEEL_SPEED);

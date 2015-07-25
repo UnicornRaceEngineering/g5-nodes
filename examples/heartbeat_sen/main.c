@@ -48,7 +48,7 @@ int main(void) {
 	init();
 
 	while (1) {
-		uint8_t node_id = TEST_NODE;
+		uint8_t node_id = 7;//TEST_NODE;
 		can_broadcast(HEARTBEAT, &node_id);
 		_delay_ms(30);
 	}

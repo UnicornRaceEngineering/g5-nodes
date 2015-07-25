@@ -58,11 +58,13 @@ int main(void) {
 	// Main work loop
 	while(1){
 		if (gps_get_fix(&fix) == 0 ) {
+#if 0
 			float dd = GPS_DMS_TO_DD(&(fix.latitude));
 			uint8_t *dd_ptr = (uint8_t*)&dd; // We need a pointer to the float
 											 // to split it up into 4 bytes
 
-			uint8_t *data = (uint8_t*)can_malloc(13);
+			uint8_t data[13];
+
 			data[0] = 1;
 			data[1] = *(dd_ptr + 0);
 			data[2] = *(dd_ptr + 1);
@@ -79,8 +81,7 @@ int main(void) {
 			data[10] = *(dd_ptr + 3);
 			data[11] = HIGH_BYTE(fix.speed);
 			data[12] = LOW_BYTE(fix.speed);
-
-			can_broadcast(GPS_DATA, &data[0]);
+#endif
 		}
 	}
 

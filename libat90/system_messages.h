@@ -106,66 +106,66 @@ enum medium {
 
 
 struct message_detail {
-	const uint16_t id; // Should this be CAN_id?
+	const uint16_t can_id; // Should this be CAN_id?
 	const uint8_t len;
 	const uint8_t transport;
 };
 
 
 #define MESSAGE_INFO(type) ((const struct message_detail []) { \
-	[TRANSPORT_TEST_SHORT]         = { .id =   1,    .len =  6,    .transport = 0 | CAN             }, \
-	[TRANSPORT_TEST_LONG]          = { .id =   2,    .len = 27,    .transport = 0 | CAN             }, \
-	[TIME_SYNC]                    = { .id =   3,    .len =  4,    .transport = 0 | CAN             }, \
+	[TRANSPORT_TEST_SHORT]         = { .can_id =   1,    .len =  6,    .transport = 0 | CAN             }, \
+	[TRANSPORT_TEST_LONG]          = { .can_id =   2,    .len = 27,    .transport = 0 | CAN             }, \
+	[TIME_SYNC]                    = { .can_id =   3,    .len =  4,    .transport = 0 | CAN             }, \
 	\
-	[ECU_PKT + EMPTY]              = { .id = 257,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + FUEL_PRESSURE]      = { .id = 258,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_LAP_COUNT]   = { .id = 259,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_INJ_SUM]     = { .id = 260,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + LAST_GEAR_SHIFT]    = { .id = 261,    .len =  4,    .transport = 0 |      XBEE       }, \
-	[ECU_PKT + MOTOR_OILTEMP]      = { .id = 262,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + OIL_PRESSURE]       = { .id = 263,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_TIME]        = { .id = 264,    .len =  4,    .transport = 0 |              SD }, \
-	[ECU_PKT + STATUS_LAP_TIME]    = { .id = 265,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + GEAR_OIL_TEMP]      = { .id = 266,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_TRACTION]    = { .id = 267,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_GAS]         = { .id = 268,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_LAMBDA_V2]   = { .id = 269,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_CAM_TRIG_P1] = { .id = 270,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_CAM_TRIG_P2] = { .id = 271,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + STATUS_CHOKER_ADD]  = { .id = 272,    .len =  4,    .transport = 0 | CAN | XBEE      }, \
-	[ECU_PKT + STATUS_LAMBDA_PWM]  = { .id = 273,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + WATER_TEMP]         = { .id = 274,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
-	[ECU_PKT + MANIFOLD_AIR_TEMP]  = { .id = 275,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + SPEEDER_POTMETER]   = { .id = 276,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + RPM]                = { .id = 277,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
-	[ECU_PKT + TRIGGER_ERR]        = { .id = 278,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + CAM_ANGLE1]         = { .id = 279,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + CAM_ANGLE2]         = { .id = 280,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + ROAD_SPEED]         = { .id = 281,    .len =  4,    .transport = 0       | XBEE | SD }, /* Check if this contains any data */ \
-	[ECU_PKT + MAP_SENSOR]         = { .id = 282,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + BATTERY_V]          = { .id = 283,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
-	[ECU_PKT + LAMBDA_V]           = { .id = 284,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + LOAD]               = { .id = 285,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + INJECTOR_TIME]      = { .id = 286,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + IGNITION_TIME]      = { .id = 287,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + DWELL_TIME]         = { .id = 288,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + GX]                 = { .id = 289,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + GY]                 = { .id = 290,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + GZ]                 = { .id = 291,    .len =  4,    .transport = 0       | XBEE | SD }, \
-	[ECU_PKT + MOTOR_FLAGS]        = { .id = 292,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + OUT_BITS]           = { .id = 293,    .len =  4,    .transport = 0                   }, \
-	[ECU_PKT + TIME]               = { .id = 294,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + EMPTY]              = { .can_id = 257,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + FUEL_PRESSURE]      = { .can_id = 258,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAP_COUNT]   = { .can_id = 259,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_INJ_SUM]     = { .can_id = 260,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + LAST_GEAR_SHIFT]    = { .can_id = 261,    .len =  4,    .transport = 0 |      XBEE       }, \
+	[ECU_PKT + MOTOR_OILTEMP]      = { .can_id = 262,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + OIL_PRESSURE]       = { .can_id = 263,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_TIME]        = { .can_id = 264,    .len =  4,    .transport = 0 |              SD }, \
+	[ECU_PKT + STATUS_LAP_TIME]    = { .can_id = 265,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + GEAR_OIL_TEMP]      = { .can_id = 266,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_TRACTION]    = { .can_id = 267,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_GAS]         = { .can_id = 268,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_LAMBDA_V2]   = { .can_id = 269,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CAM_TRIG_P1] = { .can_id = 270,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CAM_TRIG_P2] = { .can_id = 271,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + STATUS_CHOKER_ADD]  = { .can_id = 272,    .len =  4,    .transport = 0 | CAN | XBEE      }, \
+	[ECU_PKT + STATUS_LAMBDA_PWM]  = { .can_id = 273,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + WATER_TEMP]         = { .can_id = 274,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + MANIFOLD_AIR_TEMP]  = { .can_id = 275,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + SPEEDER_POTMETER]   = { .can_id = 276,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + RPM]                = { .can_id = 277,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + TRIGGER_ERR]        = { .can_id = 278,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + CAM_ANGLE1]         = { .can_id = 279,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + CAM_ANGLE2]         = { .can_id = 280,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + ROAD_SPEED]         = { .can_id = 281,    .len =  4,    .transport = 0       | XBEE | SD }, /* Check if this contains any data */ \
+	[ECU_PKT + MAP_SENSOR]         = { .can_id = 282,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + BATTERY_V]          = { .can_id = 283,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[ECU_PKT + LAMBDA_V]           = { .can_id = 284,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + LOAD]               = { .can_id = 285,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + INJECTOR_TIME]      = { .can_id = 286,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + IGNITION_TIME]      = { .can_id = 287,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + DWELL_TIME]         = { .can_id = 288,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + GX]                 = { .can_id = 289,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + GY]                 = { .can_id = 290,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + GZ]                 = { .can_id = 291,    .len =  4,    .transport = 0       | XBEE | SD }, \
+	[ECU_PKT + MOTOR_FLAGS]        = { .can_id = 292,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + OUT_BITS]           = { .can_id = 293,    .len =  4,    .transport = 0                   }, \
+	[ECU_PKT + TIME]               = { .can_id = 294,    .len =  4,    .transport = 0                   }, \
 	\
-	[GPS_DATA]                     = { .id = 295,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
-	[HEARTBEAT]                    = { .id = 296,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
-	[NODE_STATUS]                  = { .id = 297,    .len =  2,    .transport = 0       | XBEE | SD }, \
-	[PADDLE_STATUS]                = { .id = 512,    .len =  1,    .transport = 0 | CAN             }, \
-	[CURRENT_GEAR]                 = { .id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
-	[NEUTRAL_ENABLED]              = { .id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
-	[FRONT_RIGHT_WHEEL_SPEED]      = { .id = 800,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
-	[FRONT_LEFT_WHEEL_SPEED]       = { .id = 801,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[GPS_DATA]                     = { .can_id = 295,    .len = 13,    .transport = 0 | CAN | XBEE | SD }, \
+	[HEARTBEAT]                    = { .can_id = 296,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[NODE_STATUS]                  = { .can_id = 297,    .len =  2,    .transport = 0       | XBEE | SD }, \
+	[PADDLE_STATUS]                = { .can_id = 512,    .len =  1,    .transport = 0 | CAN             }, \
+	[CURRENT_GEAR]                 = { .can_id = 768,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[NEUTRAL_ENABLED]              = { .can_id = 769,    .len =  1,    .transport = 0 | CAN | XBEE | SD }, \
+	[FRONT_RIGHT_WHEEL_SPEED]      = { .can_id = 800,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
+	[FRONT_LEFT_WHEEL_SPEED]       = { .can_id = 801,    .len =  4,    .transport = 0 | CAN | XBEE | SD }, \
 	\
-	[END_OF_LIST]                  = { .id =   0,    .len =  0,    .transport = 0                   }, \
+	[END_OF_LIST]                  = { .can_id =   0,    .len =  0,    .transport = 0                   }, \
 }[type])
 
 #endif /* SYSTEM_MESSAGES_H */

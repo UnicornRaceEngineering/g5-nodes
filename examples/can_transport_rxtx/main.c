@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>
 #include <heap.h>
 #include <sysclock.h>
+#include <stdbool.h>
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
@@ -56,30 +57,17 @@ int main(void) {
 		err = can_broadcast(TRANSPORT_TEST_SHORT, msg);
 		if (err) printf("err: %d\n",  err);
 		_delay_ms(100);
-
-		// Sending a long message (4 frames)
-		uint8_t *storage = (uint8_t*)smalloc(27);
-		if (storage) {
-			char str[27] = "HAS anyone really been far\n";
-			strncpy((char*)&storage[0], str, 27);
-			err = can_broadcast(TRANSPORT_TEST_LONG, storage);
-			if (err)
-				printf("err: %d\n",  err);
-		}
-		_delay_ms(1000);
 #else
 		// recieving
-		while(get_queue_length()) {
-			struct can_message *message = read_inbox();
-			printf("message of id %4d and length %3d : ", MESSAGE_INFO(message->index).id, MESSAGE_INFO(message->index).len);
-			for (int i = 0; i < MESSAGE_INFO(message->index).len; ++i)
-				putchar(message->data[i]);
-			can_free(message);
+		while(can_has_data()) {
+			struct can_message message = read_inbox();
+			printf("message of id %4d and length %3d : ", MESSAGE_INFO(message.id).can_id, MESSAGE_INFO(message.id).len);
+			for (int i = 0; i < MESSAGE_INFO(message.id).len; ++i)
+				putchar(message.data[i]);
 		}
 		putchar('\n');
 		_delay_ms(1000);
 #endif
-		can_cleanup();
 	}
 
 	return 0;

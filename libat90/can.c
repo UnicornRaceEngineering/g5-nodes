@@ -34,12 +34,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <util/atomic.h>
+#include <stdbool.h>
+
 #include "utils.h"
-#include "heap.h"
 #include "can_baud.h"
 #include "can.h"
-#include "sysclock.h"
-#include <util/delay.h>
+#include "ringbuffer.h"
 
 
 //_____ D E F I N I T I O N S __________________________________________________
@@ -56,17 +56,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define DLC_MSK         ( (1<<DLC3)|(1<<DLC2)|(1<<DLC1)|(1<<DLC0)   ) //!< Mask for Data Length Coding bits in CANCDMOB
 #define MOB_CONMOB_MSK  ( (1 << CONMOB1) | (1 << CONMOB0)           ) //!< Mask for Configuration MOB bits in CANCDMOB
-
-// Number of message allowed between every control message.
-// This function is currently not fully implemented and tested.
-#define MAX_BLOCK_SIZE 15
-
-
-enum FC_flag {
-	CLEAR_TO_SEND = 0,
-	WAIT =          1,
-	ABORT =         2
-};
 
 /**
 * @brief
@@ -207,11 +196,12 @@ enum mob_status_t {
 
 static inline int8_t find_me_a_mob(void);
 static inline void enable_spy_mob(uint8_t mob);
-static uint8_t receive_frame(uint8_t mob);
+static void receive_frame(uint8_t mob);
 static void reset_counters(void);
+void read_message(uint16_t *id, uint8_t *len, uint8_t *data);
+bool inbox_empty(void);
 
 static volatile uint16_t mob_on_job;
-static canrec_callback_t canrec_callback = 0;
 static volatile can_filter_t filter1, filter2;
 
 static volatile uint16_t dlcw_err;
@@ -227,11 +217,6 @@ static volatile uint16_t alloc_err;
 
 
 //______________________________________________________________________________
-
-void set_canrec_callback(canrec_callback_t callback) {
-	canrec_callback = callback;
-}
-
 
 static void reset_counters() {
 	dlcw_err  = 0;
@@ -263,8 +248,12 @@ uint16_t get_counter(enum can_counters counter) {
 	}
 }
 
-#include <stdio.h>
+uint8_t buff[64];
+volatile ringbuffer_t rb;
+
 void can_init(can_filter_t fil1, can_filter_t fil2) {
+	rb_init((ringbuffer_t*)&rb, buff, 64);
+
 	CAN_RESET();
 	reset_counters();
 
@@ -312,22 +301,22 @@ void can_init(can_filter_t fil1, can_filter_t fil2) {
 }
 
 
-uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg) {
+uint8_t can_send(const uint16_t id, const uint8_t len, const uint8_t* msg) {
 
 	int8_t mob = find_me_a_mob();
 	if (mob == -1) {
 		return NO_MOB_ERR;
 	}
 
-	uint8_t data[8] = {0};
-	for (uint8_t i = 0; i < len; ++i)
-		data[i] = msg[i];
-
 	BIT_SET(mob_on_job, mob);
 	CAN_SET_MOB(mob);
 	MOB_SET_STD_ID(id);
 	MOB_SET_DLC(len);
-	MOB_TX_DATA(data);
+
+	for (uint8_t i = 0; i < len; ++i) {
+		CANMSG = msg[i];
+	}
+
 	MOB_EN_TX();
 	CAN_ENABLE_MOB_INTERRUPT(mob);
 	return SUCCES;
@@ -354,29 +343,50 @@ static inline void enable_spy_mob(uint8_t mob) {
 }
 
 
-static uint8_t receive_frame(uint8_t mob) {
-	uint8_t msg[8];
-	MOB_RX_DATA(msg);
+static void receive_frame(uint8_t mob) {
 
-	uint16_t len = MOB_GET_DLC();
-	uint16_t id = MOB_GET_STD_ID();
-	uint8_t *data = (uint8_t*)smalloc(len);
-	if (!data) {
-		return ALLOC_ERR;
+	const uint16_t id = MOB_GET_STD_ID();
+	const uint8_t len = MOB_GET_DLC();
+
+	if (rb_left((ringbuffer_t*)&rb) > (3 + len)) {
+		rb_push((ringbuffer_t*)&rb, HIGH_BYTE(id));
+		rb_push((ringbuffer_t*)&rb, LOW_BYTE(id));
+		rb_push((ringbuffer_t*)&rb, len);
+		for (uint8_t i = 0; i < len; ++i) {
+			rb_push((ringbuffer_t*)&rb, CANMSG);
+		}
+
+		CAN_ENABLE_MOB_INTERRUPT(mob);
+		MOB_EN_RX();
+		++rx_comp;
+	} else {
+		CAN_ENABLE_MOB_INTERRUPT(mob);
+		MOB_EN_RX();
+		++alloc_err;
 	}
+}
 
-	for (uint8_t i = 0; i < len; i++)
-		data[i] = msg[i + 1];
 
-	uint8_t err = (*canrec_callback)(id, (uint8_t*)&data[0]);
-	if (err) {
-		sfree((void *) data);
-		return err;
+void read_message(uint16_t* id, uint8_t* len, uint8_t* data) {
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		if (!inbox_empty()) {
+			uint8_t c;
+			rb_pop((ringbuffer_t*)&rb, &c);
+			*id = c << 8;
+			rb_pop((ringbuffer_t*)&rb, &c);
+			*id += c;
+			rb_pop((ringbuffer_t*)&rb, len);
+
+			for (uint8_t i = 0; i < *len; ++i) {
+				rb_pop((ringbuffer_t*)&rb, &data[i]);
+			}
+		}
 	}
+}
 
-	CAN_ENABLE_MOB_INTERRUPT(mob);
-	MOB_EN_RX();
-	return SUCCES;
+
+bool inbox_empty() {
+	return (rb_left((ringbuffer_t*)&rb) < 63) ? false : true;
 }
 
 
@@ -392,8 +402,6 @@ ISR (CANIT_vect) {
 			case MOB_RX_COMPLETED_DLCW:
 				++dlcw_err;
 			case MOB_RX_COMPLETED:
-				++rx_comp;
-
 				// Run through filter, and return if ID not in ranges.
 				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
 					uint16_t id = MOB_GET_STD_ID();
@@ -406,18 +414,7 @@ ISR (CANIT_vect) {
 					}
 				}
 
-				// Receive a frame and deal with errors if necessary.
-				uint8_t err = receive_frame(mob);
-				if (err) {
-					if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
-						CAN_ENABLE_MOB_INTERRUPT(mob);
-						MOB_EN_RX();
-					}
-
-					if (err == ALLOC_ERR) {
-						++alloc_err;
-					}
-				}
+				receive_frame(mob);
 				break;
 
 			case MOB_TX_COMPLETED:

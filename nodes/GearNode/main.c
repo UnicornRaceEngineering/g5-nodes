@@ -130,19 +130,17 @@ int main(void) {
 	while (1) {
 
 		bool has_changed_gear = false; // We dont want two gear in a row
-		while (get_queue_length()) {
-			struct can_message *message = read_inbox();
+		while (can_has_data()) {
+			struct can_message message = read_inbox();
 
-			if (message->index == PADDLE_STATUS && !has_changed_gear) {
-				gearshift_procedure(message->data[0]);
+			if (message.id == PADDLE_STATUS && !has_changed_gear) {
+				gearshift_procedure(message.data[0]);
 				has_changed_gear = true;
 			}
 
-			if (message->index == NEUTRAL_ENABLED) {
-				neutral_button = message->data[0];
+			if (message.id == NEUTRAL_ENABLED) {
+				neutral_button = message.data[0];
 			}
-
-			can_free(message);
 		}
 
 		// As long as the gear is in neutral state the GearNode will broadcast

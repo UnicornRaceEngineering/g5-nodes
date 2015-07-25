@@ -30,23 +30,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_TRANSPORT_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
 #include "system_messages.h"
 
 
 struct can_message {
-	uint16_t index;
-	uint8_t *data;
-
-	struct can_message *older_message;
-	struct can_message *newer_message;
+	uint16_t id;
+	uint8_t len;
+	uint8_t data[8];
 };
 
 
 void init_can_node(const enum node_id id);
 uint8_t can_broadcast(const enum message_id receiver, void * const data);
-struct can_message* read_inbox(void);
-uint8_t get_queue_length(void);
-void can_free(struct can_message*);
-void * can_malloc(uint8_t size);
+struct can_message read_inbox(void);
+bool can_has_data(void);
 
 #endif /* CAN_TRANSPORT_H */

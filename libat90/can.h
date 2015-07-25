@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * Interrupt callback function pointer for can receive interrupt.
@@ -41,8 +42,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @param len	Length of incomming message.
  * @param *msg	Pointer to message on the heap.
  */
-
-typedef uint8_t (*canrec_callback_t)(uint16_t id, uint8_t *msg);
 
 typedef struct can_filter_t {
 	uint16_t lower_bound;
@@ -67,8 +66,9 @@ enum can_counters{
 
 
 void can_init(can_filter_t, can_filter_t);
-uint8_t can_send(const uint16_t id, const uint16_t len, const uint8_t* msg);
-void set_canrec_callback(canrec_callback_t callback);
+uint8_t can_send(const uint16_t id, const uint8_t len, const uint8_t* msg);
 uint16_t get_counter(enum can_counters counter);
+void read_message(uint16_t *id, uint8_t *len, uint8_t *data);
+bool inbox_empty(void);
 
 #endif /* CAN_H */

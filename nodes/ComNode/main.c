@@ -40,6 +40,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <sysclock.h>
 #include <system_messages.h>
+#include <stdbool.h>
 
 static void init(void) {
 	rtc_init();
@@ -60,31 +61,30 @@ int main(void) {
 	while(1){
 		// Main work loop
 
-		while (get_queue_length()) {
-			struct can_message *msg = read_inbox();
-			struct message_detail msg_info = MESSAGE_INFO(msg->index);
+		while (can_has_data()) {
+			struct can_message msg = read_inbox();
+			//struct message_detail msg_info = MESSAGE_INFO(msg.id);
+			const uint8_t transport = MESSAGE_INFO(msg.id).transport;
 
-			if (msg_info.transport & SD) {
-				// log_append(&msg->index, sizeof(msg->index));
-				// log_append(msg->data, msg_info.len);
+			if (transport & SD) {
+				// log_append(&msg->index, sizeof(msg.id));
+				// log_append(msg->data, len);
 			}
 
-			if (msg_info.transport & XBEE) {
-				uint8_t buf[sizeof(msg->index) + msg_info.len];
+			if (transport & XBEE) {
+				uint8_t buf[sizeof(msg.id) + msg.len];
 				size_t buf_i = 0;
 
-				for (size_t i = 0; i < sizeof(msg->index); i++) {
-					buf[buf_i++] = ((uint8_t*)&msg->index)[i];
+				for (size_t i = 0; i < sizeof(msg.id); i++) {
+					buf[buf_i++] = ((uint8_t*)&msg.id)[i];
 				}
 
-				for (size_t i = 0; i < msg_info.len; i++) {
-					buf[buf_i++] = msg->data[i];
+				for (size_t i = 0; i < msg.len; i++) {
+					buf[buf_i++] = msg.data[i];
 				}
 
-				xbee_send(buf, sizeof(msg->index) + msg_info.len);
+				xbee_send(buf, sizeof(msg.id) + msg.len);
 			}
-
-			can_free(msg);
 		}
 
 		ecu_parse_package();

@@ -31,18 +31,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <stdint.h>
-#include "heap.h"
+#include <stdbool.h>
+
 #include "can.h"
 #include "can_transport.h"
 #include "system_messages.h"
-#include "sysclock.h"
 
-
-static struct can_message *oldest_message;
-static struct can_message *newest_message;
-static volatile uint8_t queue_length;
-
-static uint8_t rx_complete(uint16_t id, uint8_t *msg);
 
 /**
  * Initializes the node so it is ready to communicate on the network
@@ -51,13 +45,6 @@ static uint8_t rx_complete(uint16_t id, uint8_t *msg);
  * @return    A pointer to the node handle
  */
 void init_can_node(enum node_id node) {
-	init_heap();
-	oldest_message = 0;
-	newest_message = 0;
-	queue_length = 0;
-
-	set_canrec_callback(rx_complete);
-
 	can_filter_t filter1 = {.lower_bound = filter_info(PUBLIC).lower_bound,
 							.upper_bound = filter_info(PUBLIC).upper_bound };
 	can_filter_t filter2 = {.lower_bound = filter_info(node).lower_bound,
@@ -73,65 +60,26 @@ void init_can_node(enum node_id node) {
  * @return      Non zero on error.
  */
 uint8_t can_broadcast(const enum message_id type, void * const data) {
-	return can_send(MESSAGE_INFO(type).id, MESSAGE_INFO(type).len, data);
+	return can_send(MESSAGE_INFO(type).can_id, MESSAGE_INFO(type).len, data);
 }
 
 
-// Callback to be run when rx comletes on the CAN
-static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
+struct can_message read_inbox() {
+	struct can_message msg;
+	read_message(&msg.id, &msg.len, msg.data);
 	uint16_t index = 0;
 	do {
-		if (MESSAGE_INFO(index).id == id) {
-			if (queue_length) {
-				struct can_message *temp = newest_message;
-				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
-				if (!newest_message) {
-					return ALLOC_ERR;
-				}
-				newest_message->index = index;
-				newest_message->data = msg;
-				newest_message->older_message = temp;
-				newest_message->newer_message = 0;
-				temp->newer_message = newest_message;
-			} else {
-				newest_message = (struct can_message*)smalloc(sizeof(struct can_message));
-				if (!newest_message) {
-					return ALLOC_ERR;
-				}
-				oldest_message = newest_message;
-				newest_message->index = index;
-				newest_message->data = msg;
-				newest_message->newer_message = 0;
-				newest_message->older_message = 0;
-			}
-			++queue_length;
-			return SUCCES;
+		const uint16_t can_id = MESSAGE_INFO(index).can_id;
+		if (can_id == msg.id) {
+			msg.id = index;
+			break;
 		}
-	} while (MESSAGE_INFO(++index).id);
-	return ID_ERR;
+	} while(index++ != END_OF_LIST);
+
+	return msg;
 }
 
-struct can_message* read_inbox(void) {
-	if (queue_length) {
-		struct can_message *return_message = oldest_message;
-		oldest_message = return_message->newer_message;
-		oldest_message->older_message = 0;
-		--queue_length;
-		return return_message;
-	} else {
-		return 0;
-	}
-}
 
-uint8_t get_queue_length(void) {
-	return queue_length;
-}
-
-void can_free(struct can_message* message) {
-	sfree((void *) message->data);
-	sfree((void *) message);
-}
-
-void * can_malloc(uint8_t size) {
-	return smalloc(size);
+bool can_has_data() {
+	return !inbox_empty();
 }
