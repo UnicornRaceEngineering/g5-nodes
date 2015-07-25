@@ -58,10 +58,7 @@ int main(void) {
 
 	while (1) {
 		while(can_has_data()) {
-			read_inbox();
-			printf("recieved: %d error: %d\n", get_counter(RX_COMP), get_counter(TOTAL_ERR));
-			//struct can_message message = read_inbox();
-			//read_msg(message);
+			read_msg(read_inbox());
 		}
 	}
 
@@ -73,7 +70,7 @@ void read_msg(struct can_message msg) {
 	const uint8_t len = MESSAGE_INFO(msg.id).len;
 	const uint16_t id  = MESSAGE_INFO(msg.id).can_id;
 
-	printf("MSG:%4d  Got id: %4d and length: %1d\t", msg_num++, id, len);
+	printf("MSG:%5u | recieved: %4u | error: %4u |  Got id: %4u and length: %1u\t", msg_num++, get_counter(RX_COMP), get_counter(TOTAL_ERR), id, len);
 	for (uint8_t i = 0; i < len; ++i) {
 		printf("%3d; 0x%02x  |  ", msg.data[i], msg.data[i]);
 	}
