@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <io.h>
 #include <utils.h>
 #include <can_transport.h>
+
 #include "../SteeringNode/paddleshift.h"
 
 #include "dewalt.h"
@@ -42,7 +43,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGN_PIN		(PIN4)
 #define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
-#define TIMEOUT 700
+
+#define TIMEOUT 		700 	// Timeout for gearshift given in timer ticks
+#define TIMEOUT_SLOW	2000	// Like TIMEOUT just for when going to neutral
 
 enum {
 	GEAR_DOWN = -1,
@@ -60,9 +63,9 @@ void go_slow(uint8_t gear_request);
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
-volatile uint8_t current_gear = 1;
-volatile uint8_t neutral_flag = 0;
-volatile uint8_t neutral_button = 0;
+uint8_t current_gear = 1;
+uint8_t neutral_flag = 0;
+uint8_t neutral_button = 0;
 
 
 static int shift_gear(int gear_dir) {
@@ -125,11 +128,14 @@ int main(void) {
 	//printf("diagA: %d diagB: %d\n", vnh2sp30_read_DIAGA(), vnh2sp30_read_DIAGB());
 
 	while (1) {
-		if (get_queue_length()) {
+
+		bool has_changed_gear = false; // We dont want two gear in a row
+		while (get_queue_length()) {
 			struct can_message *message = read_inbox();
-			//printf("Got id: %d and data: %d\n", MESSAGE_INFO(message->index).id, message->data[0]);
-			if (message->index == PADDLE_STATUS) {
+
+			if (message->index == PADDLE_STATUS && !has_changed_gear) {
 				gearshift_procedure(message->data[0]);
+				has_changed_gear = true;
 			}
 
 			if (message->index == NEUTRAL_ENABLED) {
@@ -137,11 +143,6 @@ int main(void) {
 			}
 
 			can_free(message);
-
-			while(get_queue_length()) {
-				struct can_message *crap = read_inbox();
-				can_free(crap);
-			}
 		}
 
 		// As long as the gear is in neutral state the GearNode will broadcast
@@ -149,21 +150,23 @@ int main(void) {
 		// It should be enough to do this once only, but it doesn't allways seem
 		// to work. That's a problem with the CAN and this is a temporary workaround.
 		if (GEAR_IS_NEUTRAL()) {
-			current_gear = 0;
-			uint8_t msg[1] = {current_gear};
-			can_broadcast(CURRENT_GEAR, msg);
+			can_broadcast(CURRENT_GEAR, &(uint8_t){0});
+			_delay_ms(100);
 		}
 
-		_delay_ms(100);
+		if (vnh2sp30_is_faulty()) {
+			printf("faulty H-Bridge!!");
+			vnh2sp30_reset();
+			_delay_ms(1000); // 1 second to cool off
+		}
 	}
 
 	return 0;
 }
 
 void gearshift_procedure(uint8_t gear_request) {
-
 	if (gear_request == (PADDLE_UP | PADDLE_DOWN)) {
-		return;
+		return; // We cant do both so ignore it
 	}
 
 	if (neutral_button) {
@@ -195,54 +198,52 @@ void gearshift_procedure(uint8_t gear_request) {
 void start_gearshift(uint8_t gear_request) {
 	IGNITION_CUT();
 	if (gear_request & PADDLE_UP){
-		printf("gear up\n");
+		printf("gear up %u\n", current_gear);
 		shift_gear(GEAR_UP);
 	} else if(gear_request & PADDLE_DOWN){
-		printf("gear down\n");
+		printf("gear down %u\n", current_gear);
 		shift_gear(GEAR_DOWN);
 	}
 
-	// counts the number of times that the ampere reaches a set maximum.
-	// uint16_t maxcounter = 0;
 
+	// Reset
 	neutral_flag = 0;
-
 	tick = 0;
 
-	uint8_t done = 0;
+	// Moving average buffer
+	uint16_t buf[16] = {0}; // pow2 so division can be done with bitshifts
+	size_t buf_i = 0;
+
+	bool high_resistance = false;
 	while(tick <= TIMEOUT) {
 		// add new data to array
-		//volatile const uint16_t current_sense = vnh2sp30_read_CS();
+		const uint16_t current_sense = vnh2sp30_read_CS();
+		buf[buf_i++] = current_sense;
+		if (buf_i == ARR_LEN(buf)) buf_i = 0;
 
-		// after the 150 first measurements we expect the motor to be in a
-		// state where it's moving and it's using fewer ampere. From here we
-		// can look at out for when the ampere goes up again to 1000 where
-		// we expect that the motor will be back in a standstill.
-#if 0
-		if ((tick > 0) && (current_sense > 1000)) {
-			maxcounter++;
-
-			const uint16_t saved_time = tick;
-			while (current_sense > 1000) {
-				printf("%d;%d\n", tick, current_sense);
-				if ((tick - saved_time) > 30) {
-					done = 1;
-					break;
-				}
-			}
-
-			if (done) {
-				break;
-			}
+		// Low pass moving avarage filter data
+		uint32_t accumulator = 0;
+		for (size_t i = 0; i < ARR_LEN(buf); i++) {
+			accumulator += buf[i];
 		}
-		printf("%d;%d\n", tick, current_sense);
-#endif
+		const uint16_t filtered_cs = accumulator / ARR_LEN(buf);
+
+		printf("%d;%d\n", tick, filtered_cs);
+
 		if (GEAR_IS_NEUTRAL()) {
 			neutral_flag = 1;
 		}
+
+		if (tick > TIMEOUT/2) {
+			if (filtered_cs > 75) {
+				high_resistance = true;
+				break;
+			}
+		}
+
 	}
 
-	if (done) {
+	if (high_resistance) {
 		const uint16_t limit_time = tick;
 		printf("reached limit - with time %d\n", limit_time);
 	} else {
@@ -256,36 +257,25 @@ void stop_gearshift() {
 }
 
 void gear_estimate(uint8_t gear_request) {
-	if (gear_request & PADDLE_UP){
-		if (current_gear < 6)
-			++current_gear;
+	if (gear_request & PADDLE_UP) {
+		if (current_gear < 6) ++current_gear;
+		if (!current_gear)      current_gear = 2;
+		if (neutral_flag)       current_gear = 2;
 
-		if (!current_gear)
-			current_gear = 2;
-
-		if (neutral_flag)
-			current_gear = 2;
-
-	} else if(gear_request & PADDLE_DOWN){
-		if (current_gear > 1)
-			--current_gear;
-
-		if (!current_gear)
-			current_gear = 1;
-
-		if (neutral_flag)
-			current_gear = 1;
+	} else if(gear_request & PADDLE_DOWN) {
+		if (current_gear > 1) --current_gear;
+		if (!current_gear)      current_gear = 1;
+		if (neutral_flag)       current_gear = 1;
 	}
 
-	uint8_t msg[1] = {current_gear};
-	can_broadcast(CURRENT_GEAR, msg);
+	can_broadcast(CURRENT_GEAR, &(uint8_t){current_gear});
 }
 
 void go_slow(uint8_t gear_request) {
 	IGNITION_CUT();
-	if (gear_request & PADDLE_UP){
+	if (gear_request & PADDLE_UP) {
 		shift_gear(GEAR_NEUTRAL_UP);
-	} else if(gear_request & PADDLE_DOWN){
+	} else if(gear_request & PADDLE_DOWN) {
 		shift_gear(GEAR_NEUTRAL_DOWN);
 	}
 
@@ -293,7 +283,7 @@ void go_slow(uint8_t gear_request) {
 
 	// The gear shifting motor is allowed to run for 370 ms on 50% PWM.
 	// This number has been found by trial and error and can be changed.
-	while(tick <= 2000) {
+	while(tick <= TIMEOUT_SLOW) {
 		if (GEAR_IS_NEUTRAL()) {
 			break;
 		}

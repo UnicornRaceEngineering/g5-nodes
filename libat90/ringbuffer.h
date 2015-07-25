@@ -127,8 +127,8 @@ static inline int rb_pop(ringbuffer_t *rb, uint8_t *data) {
 	return 0; // Success
 }
 
-static inline unsigned rb_used(ringbuffer_t *rb) {
-	return (rb->start > rb->end) ? (rb->start - rb->end) : (rb->size - (rb->end - rb->start));
+static inline unsigned rb_left(ringbuffer_t *rb) {
+	return ((rb->start > rb->end) ? (rb->start - rb->end) : (rb->size - (rb->end - rb->start))) - 1;
 }
 
 /**
@@ -140,10 +140,11 @@ static inline unsigned rb_used(ringbuffer_t *rb) {
  * @param  data   pointer where returned byte is stored
  * @return        1 if no data is available and 0 on success
  */
-static inline int rb_peek(ringbuffer_t *rb, uint8_t *data) {
+static inline int rb_peek(ringbuffer_t *rb, size_t index, uint8_t *data) {
 	if (rb_isEmpty(rb)) return -1; // No data available
 
-	*data = rb->buffer[rb->start];
+	// *data = rb->buffer[rb->start];
+	*data = (rb->start + index) & RB_BUFFER_MASK(rb);
 	return 0; // Success
 }
 
