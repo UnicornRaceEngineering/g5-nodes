@@ -6,6 +6,7 @@ include(cmake/avr_crosscompile.cmake)
 include(cmake/flags.cmake)
 
 project(G5_NODES C)
+avr_write_fuses()
 
 add_subdirectory(third_party)
 add_subdirectory(libat90)
