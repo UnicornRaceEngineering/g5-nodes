@@ -24,10 +24,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef STATUSLIGHT_H
 #define STATUSLIGHT_H
 
-#include <stdint.h>
-#include <stdbool.h>
-
 #include <avr/io.h>
+#include <stdbool.h>
+#include <stdint.h>  // for uint8_t
 
 #define STATUS_LED_PORT PORTB
 #define STATUS_LED_R    PIN7 // The schematic mixes red and green

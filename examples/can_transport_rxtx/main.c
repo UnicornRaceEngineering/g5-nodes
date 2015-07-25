@@ -22,16 +22,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdint.h>
-#include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <can_transport.h>    // for can_broadcast, can_cleanup, etc
+#include <heap.h>             // for smalloc
+#include <stdint.h>           // for uint8_t
+#include <stdio.h>            // for printf
+#include <string.h>           // for strncpy
+#include <sysclock.h>         // for sysclock_init
+#include <usart.h>            // for usart1_init
 #include <util/delay.h>
-#include <string.h>
-#include <can_transport.h>
-#include <usart.h>
-#include <heap.h>
-#include <sysclock.h>
+
+#include "system_messages.h"  // for message_id::TRANSPORT_TEST_LONG, etc
+#include "utils.h"            // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

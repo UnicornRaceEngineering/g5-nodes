@@ -27,16 +27,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Drivers.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h> // strlen
-#include <spi.h>
-#include <utils.h>
-
-#include <io.h>
 #include <avr/io.h>
-#include "max7221_7seg.h"
+#include <io.h>       // for IO_SET_LOW, IO_SET_HIGH
+#include <spi.h>      // for spi_tranceive, SPI_PORT, SS_PIN, etc
+#include <stdbool.h>  // for false, bool, true
+#include <stddef.h>   // for size_t
+#include <stdint.h>   // for int8_t, uint8_t
+#include <string.h>   // for strlen
 
+#include "max7221_7seg.h"
 
 #define IS_IN_RANGE(val, from, to) (val >= from && val <= to)
 

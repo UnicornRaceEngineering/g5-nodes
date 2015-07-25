@@ -21,14 +21,15 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <stdio.h>
-
-#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+#include <can_transport.h>    // for can_message, can_free, etc
+#include <stdint.h>           // for uint8_t, uint16_t
+#include <stdio.h>            // for printf
+#include <usart.h>            // for usart1_init
 
-#include <usart.h>
-#include <can_transport.h>
+#include "system_messages.h"  // for MESSAGE_INFO, message_detail, etc
+#include "utils.h"            // for ARR_LEN
 
 
 void read_message(struct can_message *message);

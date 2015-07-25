@@ -24,12 +24,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <can.h>     // for can_filter_t, can_init, set_canrec_callback
+#include <heap.h>    // for init_heap
+#include <stdint.h>  // for uint8_t, uint16_t
+#include <stdio.h>   // for printf
+#include <usart.h>   // for usart1_init
 #include <util/delay.h>
-#include <stdint.h>
-#include <string.h>
-#include <can.h>
-#include <usart.h>
-#include <heap.h>
+
+#include "utils.h"   // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

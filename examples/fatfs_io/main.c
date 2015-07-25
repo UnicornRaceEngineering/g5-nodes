@@ -23,12 +23,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include <avr/interrupt.h>
-#include <stdio.h>
-#include <string.h>
-#include <usart.h>
+#include <fatfs/ff.h>  // for f_open, f_close, f_write, FA_CREATE_ALWAYS, etc
+#include <stdint.h>    // for uint8_t
+#include <stdio.h>     // for printf, putchar, scanf, getchar
+#include <string.h>    // for strlen, memset
+#include <usart.h>     // for usart1_init
 
-#include <fatfs/ff.h>
-#include <fatfs/diskio.h>
+#include "utils.h"     // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

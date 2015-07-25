@@ -22,11 +22,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <io.h>
-#include <usart.h>
+#include <io.h>      // for io_pinmode_t::OUTPUT, SET_PIN_MODE, etc
+#include <stdint.h>  // for uint8_t
+#include <stdio.h>   // for printf
+#include <usart.h>   // for usart1_init
+#include <util/delay.h>
+
+#include "utils.h"   // for ARR_LEN
 
 #define NUM_PINS	(8)
 

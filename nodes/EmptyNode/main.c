@@ -21,10 +21,9 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
-
-#include <usart.h>
+#include <avr/pgmspace.h>
+#include <stdio.h>                 // for puts_p
 
 
 static void init(void) {

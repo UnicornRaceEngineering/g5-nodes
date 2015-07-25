@@ -22,11 +22,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include "vnh2sp30.h"
-#include <pwm.h>
-#include <adc.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <adc.h>      // for ADC_ENABLE, adc_setPrescaler, adc_setVref, etc
+#include <pwm.h>      // for pwm_PB5_init
+#include <stdbool.h>  // for bool
+
+#include "io.h"       // for SET_PIN_MODE, io_pinmode_t::INPUT, etc
 
 /**
  * @name vnh2sp30_init

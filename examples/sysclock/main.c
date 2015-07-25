@@ -22,12 +22,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdlib.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <stdint.h>    // for uint8_t
+#include <sysclock.h>  // for sysclock_init
+#include <usart.h>     // for usart1_init
 #include <util/delay.h>
-#include <usart.h>
-#include <sysclock.h>
+
+#include "utils.h"     // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

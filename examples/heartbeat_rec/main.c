@@ -22,15 +22,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdint.h>
-#include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <can_transport.h>    // for can_free, can_message, etc
+#include <stdint.h>           // for uint8_t, uint32_t, uint16_t
+#include <stdio.h>            // for printf
+#include <usart.h>            // for usart1_init
 #include <util/delay.h>
-#include <string.h>
-#include <can_transport.h>
-#include <usart.h>
-#include "sysclock.h"
+
+#include "sysclock.h"         // for get_tick, sysclock_init
+#include "system_messages.h"  // for message_detail, node_id::N_NODES, etc
+#include "utils.h"            // for ARR_LEN
 
 #define HEARTBEAT_TIMEOUT 100
 

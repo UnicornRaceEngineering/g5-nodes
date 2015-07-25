@@ -21,10 +21,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <usart.h>
-#include <utils.h>
-#include <string.h> // memcpy() memset()
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint8_t
+#include <stdio.h>   // for fputc, FILE
+#include <string.h>  // for memcpy, memset
+#include <usart.h>   // for usart1_init, usart1_byte_output
+#include <utils.h>   // for ARR_LEN
 
 #include "xbee.h"
 

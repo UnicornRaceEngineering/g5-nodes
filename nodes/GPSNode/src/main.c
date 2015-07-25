@@ -27,17 +27,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * broadcasts it via CAN.
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
-
 #include <avr/interrupt.h>
+#include <can_transport.h>    // for can_broadcast, can_malloc, etc
+#include <stdint.h>           // for uint8_t
+#include <usart.h>            // for usart1_init, usart1_io
 #include <util/delay.h>
+#include <utils.h>            // for ARR_LEN, HIGH_BYTE, LOW_BYTE
 
-#include <can_transport.h>
-#include <usart.h>
-#include <utils.h>
-#include "gps.h"
+#include "gps.h"              // for gps_fix, GPS_DMS_TO_DD, gps_get_fix, etc
+#include "system_messages.h"  // for message_id::GPS_DATA, etc
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

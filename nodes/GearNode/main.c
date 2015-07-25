@@ -21,23 +21,24 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <stdio.h>
-
-#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+#include <can_transport.h>                // for can_message, can_broadcast, etc
+#include <io.h>                           // for IO_SET_HIGH, IO_SET_LOW, etc
+#include <stdbool.h>                      // for bool, false, true
+#include <stddef.h>                       // for size_t
+#include <stdint.h>                       // for uint8_t, uint16_t, etc
+#include <stdio.h>                        // for printf
+#include <usart.h>                        // for usart1_init
 #include <util/delay.h>
+#include <utils.h>                        // for ARR_LEN
 
-#include <usart.h>
-#include <io.h>
-#include <utils.h>
-#include <can_transport.h>
-
-#include "../SteeringNode/paddleshift.h"
-
-#include "dewalt.h"
-#include "vnh2sp30.h"
-#include "neutralsensor.h"
+#include "../SteeringNode/paddleshift.h"  // for paddle_status::PADDLE_DOWN, etc
+#include "adc.h"                          // for adc_init, adc_vref_t::AVCC
+#include "dewalt.h"                       // for dewalt_set_pwm_dutycycle, etc
+#include "neutralsensor.h"                // for GEAR_IS_NEUTRAL, NEUT_PIN, etc
+#include "system_messages.h"              // for message_id::CURRENT_GEAR, etc
+#include "vnh2sp30.h"                     // for vnh2sp30_is_faulty, etc
 
 #define IGN_PORT	(PORTE)
 #define IGN_PIN		(PIN4)

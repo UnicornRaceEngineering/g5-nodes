@@ -21,38 +21,34 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h> // memset()
-
 #include <avr/interrupt.h>
-#include <util/delay.h>
-#include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
+#include <avr/sfr_defs.h>
+#include <can_transport.h>    // for can_message, can_broadcast, can_free, etc
+#include <max7221_7seg.h>     // for seg7_disp_str, seg7_disp_char, etc
+#include <stdbool.h>          // for false
+#include <stddef.h>           // for size_t
+#include <stdint.h>           // for uint8_t, uint16_t, int16_t
+#include <stdio.h>            // for snprintf
+#include <string.h>           // for memset
+#include <sysclock.h>         // for sysclock_init
+#include <usart.h>            // for usart1_init
+#include <util/delay.h>
+#include <utils.h>            // for ARR_LEN
 
-#include <can_transport.h>
-#include <usart.h>
-#include <io.h>
-#include <utils.h>
-#include <sysclock.h>
-
-// Drivers
-#include <74ls138d_demultiplexer.h>
-#include <max7221_7seg.h>
-
-#include "../ComNode/ecu.h"
-
-#include "paddleshift.h"
-#include "statuslight.h"
-#include "rpm.h"
-#include "shiftlight.h"
-#include "neutral.h"
-#include "rotaryswitch.h"
-#include "dipswitch.h"
+#include "../ComNode/ecu.h"   // for ecu_id::BATTERY_V, ecu_id::RPM, etc
+#include "dipswitch.h"        // for dip_init, dip_read
+#include "neutral.h"          // for neutral_btn_init, neutral_is_enabled, etc
+#include "paddleshift.h"      // for paddle_init, paddle_state
+#include "rotaryswitch.h"     // for rot_init, rot_read
+#include "rpm.h"              // for rpm_init, set_rpm
+#include "shiftlight.h"       // for shiftlight_init, shiftlight_off
+#include "statuslight.h"      // for color_masks, color_masks::COLOR_OFF, etc
+#include "system_messages.h"  // for message_id::ECU_PKT, etc
 
 #if 0
 #include <avr/fuse.h>
+
 FUSES = {.low = 0xFF, .high = 0xD9, .extended = 0xFD};
 #endif
 

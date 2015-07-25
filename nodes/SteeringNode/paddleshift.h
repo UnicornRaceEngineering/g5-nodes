@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/io.h>
 #include <stdbool.h>
+#include <stdint.h>  // for uint8_t
 
 enum paddle_status {
 	PADDLE_DOWN 	= 1 << 0,

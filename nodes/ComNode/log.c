@@ -21,14 +21,11 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <fatfs/ff.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h> //memcpy() , memset();
-#include <utils.h>
 #include <avr/pgmspace.h>
-
+#include <fatfs/ff.h>  // for f_mount, f_open, f_sync, f_write, ::FR_EXIST, etc
+#include <stddef.h>    // for size_t
+#include <stdint.h>    // for uint8_t
+#include <string.h>    // for memcpy, memset
 #include <util/delay.h>
 
 #include "log.h"

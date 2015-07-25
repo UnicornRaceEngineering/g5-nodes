@@ -28,12 +28,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * can then be used to extract a GPS fix.
  */
 
-#include "gps.h"
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h> // round()
-#include <stdio.h>
+#include "gps.h"      // for gps_fix, gps_coordinate
+
+#include <math.h>     // for round
+#include <stdbool.h>  // for bool, false, true
+#include <stddef.h>   // for size_t
+#include <stdint.h>   // for uint16_t, int16_t
+#include <stdio.h>    // for NULL, fgetc, FILE
+#include <stdlib.h>   // for strtod, strtoul
+#include <string.h>   // for strlen, strncmp
 
 
 #define MAX_SENTENCE_LEN		(128)
