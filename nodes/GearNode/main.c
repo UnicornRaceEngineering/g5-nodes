@@ -46,7 +46,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
 
 #define TIMEOUT 		700 	// Timeout for gearshift given in timer ticks
-#define TIMEOUT_SLOW	2000	// Like TIMEOUT just for when going to neutral
+#define TIMEOUT_NEUTRAL	2000	// Like TIMEOUT just for when going to neutral
+#define MOTOR_STARTUP_TIME	(TIMEOUT / 2)
+
+#define MAX_CURRENT_SENSE	75
+
 
 enum {
 	GEAR_DOWN = -1,
@@ -70,7 +74,6 @@ uint8_t neutral_button = 0;
 
 
 static int shift_gear(int gear_dir) {
-	//!< TODO: check the right way to slow down
 	switch (gear_dir) {
 		case GEAR_DOWN:
 			dewalt_set_direction_B();
@@ -187,7 +190,7 @@ void gearshift_procedure(uint8_t gear_request) {
 	// the number 2000 ticks is found by test and can be changed without
 	// affecting the gear shift it itself.
 	// That is: Only affects gear estimate.
-	while (tick < 2000) {
+	while (tick < TIMEOUT_NEUTRAL) {
 		if (GEAR_IS_NEUTRAL()) {
 			neutral_flag = 1;
 		}
@@ -235,8 +238,8 @@ void start_gearshift(uint8_t gear_request) {
 			neutral_flag = 1;
 		}
 
-		if (tick > TIMEOUT/2) {
-			if (filtered_cs > 75) {
+		if (tick > MOTOR_STARTUP_TIME) {
+			if (filtered_cs > MAX_CURRENT_SENSE) {
 				high_resistance = true;
 				break;
 			}
@@ -284,7 +287,7 @@ void go_slow(uint8_t gear_request) {
 
 	// The gear shifting motor is allowed to run for 370 ms on 50% PWM.
 	// This number has been found by trial and error and can be changed.
-	while(tick <= TIMEOUT_SLOW) {
+	while(tick <= TIMEOUT_NEUTRAL) {
 		if (GEAR_IS_NEUTRAL()) {
 			break;
 		}
