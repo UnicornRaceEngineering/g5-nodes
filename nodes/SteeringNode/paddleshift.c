@@ -27,12 +27,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <avr/interrupt.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <utils.h>
-#include <io.h>
+#include <io.h>        // for io_pinmode_t::INPUT, SET_PIN_MODE
+#include <stdint.h>    // for uint8_t, uint32_t
+#include <sysclock.h>  // for get_tick
 #include <util/delay.h>
-#include <sysclock.h>
+#include <utils.h>     // for BIT_SET
 
 #include "paddleshift.h"
 

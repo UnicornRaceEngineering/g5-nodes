@@ -33,16 +33,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * compile time.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h> // size_t
-#include <stdarg.h> // va args
-#include <stdio.h> // vsprintf
-
-#include <avr/io.h>
 #include <avr/interrupt.h>
-#include "utils.h"
+#include <avr/io.h>
+#include <stdbool.h>     // for bool
+#include <stddef.h>      // for size_t
+#include <stdint.h>      // for uint8_t, uint32_t, uint16_t
+#include <stdio.h>       // for FILE, NULL, stdin, stdout
+
 #include "usart.h"
+#include "utils.h"       // for HIGH_BYTE, LOW_BYTE
 
 enum usart_charSelect_t {
 	USART_CHAR_5BIT = 0x00,
@@ -53,7 +52,8 @@ enum usart_charSelect_t {
 };
 
 #ifndef NO_USART0_SUPPORT
-#	include "ringbuffer.h"
+#include "ringbuffer.h"  // for ringbuffer_t, rb_init, rb_pop, rb_push, etc
+
 	static volatile ringbuffer_t usart0_rb_in;
 	static volatile ringbuffer_t usart0_rb_out;
 
@@ -62,7 +62,6 @@ enum usart_charSelect_t {
 #endif
 
 #ifndef NO_USART1_SUPPORT
-#	include "ringbuffer.h"
 	static volatile ringbuffer_t usart1_rb_in;
 	static volatile ringbuffer_t usart1_rb_out;
 

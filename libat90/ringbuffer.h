@@ -43,10 +43,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
-#include <stdint.h>
-#include <string.h> // memset()
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint8_t
+#include <string.h>  // for memset
 
-#include "utils.h"
+#include "utils.h"   // for IS_POW2
 
 // #define RB_BUFFER_MASK	(RB_BUFFER_SIZE-1)
 #define RB_BUFFER_MASK(B)	((B)->size-1)

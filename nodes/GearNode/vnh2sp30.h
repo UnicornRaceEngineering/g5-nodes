@@ -44,11 +44,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef VNH2SP30_H
 #define VNH2SP30_H
 
-#include <avr/io.h>
-#include <pwm.h>
 #include <adc.h>
-#include <io.h>
-#include <stdbool.h>
+#include <avr/io.h>
+#include <io.h>       // for IO_SET_LOW, DIGITAL_READ, IO_SET_HIGH
+#include <pwm.h>      // for pwm_PB5_set_dutycycle
+#include <stdbool.h>  // for bool
 
 #define VNH2SP30_INA_PORT	(PORTA)
 #define VNH2SP30_INA_PIN	(PIN0)

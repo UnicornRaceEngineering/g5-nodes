@@ -22,25 +22,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <avr/interrupt.h> // sei()
+#include <avr/pgmspace.h>
+#include <can_transport.h>         // for can_message, can_free, etc
+#include <m41t81s_rtc.h>           // for rtc_init
+#include <stddef.h>                // for size_t
+#include <stdio.h>                 // for puts_p
+#include <stdint.h>                // for uint8_t, uint16_t
+#include <sysclock.h>              // for sysclock_init
+#include <system_messages.h>       // for message_detail, MESSAGE_INFO, etc
 #include <util/delay.h>
 #include <stdbool.h>
-#include <avr/pgmspace.h>
 
-#include "ecu.h"
-#include "xbee.h"
-#include "bson.h"
-#include "log.h"
-
-#include <usart.h>
-#include <string.h>
-#include <spi.h>
-#include <m41t81s_rtc.h>
-#include <mmc_sdcard.h>
-#include <can_transport.h>
-#include <stdio.h>
-#include <sysclock.h>
-#include <system_messages.h>
-#include <stdbool.h>
+#include "../nodes/ComNode/ecu.h"  // for ecu_init, ecu_parse_package
+#include "xbee.h"                  // for xbee_init, xbee_send
 
 static void init(void) {
 	rtc_init();

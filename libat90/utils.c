@@ -21,9 +21,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-
-#include "utils.h"
+#include <stdint.h>  // for int32_t
 
 int32_t map(int32_t x,
             const int32_t from_low, const int32_t from_high,

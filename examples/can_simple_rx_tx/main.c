@@ -24,21 +24,28 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <io.h>      // for io_pinmode_t::OUTPUT, SET_PIN_MODE, etc
-#include <stdint.h>  // for uint8_t
+#include <can.h>     // for can_filter_t, can_init, set_canrec_callback
+#include <heap.h>    // for init_heap
+#include <stdint.h>  // for uint8_t, uint16_t
 #include <stdio.h>   // for printf
 #include <usart.h>   // for usart1_init
 #include <util/delay.h>
 
 #include "utils.h"   // for ARR_LEN
 
-#define NUM_PINS	(8)
-
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
+static uint8_t rx_complete(uint16_t id, uint8_t *msg);
+
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
+	init_heap();
+
+	can_filter_t filter1 = { .lower_bound =   0, .upper_bound = 255 };
+	can_filter_t filter2 = { .lower_bound = 256, .upper_bound = 511 };
+	can_init(filter1, filter2);
+	set_canrec_callback(rx_complete);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -47,42 +54,38 @@ static void init(void) {
 int main(void) {
 	init();
 
-	SET_PIN_MODE(PORTF, PIN0, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN1, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN2, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN3, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN4, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN5, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN6, OUTPUT);
-	SET_PIN_MODE(PORTF, PIN7, OUTPUT);
+#if 0 // If sending messages
+	uint8_t *storage1 = (uint8_t*)malloc_(28);
+	char str1[28] = "Has anyone really been far\n";
+	strncpy((char*)&storage1[0], str1, 28);
 
-	DIGITAL_WRITE(PORTF, PIN0, HIGH); 	// takes 6 instruktions
-	IO_SET_HIGH(PORTF, PIN1); 			// takes 1 instruktion
-	DIGITAL_WRITE(PORTF, PIN2, HIGH);
-	DIGITAL_WRITE(PORTF, PIN3, HIGH);
-	DIGITAL_WRITE(PORTF, PIN4, HIGH);
-	DIGITAL_WRITE(PORTF, PIN5, HIGH);
-	DIGITAL_WRITE(PORTF, PIN6, HIGH);
-	IO_SET_HIGH(PORTF, PIN7);
+	uint8_t *storage2 = (uint8_t*)malloc_(29);
+	char str2[29] = "even as decided to use even\n";
+	strncpy((char*)&storage2[0], str2, 29);
 
-	int i = 0;
-	while(1){
-		// Main work loop
-		_delay_ms(250); // 1 second
+	uint8_t *storage3 = (uint8_t*)malloc_(33);
+	char str3[33] = "go want to do look more like?\n\n";
+	strncpy((char*)&storage3[0], str3, 33);
+#endif
 
-		DIGITAL_TOGGLE(PORTF, i); // This expands to 6 instruktions
+	_delay_ms(2000);
+	while(1) {
+#if 0 // If sending messages
+		can_send(1, 28, &storage1[0]);
+		can_send(2, 29, &storage2[0]);
+		can_send(3, 33, &storage3[0]);
+#endif
 
-		int pin;
-		for (pin = 0; pin < NUM_PINS; ++pin){
-			int pinVal = DIGITAL_READ(PORTF, pin);
-			printf("pin %d is logical %d\n", pin, pinVal);
-		}
-		printf("\n");
+		// printf("There is %d bytes allocated.\n", count_heap());
+		_delay_ms(1000);
 
-		if(++i == NUM_PINS){
-			i = 0;
-		}
 	}
-
     return 0;
+}
+
+// Callback to be run when rx comletes on the CAN
+static uint8_t rx_complete(uint16_t id, uint8_t *msg) {
+	printf("id: %d\n", id);
+	// for (uint8_t i = 0; i < len; i++) putchar(msg[i]);
+	return 0;
 }

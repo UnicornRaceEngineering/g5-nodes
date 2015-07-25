@@ -32,14 +32,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //_____ I N C L U D E S ________________________________________________________
 
 #include <avr/interrupt.h>
-#include <stdint.h>
+#include <stdint.h>    // for uint8_t, uint16_t, int8_t, uint32_t
 #include <util/atomic.h>
 #include <stdbool.h>
 
-#include "utils.h"
-#include "can_baud.h"
-#include "can.h"
+#include "can.h"       // for can_counters::NO_MOB_ERR, etc
+#include "can_baud.h"  // for CANBT1_VALUE, CANBT2_VALUE, CANBT3_VALUE
+#include "heap.h"      // for sfree, smalloc
+#include "sysclock.h"  // for get_tick
+#include "utils.h"     // for BIT_CLEAR, BIT_SET, BITMASK_SET, BIT_CHECK, etc
 #include "ringbuffer.h"
+
+struct can_msg_t;
 
 
 //_____ D E F I N I T I O N S __________________________________________________

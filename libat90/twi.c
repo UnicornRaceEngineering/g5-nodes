@@ -29,16 +29,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <avr/io.h>
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint8_t, int16_t, int8_t
 #include <util/delay.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
 #include <util/twi.h> // avr libc twi bit mask definitions
 
-#include "usart.h"
-#include "utils.h"
-#include "io.h"
-#include "twi.h"
+#include "io.h"      // for io_pinmode_t::INPUT_PULLUP, SET_PIN_MODE
+#include "twi.h"     // for PRESCALER, F_SCL
+#include "utils.h"   // for BITMASK_CLEAR, BITMASK_SET
 
 #define ARR_LEN(arr)	(sizeof(arr) / sizeof(arr[0]))
 

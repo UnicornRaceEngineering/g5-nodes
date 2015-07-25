@@ -21,16 +21,17 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stddef.h> // size_t
-#include <string.h> // memcpy()
-#include <stdint.h>
-#include <stdbool.h>
 #include <avr/io.h>
+#include <io.h>          // for IO_SET_HIGH, IO_SET_LOW
+#include <spi.h>         // for SPI_PORT, SS_PIN, spi_init_master, etc
+#include <stdbool.h>     // for false
+#include <stddef.h>      // for size_t
+#include <stdint.h>      // for uint8_t, uint32_t, int8_t, uint16_t, etc
+#include <string.h>      // for NULL, memcpy
 #include <util/delay.h>
-#include <spi.h>
-#include <io.h>
 
-#include "mmc_sdcard.h"
+#include "mmc_sdcard.h"  // for SD_BLOCKSIZE, CSD_SIZE, CID_SIZE, etc
+#include "utils.h"       // for BITMASK_CLEAR, EXTRACT_AT_INDEX, LOW_NIBBLE
 
 /**
  * @file mmc_sdcard.c

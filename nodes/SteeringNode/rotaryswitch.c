@@ -23,11 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include <avr/io.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <utils.h>
-#include <io.h>
+#include <io.h>      // for io_pinmode_t::INPUT, SET_PIN_MODE, PIN_PORT
+#include <stdint.h>  // for uint8_t
+#include <utils.h>   // for ARR_LEN
 
 #include "rotaryswitch.h"
 

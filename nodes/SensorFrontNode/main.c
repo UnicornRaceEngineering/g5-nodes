@@ -21,19 +21,19 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <stdio.h>
+#include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+#include <can_transport.h>    // for can_broadcast, can_free, etc
+#include <io.h>               // for io_pinmode_t::INPUT, SET_PIN_MODE
+#include <stdint.h>           // for uint8_t, uint32_t, uint16_t
+#include <stdio.h>            // for printf
+#include <sysclock.h>         // for get_tick, sysclock_init
+#include <usart.h>            // for usart1_init
+#include <util/delay.h>
+#include <utils.h>            // for ARR_LEN, BIT_SET
 #include <stdbool.h>
 
-#include <avr/pgmspace.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
-
-#include <io.h>
-#include <usart.h>
-#include <utils.h>
-#include <can_transport.h>
-#include <sysclock.h>
+#include "system_messages.h"  // for message_id, etc
 
 
 #define WHEEL_TICK_PORT		PORTE

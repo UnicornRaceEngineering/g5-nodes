@@ -22,11 +22,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdint.h>
-#include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdint.h>  // for uint32_t
 #include <util/atomic.h>
-#include "sysclock.h"
 
 
 static volatile uint32_t tick;

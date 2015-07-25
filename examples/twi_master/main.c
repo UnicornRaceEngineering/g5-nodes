@@ -22,13 +22,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdint.h>
-#include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <usart.h>
-#include <m41t81s_rtc.h>
-#include <io.h>
+#include <m41t81s_rtc.h>  // for rtc_time, rtc_get_time, rtc_init
+#include <stdint.h>       // for uint8_t, int16_t
+#include <stdio.h>        // for printf
+#include <usart.h>        // for usart1_init
+#include <util/delay.h>
+
+#include "utils.h"        // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

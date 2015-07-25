@@ -22,14 +22,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdio.h>
-#include <string.h>
-#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
-#include <usart.h>
-#include <mmc_sdcard.h>
-#include <utils.h>
+#include <avr/pgmspace.h>
+#include <mmc_sdcard.h>  // for SD_BLOCKSIZE, get_memory_capacity, sd_init, etc
+#include <stdint.h>      // for uint8_t, uint32_t
+#include <stdio.h>       // for printf, putchar, getchar, scanf
+#include <usart.h>       // for usart1_init
 #include <util/delay.h>
+#include <utils.h>       // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

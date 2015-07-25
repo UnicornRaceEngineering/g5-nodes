@@ -22,11 +22,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <stdio.h>
-#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
-#include <usart.h>
-#include <utils.h>
+#include <avr/pgmspace.h>
+#include <stdint.h>  // for uint8_t
+#include <stdio.h>   // for getchar, putchar
+#include <usart.h>   // for usart1_init
+#include <utils.h>   // for ARR_LEN
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];

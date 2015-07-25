@@ -26,10 +26,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Handles input from neutral enable button
  */
 
-#include <stdbool.h>
 #include <avr/io.h>
-#include <io.h>
-#include <utils.h>
+#include <io.h>       // for io_pinmode_t::INPUT, DIGITAL_READ, etc
+#include <stdbool.h>  // for bool, false
 
 #include "neutral.h"
 
