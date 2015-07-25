@@ -16,6 +16,7 @@ set(CMAKE_C_COMPILER avr-gcc)
 find_program(PROGRAMMER avrdude)
 set(PROGRAMMER_ID avrispmkII)
 set(PROGRAMMER_MCU c128)
+set(AVRDUDE avrdude)
 
 
 # Sets up a custom command and target that Generates an intel hex file from a
@@ -51,4 +52,18 @@ function(avr_make_flashable elf_file)
 		VERBATIM
 		)
 
+endfunction()
+
+set(FUSE_1 lfuse:w:0xff:m)
+set(FUSE_2 hfuse:w:0xf9:m)
+set(FUSE_3 efuse:w:0xdf:m)
+
+function(avr_write_fuses)
+	add_custom_target(Fuses_writeflash
+		COMMAND ${AVRDUDE} -c ${PROGRAMMER_ID}
+			-p ${PROGRAMMER_MCU} -P usb -e
+			-u -U ${FUSE_1}
+			-u -U ${FUSE_2}
+			-u -U ${FUSE_3}
+	)
 endfunction()
