@@ -36,17 +36,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 
-/**
- * Interrupt callback function pointer for can receive interrupt.
- * @param id	ID of incomming message.
- * @param len	Length of incomming message.
- * @param *msg	Pointer to message on the heap.
- */
+#include "system_messages.h"
 
-typedef struct can_filter_t {
-	uint16_t lower_bound;
-	uint16_t upper_bound;
-} can_filter_t;
 
 enum can_counters{
 	SUCCES,
@@ -65,10 +56,17 @@ enum can_counters{
 };
 
 
-void can_init(can_filter_t, can_filter_t);
-uint8_t can_send(const uint16_t id, const uint8_t len, const uint8_t* msg);
+struct can_message {
+	uint16_t id;
+	uint8_t len;
+	uint8_t data[8];
+};
+
+
+void can_init(void);
+uint8_t can_broadcast(const enum message_id id, const void* msg);
 uint16_t get_counter(enum can_counters counter);
-void read_message(uint16_t *id, uint8_t *len, uint8_t *data);
-bool inbox_empty(void);
+void read_message(struct can_message* msg);
+bool can_has_data(void);
 
 #endif /* CAN_H */

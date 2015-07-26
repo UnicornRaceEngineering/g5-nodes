@@ -7,7 +7,7 @@ set(SRC_FILES
 	usart.c
 	heap.c
 	spi.c
-	can_transport.c
+	system_messages.c
 	utils.c
 	sysclock.c
 )

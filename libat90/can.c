@@ -42,6 +42,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sysclock.h"  // for get_tick
 #include "utils.h"     // for BIT_CLEAR, BIT_SET, BITMASK_SET, BIT_CHECK, etc
 #include "ringbuffer.h"
+#include "system_messages.h"
 
 struct can_msg_t;
 
@@ -55,7 +56,7 @@ struct can_msg_t;
 #define NB_MOB          ( 15        ) //!< Number of MOB's
 #define DATA_MAX        ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB     ( NB_MOB-1  ) //!< Index of the last MOB. This is useful when looping over all MOB's
-#define NB_SPYMOB       ( 2         ) //!< Number of spymobs used.
+#define NB_SPYMOB       ( 10        ) //!< Number of spymobs used.
 #define NO_MOB          ( 0xFF      )
 
 #define DLC_MSK         ( (1<<DLC3)|(1<<DLC2)|(1<<DLC1)|(1<<DLC0)   ) //!< Mask for Data Length Coding bits in CANCDMOB
@@ -200,13 +201,12 @@ enum mob_status_t {
 
 static inline int8_t find_me_a_mob(void);
 static inline void enable_spy_mob(uint8_t mob);
-static void receive_frame(uint8_t mob);
+static void receive_frame(const uint8_t mob, const uint16_t id);
 static void reset_counters(void);
-void read_message(uint16_t *id, uint8_t *len, uint8_t *data);
-bool inbox_empty(void);
 
 static volatile uint16_t mob_on_job;
-static volatile can_filter_t filter1, filter2;
+static volatile ringbuffer_t rb;
+static uint8_t buff[64];
 
 static volatile uint16_t dlcw_err;
 static volatile uint16_t rx_comp;
@@ -252,18 +252,12 @@ uint16_t get_counter(enum can_counters counter) {
 	}
 }
 
-uint8_t buff[64];
-volatile ringbuffer_t rb;
 
-void can_init(can_filter_t fil1, can_filter_t fil2) {
+void can_init() {
 	rb_init((ringbuffer_t*)&rb, buff, 64);
 
 	CAN_RESET();
 	reset_counters();
-
-	// Set the CAN ID filters.
-	filter1 = fil1;
-	filter2 = fil2;
 
 	/*
 	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
@@ -305,20 +299,21 @@ void can_init(can_filter_t fil1, can_filter_t fil2) {
 }
 
 
-uint8_t can_send(const uint16_t id, const uint8_t len, const uint8_t* msg) {
-
+uint8_t can_broadcast(const enum message_id id, const void* msg) {
+	const uint16_t can_id = (uint16_t)id;
 	int8_t mob = find_me_a_mob();
 	if (mob == -1) {
 		return NO_MOB_ERR;
 	}
 
+	uint8_t len = can_msg_length(id);
+
 	BIT_SET(mob_on_job, mob);
 	CAN_SET_MOB(mob);
-	MOB_SET_STD_ID(id);
+	MOB_SET_STD_ID(can_id);
 	MOB_SET_DLC(len);
-
 	for (uint8_t i = 0; i < len; ++i) {
-		CANMSG = msg[i];
+		CANMSG = ((uint8_t*)msg)[i];
 	}
 
 	MOB_EN_TX();
@@ -347,9 +342,7 @@ static inline void enable_spy_mob(uint8_t mob) {
 }
 
 
-static void receive_frame(uint8_t mob) {
-
-	const uint16_t id = MOB_GET_STD_ID();
+static void receive_frame(const uint8_t mob, const uint16_t id) {
 	const uint8_t len = MOB_GET_DLC();
 
 	if (rb_left((ringbuffer_t*)&rb) > (3 + len)) {
@@ -371,26 +364,26 @@ static void receive_frame(uint8_t mob) {
 }
 
 
-void read_message(uint16_t* id, uint8_t* len, uint8_t* data) {
+void read_message(struct can_message* msg) {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-		if (!inbox_empty()) {
+		if (can_has_data()) {
 			uint8_t c;
 			rb_pop((ringbuffer_t*)&rb, &c);
-			*id = c << 8;
+			msg->id = c << 8;
 			rb_pop((ringbuffer_t*)&rb, &c);
-			*id += c;
-			rb_pop((ringbuffer_t*)&rb, len);
+			msg->id += c;
+			rb_pop((ringbuffer_t*)&rb, &msg->len);
 
-			for (uint8_t i = 0; i < *len; ++i) {
-				rb_pop((ringbuffer_t*)&rb, &data[i]);
+			for (uint8_t i = 0; i < msg->len; ++i) {
+				rb_pop((ringbuffer_t*)&rb, &msg->data[i]);
 			}
 		}
 	}
 }
 
 
-bool inbox_empty() {
-	return (rb_left((ringbuffer_t*)&rb) < 63) ? false : true;
+bool can_has_data() {
+	return (rb_left((ringbuffer_t*)&rb) < 63) ? true : false;
 }
 
 
@@ -399,6 +392,7 @@ ISR (CANIT_vect) {
 		const uint8_t mob = PRIORITY_MOB();
 		CAN_SET_MOB(mob);
 		const uint8_t canst = CANSTMOB;
+		const uint16_t id = MOB_GET_STD_ID();
 		CANSTMOB = 0;
 		sei();
 
@@ -406,19 +400,13 @@ ISR (CANIT_vect) {
 			case MOB_RX_COMPLETED_DLCW:
 				++dlcw_err;
 			case MOB_RX_COMPLETED:
-				// Run through filter, and return if ID not in ranges.
-				if (mob > (LAST_MOB_NB - NB_SPYMOB)) {
-					uint16_t id = MOB_GET_STD_ID();
-					if ( !((id >= filter1.lower_bound && id < filter1.upper_bound)
-						|| (id >= filter2.lower_bound && id < filter2.upper_bound)) )
-					{
-						CAN_ENABLE_MOB_INTERRUPT(mob);
-						MOB_EN_RX();
-						continue;
-					}
+				if (!can_is_subscribed(id)) {
+					CAN_ENABLE_MOB_INTERRUPT(mob);
+					MOB_EN_RX();
+					continue;
 				}
 
-				receive_frame(mob);
+				receive_frame(mob, id);
 				break;
 
 			case MOB_TX_COMPLETED:

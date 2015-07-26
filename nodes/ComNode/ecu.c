@@ -43,8 +43,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>
 #include <utils.h>
 #include <system_messages.h>
-#include <can_transport.h>
 #include <util/delay.h>
+#include <can.h>
 
 #include "log.h"
 #include "xbee.h"
@@ -148,7 +148,7 @@ void ecu_parse_package(void) {
 
 		if (pkt[i].sensor.id != EMPTY) {
 			const uint16_t tx_id = ECU_PKT + pkt[i].sensor.id;
-			enum medium transport = MESSAGE_INFO(tx_id).transport;
+			enum medium transport = can_msg_transport(tx_id);
 
 			uint8_t buf[sizeof(tx_id)+sizeof(pkt[i].sensor.value)];
 			memcpy(buf, &tx_id, sizeof(tx_id));
@@ -165,7 +165,6 @@ void ecu_parse_package(void) {
 #endif
 
 				can_broadcast(tx_id, &pkt[i].sensor.value);
-				_delay_ms(1); // TODO: can lib cant handle burst data so we have this ugly delay hack
 			}
 
 			if (transport & XBEE) xbee_send(buf, ARR_LEN(buf));

@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <can_transport.h>    // for can_message, can_free, etc
 #include <stdint.h>           // for uint8_t, uint16_t
 #include <stdio.h>            // for printf
 #include <usart.h>            // for usart1_init
@@ -39,14 +38,14 @@ void read_msg(struct can_message message);
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
-static uint16_t msg_num;
+static uint16_t msg_num = 0;
 
 
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
-	init_can_node(COM_NODE);
+	can_init();
 
-	msg_num = 0;
+	can_subscribe_all();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -58,7 +57,9 @@ int main(void) {
 
 	while (1) {
 		while(can_has_data()) {
-			read_msg(read_inbox());
+			struct can_message msg;
+			read_message(&msg);
+			read_msg(msg);
 		}
 	}
 
@@ -67,11 +68,8 @@ int main(void) {
 
 
 void read_msg(struct can_message msg) {
-	const uint8_t len = MESSAGE_INFO(msg.id).len;
-	const uint16_t id  = MESSAGE_INFO(msg.id).can_id;
-
-	printf("MSG:%5u | recieved: %4u | error: %4u |  Got id: %4u and length: %1u\t", msg_num++, get_counter(RX_COMP), get_counter(TOTAL_ERR), id, len);
-	for (uint8_t i = 0; i < len; ++i) {
+	printf("MSG:%5u | recieved: %4u | error: %4u |  Got id: %4u and length: %1u\t", msg_num++, get_counter(RX_COMP), get_counter(TOTAL_ERR), msg.id, msg.len);
+	for (uint8_t i = 0; i < msg.len; ++i) {
 		printf("%3d; 0x%02x  |  ", msg.data[i], msg.data[i]);
 	}
 	printf("\n");

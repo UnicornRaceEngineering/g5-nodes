@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <can_transport.h>                // for can_message, can_broadcast, etc
 #include <io.h>                           // for IO_SET_HIGH, IO_SET_LOW, etc
 #include <stdbool.h>                      // for bool, false, true
 #include <stddef.h>                       // for size_t
@@ -32,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>                        // for usart1_init
 #include <util/delay.h>
 #include <utils.h>                        // for ARR_LEN
+#include <can.h>
 
 #include "../SteeringNode/paddleshift.h"  // for paddle_status::PADDLE_DOWN, etc
 #include "adc.h"                          // for adc_init, adc_vref_t::AVCC
@@ -45,11 +45,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
 
-#define TIMEOUT 		700 	// Timeout for gearshift given in timer ticks
-#define TIMEOUT_NEUTRAL	2000	// Like TIMEOUT just for when going to neutral
-#define MOTOR_STARTUP_TIME	(TIMEOUT / 2)
-
-#define MAX_CURRENT_SENSE	75
+#define TIMEOUT                     (700) 	// Timeout for gearshift given in timer ticks
+#define TIMEOUT_NEUTRAL            (2000)	// Like TIMEOUT just for when going to neutral
+#define MOTOR_STARTUP_TIME	(TIMEOUT / 2)	// Time passing before "looking" at filtered measurements
+#define MAX_CURRENT_SENSE            (75)	// Measured power limit (stop gear motor at this value)
 
 
 enum {
@@ -114,7 +113,7 @@ static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	timer_init();
 	adc_init(1, AVCC, 4);
-	init_can_node(GEAR_NODE);
+	can_init();
 
 	dewalt_init();
 	dewalt_kill();
@@ -122,6 +121,9 @@ static void init(void) {
 	SET_PIN_MODE(NEUT_PORT, NEUT_PIN, INPUT_PULLUP);
 	SET_PIN_MODE(IGN_PORT, IGN_PIN, OUTPUT);
 	IGNITION_UNCUT();
+
+	can_subscribe(PADDLE_STATUS);
+	can_subscribe(NEUTRAL_ENABLED);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -135,7 +137,8 @@ int main(void) {
 
 		bool has_changed_gear = false; // We dont want two gear in a row
 		while (can_has_data()) {
-			struct can_message message = read_inbox();
+			struct can_message message;
+			read_message(&message);
 
 			if (message.id == PADDLE_STATUS && !has_changed_gear) {
 				gearshift_procedure(message.data[0]);
@@ -230,7 +233,7 @@ void start_gearshift(uint8_t gear_request) {
 		}
 		const uint16_t filtered_cs = accumulator / ARR_LEN(buf);
 
-		printf("%d;%d\n", tick, filtered_cs);
+		//printf("%d;%d\n", tick, filtered_cs);
 
 		if (GEAR_IS_NEUTRAL()) {
 			neutral_flag = 1;

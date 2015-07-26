@@ -24,10 +24,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <can_transport.h>    // for can_broadcast, init_can_node
 #include <stdint.h>           // for uint8_t
 #include <usart.h>            // for usart1_init
 #include <util/delay.h>
+#include <can.h>
 
 #include "sysclock.h"         // for sysclock_init
 #include "system_messages.h"  // for node_id::TEST_NODE, etc
@@ -39,7 +39,7 @@ static uint8_t buf_out[64];
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
-	init_can_node(TEST_NODE);
+	can_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -49,7 +49,7 @@ int main(void) {
 	init();
 
 	while (1) {
-		uint8_t node_id = 7;//TEST_NODE;
+		uint8_t node_id = 2;
 		can_broadcast(HEARTBEAT, &node_id);
 		_delay_ms(30);
 	}

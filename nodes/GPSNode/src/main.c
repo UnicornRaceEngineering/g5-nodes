@@ -28,11 +28,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <avr/interrupt.h>
-#include <can_transport.h>    // for can_broadcast, can_malloc, etc
 #include <stdint.h>           // for uint8_t
 #include <usart.h>            // for usart1_init, usart1_io
 #include <util/delay.h>
 #include <utils.h>            // for ARR_LEN, HIGH_BYTE, LOW_BYTE
+#include <can.h>
 
 #include "gps.h"              // for gps_fix, GPS_DMS_TO_DD, gps_get_fix, etc
 #include "system_messages.h"  // for message_id::GPS_DATA, etc
@@ -44,7 +44,7 @@ static void init(void) {
 	gps_set_getc(&usart1_io);
 	usart1_init(GPS_BAUDRATE, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 
-	init_can_node(GPS_NODE);
+	can_init();
 	sei();	//Enable interrupt
 }
 

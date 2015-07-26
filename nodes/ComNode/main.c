@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h> // sei()
 #include <avr/pgmspace.h>
-#include <can_transport.h>         // for can_message, can_free, etc
 #include <m41t81s_rtc.h>           // for rtc_init
 #include <stddef.h>                // for size_t
 #include <stdio.h>                 // for puts_p
@@ -32,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <system_messages.h>       // for message_detail, MESSAGE_INFO, etc
 #include <util/delay.h>
 #include <stdbool.h>
+#include <can.h>
 
 #include "../nodes/ComNode/ecu.h"  // for ecu_init, ecu_parse_package
 #include "xbee.h"                  // for xbee_init, xbee_send
@@ -42,8 +42,9 @@ static void init(void) {
 	xbee_init();
 	// log_init();
 	sysclock_init();
+	can_init();
 
-	init_can_node(COM_NODE);
+	can_subscribe_all();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -56,9 +57,10 @@ int main(void) {
 		// Main work loop
 
 		while (can_has_data()) {
-			struct can_message msg = read_inbox();
-			//struct message_detail msg_info = MESSAGE_INFO(msg.id);
-			const uint8_t transport = MESSAGE_INFO(msg.id).transport;
+			struct can_message msg;
+			read_message(&msg);
+
+			const uint8_t transport = can_msg_transport(msg.id);
 
 			if (transport & SD) {
 				// log_append(&msg->index, sizeof(msg.id));

@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <can_transport.h>    // for can_broadcast, can_free, etc
 #include <io.h>               // for io_pinmode_t::INPUT, SET_PIN_MODE
 #include <stdint.h>           // for uint8_t, uint32_t, uint16_t
 #include <stdio.h>            // for printf
@@ -32,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <utils.h>            // for ARR_LEN, BIT_SET
 #include <stdbool.h>
+#include <can.h>
 
 #include "system_messages.h"  // for message_id, etc
 
@@ -68,7 +68,7 @@ static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
 	wheel_tick_init();
-	init_can_node(SENSOR_FRONT_NODE);
+	can_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -80,7 +80,7 @@ void wheel_speed(enum message_id wheel_id) {
 	const uint32_t current_time = get_tick();
 	const uint32_t duration     = (current_time - last_time);
 
-	if (duration > 130) {
+	if (duration > 50) {
 		const float holes_pr_ms = (float)wheel_tick / duration;
 		const float rpm = (1000.0 * 60.0) / (HOLES_PR_WHEEL / holes_pr_ms); // Convert ms to min
 
@@ -102,10 +102,11 @@ int main(void) {
 
 	while (1) {
 		while (can_has_data()) {
-			read_inbox();
+			struct can_message msg;
+			read_message(&msg);
 		}
 
-		wheel_speed(FRONT_LEFT_WHEEL_SPEED);
+		wheel_speed(FRONT_RIGHT_WHEEL_SPEED);
 	}
 
 	return 0;

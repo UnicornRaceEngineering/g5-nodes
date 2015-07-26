@@ -24,12 +24,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <can_transport.h>    // for can_free, can_message, etc
 #include <stdint.h>           // for uint8_t, uint32_t, uint16_t
 #include <stdio.h>            // for printf
 #include <usart.h>            // for usart1_init
 #include <util/delay.h>
 #include <stdbool.h>
+#include <can.h>
 
 #include "sysclock.h"         // for get_tick, sysclock_init
 #include "system_messages.h"  // for message_detail, node_id::N_NODES, etc
@@ -44,14 +44,14 @@ void handle_heartbeat(struct can_message msg);
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
-uint8_t node_state[N_NODES] = {0};
-uint32_t last_heartbeat[N_NODES] = {0};
+uint8_t node_state[5] = {0};
+uint32_t last_heartbeat[5] = {0};
 
 
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
-	init_can_node(SPY_NODE);
+	can_init();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -60,10 +60,10 @@ static void init(void) {
 int main(void) {
 	init();
 
-
 	while (1) {
 		while (can_has_data()) {
-			struct can_message msg = read_inbox();
+			struct can_message msg;
+			read_message(&msg);
 
 			switch(msg.id) {
 				case HEARTBEAT: handle_heartbeat(msg); break;
@@ -71,7 +71,7 @@ int main(void) {
 			}
 		}
 
-		for (uint8_t i = 0; i < N_NODES; ++i) {
+		for (uint8_t i = 0; i < 5; ++i) {
 			if (node_state[i]) {
 				if ((get_tick() - last_heartbeat[i]) > HEARTBEAT_TIMEOUT) {
 					node_state[i] = 0;

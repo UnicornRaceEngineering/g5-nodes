@@ -1,7 +1,6 @@
 add_subdirectory(buffered_usart_echo)
 add_subdirectory(io_read_write)
 add_subdirectory(twi_master)
-add_subdirectory(can_transport_rxtx)
 add_subdirectory(sd_io)
 add_subdirectory(fatfs_io)
 add_subdirectory(sysclock)
