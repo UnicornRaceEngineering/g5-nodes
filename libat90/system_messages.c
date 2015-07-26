@@ -83,13 +83,13 @@ struct message_detail message_info[END_OF_LIST] = {
 };
 
 
-void can_subscribe(enum medium id) {
-	message_info[id].subscribed = true;
+void can_subscribe(enum message_id id) {
+	message_info[(uint16_t)id].subscribed = true;
 }
 
 
-void can_unsubscribe(enum medium id) {
-	message_info[id].subscribed = false;
+void can_unsubscribe(enum message_id id) {
+	message_info[(uint16_t)id].subscribed = false;
 }
 
 
@@ -107,16 +107,16 @@ void can_unsubscribe_all(void) {
 }
 
 
-bool can_is_subscribed(enum medium id) {
-	return message_info[id].subscribed;
+bool can_is_subscribed(enum message_id id) {
+	return message_info[(uint16_t)id].subscribed;
 }
 
 
-uint8_t can_msg_length(enum medium id) {
-	return message_info[id].len;
+uint8_t can_msg_length(enum message_id id) {
+	return message_info[(uint16_t)id].len;
 }
 
 
-uint8_t can_msg_transport(enum medium id) {
-	return message_info[id].transport;
+uint8_t can_msg_transport(enum message_id id) {
+	return message_info[(uint16_t)id].transport;
 }
