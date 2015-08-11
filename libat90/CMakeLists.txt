@@ -5,7 +5,6 @@ set(SRC_FILES
 	pwm.c
 	timer.c
 	usart.c
-	heap.c
 	spi.c
 	system_messages.c
 	utils.c

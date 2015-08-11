@@ -38,7 +38,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "can.h"       // for can_counters::NO_MOB_ERR, etc
 #include "can_baud.h"  // for CANBT1_VALUE, CANBT2_VALUE, CANBT3_VALUE
-#include "heap.h"      // for sfree, smalloc
 #include "sysclock.h"  // for get_tick
 #include "utils.h"     // for BIT_CLEAR, BIT_SET, BITMASK_SET, BIT_CHECK, etc
 #include "ringbuffer.h"
