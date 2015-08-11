@@ -49,6 +49,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CAN_DISABLE()     ( CANGCON &= ~(1<<ENASTB))
 #define CAN_FULL_ABORT()  { CANGCON |=  (1<<ABRQ); CANGCON &= ~(1<<ABRQ); }
 
+#define RINGBF_SIZE     ( 64        ) //!< Size of ringbuffer for recieved CAN frames.
 #define NB_MOB          ( 15        ) //!< Number of MOB's
 #define DATA_MAX        ( 8         ) //!< The can can max transmit a payload of 8 uint8_t
 #define LAST_MOB_NB     ( NB_MOB-1  ) //!< Index of the last MOB. This is useful when looping over all MOB's
@@ -190,7 +191,7 @@ static void reset_counters(void);
 
 static volatile uint16_t mob_on_job;
 static volatile ringbuffer_t rb;
-static uint8_t buff[64];
+static uint8_t buff[RINGBF_SIZE];
 
 static volatile uint16_t dlcw_err;
 static volatile uint16_t rx_comp;
@@ -205,7 +206,9 @@ static volatile uint16_t alloc_err;
 
 
 //______________________________________________________________________________
-
+/**
+ * Reset all error counters.
+ */
 static void reset_counters() {
 	dlcw_err  = 0;
 	rx_comp   = 0;
@@ -218,6 +221,11 @@ static void reset_counters() {
 }
 
 
+/**
+ * Get number of any counted errors from the CAN driver,
+ * mainly for debugging purposes.
+ * @return value Any counted error value.
+ */
 uint16_t get_counter(enum can_counters counter) {
 	switch (counter) {
 		case DLCW_ERR: 	return dlcw_err;
@@ -237,26 +245,20 @@ uint16_t get_counter(enum can_counters counter) {
 }
 
 
+/**
+ * Initializes the CAN driver, which involves:
+ * Initializing the ringbuffer,
+ * reset counters,
+ * set baudrate,
+ * reset mobs,
+ * enable listening mobs (spy mobs).
+ */
 void can_init() {
-	rb_init((ringbuffer_t*)&rb, buff, 64);
+	rb_init((ringbuffer_t*)&rb, buff, RINGBF_SIZE);
 
 	CAN_RESET();
 	reset_counters();
 
-	/*
-	The CPU freq is 11059200 so with a baud-rate of 204800 one get exactly
-	11059200 % 204800 = 0 which means the CPU freq is divisible with the
-	baud-rate.
-	CPU freq / baud-rate = clock cycles per bit transmitted = 54
-	setting the prescalar to 6
-	and gives Tbit value of 9
-	because: (clock cycles per bit transmitted) / Tbit = prescalar
-	and because Tbit = Tsync + Tprs + Tph1 + Tph2
-	we get:
-	Tprs = 4, Tph1 = 2 and Tph2 = 2
-	which is set in the follow register values.
-	(because 11059200 % 204800 = 0 we get a timing error = 0)
-	 */
 	CANBT1 = CANBT1_VALUE;
 	CANBT2 = CANBT2_VALUE;
 	CANBT3 = CANBT3_VALUE;
@@ -283,6 +285,10 @@ void can_init() {
 }
 
 
+/**
+ * Broadcasts a frame on the CAN bus.
+ * @return err SUCCES or NO_MOB_ERR.
+ */
 uint8_t can_broadcast(const enum message_id id, const void* msg) {
 	const uint16_t can_id = (uint16_t)id;
 	int8_t mob = find_me_a_mob();
@@ -306,6 +312,12 @@ uint8_t can_broadcast(const enum message_id id, const void* msg) {
 }
 
 
+/**
+ * Searches through a list of 16 booleans
+ * (a single 16-bit integer), to find a MOB
+ * which is currently not in use.
+ * @return mob MOB number or -1 for no MOB.
+ */
 static inline int8_t find_me_a_mob(void) {
 	for (uint8_t i = 0; i < 15; i++)
 		if (!BIT_CHECK(mob_on_job, i))
@@ -316,6 +328,14 @@ static inline int8_t find_me_a_mob(void) {
 }
 
 
+/**
+ * Initializes a mob that listens to all ID's.
+ * This is essentially a recievemob.
+ * Even though the MOB will recieve frames with
+ * any ID's, not all frames are saved.
+ * Non subscribed frames are dropped immediately.
+ * @param mob The MOB to enable.
+ */
 static inline void enable_spy_mob(uint8_t mob) {
 	BIT_SET(mob_on_job, mob);
 	CAN_SET_MOB(mob);
@@ -326,6 +346,13 @@ static inline void enable_spy_mob(uint8_t mob) {
 }
 
 
+/**
+ * Reads a CAN frame from the bus and pushes it onto the
+ * CAN input ring-buffer.
+ * It pushes the id, data length and data itself.
+ * @param mob The mob to read data from.
+ * @param id The id of the recieved message.
+ */
 static void receive_frame(const uint8_t mob, const uint16_t id) {
 	const uint8_t len = MOB_GET_DLC();
 
@@ -348,6 +375,10 @@ static void receive_frame(const uint8_t mob, const uint16_t id) {
 }
 
 
+/**
+ * Reads a message from the CAN buffer.
+ * @param Pointer to CAN data struct to fill.
+ */
 void read_message(struct can_message* msg) {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 		if (can_has_data()) {
@@ -366,8 +397,12 @@ void read_message(struct can_message* msg) {
 }
 
 
+/**
+ * Check if any data in buffer.
+ * @preturn Boolean on buffer status.
+ */
 bool can_has_data() {
-	return (rb_left((ringbuffer_t*)&rb) < 63) ? true : false;
+	return (rb_left((ringbuffer_t*)&rb) < RINGBF_SIZE-1) ? true : false;
 }
 
 

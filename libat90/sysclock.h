@@ -21,6 +21,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+* @file can.c
+* @brief
+*   Used for setting up a universal timer
+*	and count elapsed milliseconds.
+*/
+
 #ifndef SYSCLOCK_H
 #define SYSCLOCK_H
 

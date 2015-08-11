@@ -21,6 +21,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+* @file can.c
+* @brief
+*   Used for setting up a universal timer
+*	and count elapsed milliseconds.
+*/
+
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
@@ -31,6 +38,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static volatile uint32_t tick;
 
 
+/**
+ * Setup 32-bit sysclock timer.
+ */
 void sysclock_init(void) {
 	tick = 0;
 
@@ -51,6 +61,11 @@ void sysclock_init(void) {
 	TIMSK1 = 1 << OCIE1A;
 }
 
+
+/**
+ * Atommically reads the milliseconds counted since clock init.
+ * @preturn numbers of counted milliseconds since clock init.
+ */
 uint32_t get_tick(void) {
 	uint32_t read_tick;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {

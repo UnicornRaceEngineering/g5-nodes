@@ -58,7 +58,7 @@ struct message_detail message_info[END_OF_LIST] = {
 	[ECU_PKT + TRIGGER_ERR]        = { .subscribed = false,    .len = 4,    .transport = 0                   },
 	[ECU_PKT + CAM_ANGLE1]         = { .subscribed = false,    .len = 4,    .transport = 0                   },
 	[ECU_PKT + CAM_ANGLE2]         = { .subscribed = false,    .len = 4,    .transport = 0                   },
-	[ECU_PKT + ROAD_SPEED]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD }, /* Check if this contains any data */
+	[ECU_PKT + ROAD_SPEED]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
 	[ECU_PKT + MAP_SENSOR]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
 	[ECU_PKT + BATTERY_V]          = { .subscribed = false,    .len = 4,    .transport = 0 | CAN | XBEE | SD },
 	[ECU_PKT + LAMBDA_V]           = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
@@ -83,16 +83,27 @@ struct message_detail message_info[END_OF_LIST] = {
 };
 
 
+/**
+ * Subscribe to message ID.
+ * @param id.
+ */
 void can_subscribe(enum medium id) {
 	message_info[id].subscribed = true;
 }
 
 
+/**
+ * Unsubscribe to message ID.
+ * @param id.
+ */
 void can_unsubscribe(enum medium id) {
 	message_info[id].subscribed = false;
 }
 
 
+/**
+ * Subscribe to to all messages.
+ */
 void can_subscribe_all(void) {
 	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = true;
@@ -100,6 +111,9 @@ void can_subscribe_all(void) {
 }
 
 
+/**
+ * Unsubscribe to to all messages.
+ */
 void can_unsubscribe_all(void) {
 	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = false;
@@ -107,16 +121,31 @@ void can_unsubscribe_all(void) {
 }
 
 
+/**
+ * Check if message ID is subscribed.
+ * @param id.
+ * @return status subscribed
+ */
 bool can_is_subscribed(enum medium id) {
 	return message_info[id].subscribed;
 }
 
 
+/**
+ * Get agreed upon length of message with ID.
+ * @param id.
+ * @return length
+ */
 uint8_t can_msg_length(enum medium id) {
 	return message_info[id].len;
 }
 
 
+/**
+ * Get agreed upon method of transport for a message.
+ * @param id.
+ * @return method transport
+ */
 uint8_t can_msg_transport(enum medium id) {
 	return message_info[id].transport;
 }
