@@ -38,12 +38,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "can.h"       // for can_counters::NO_MOB_ERR, etc
 #include "can_baud.h"  // for CANBT1_VALUE, CANBT2_VALUE, CANBT3_VALUE
-#include "sysclock.h"  // for get_tick
 #include "utils.h"     // for BIT_CLEAR, BIT_SET, BITMASK_SET, BIT_CHECK, etc
 #include "ringbuffer.h"
 #include "system_messages.h"
-
-struct can_msg_t;
 
 
 //_____ D E F I N I T I O N S __________________________________________________
@@ -80,18 +77,6 @@ enum mob_status_t {
 
 
 //_____ M A C R O S ____________________________________________________________
-//!< @name MOB Transmit and Receive
-//!< Transmit or receive data on the current MOB
-//!< @{
-#define MOB_TX_DATA(data) do { \
-	for (uint8_t i = 0; i < 8; ++i) { CANMSG = data[i]; } \
-} while (0)
-
-#define MOB_RX_DATA(data) do { \
-	for (uint8_t i = 0; i < 8; ++i) { data[i] = CANMSG;} \
-} while (0)
-//!< @} ----------
-
 #define TX_BUSY() ( BIT_CHECK(CANGSTA, TXBSY) )
 
 //!< @name CAN status Interrupt register
@@ -392,20 +377,21 @@ ISR (CANIT_vect) {
 		CAN_SET_MOB(mob);
 		const uint8_t canst = CANSTMOB;
 		const uint16_t id = MOB_GET_STD_ID();
-		CANSTMOB = 0;
+		MOB_CLEAR_INT_STATUS();
 		sei();
 
 		switch (canst) {
 			case MOB_RX_COMPLETED_DLCW:
 				++dlcw_err;
 			case MOB_RX_COMPLETED:
+
 				if (!can_is_subscribed(id)) {
 					CAN_ENABLE_MOB_INTERRUPT(mob);
 					MOB_EN_RX();
 					continue;
+				} else {
+					receive_frame(mob, id);
 				}
-
-				receive_frame(mob, id);
 				break;
 
 			case MOB_TX_COMPLETED:
