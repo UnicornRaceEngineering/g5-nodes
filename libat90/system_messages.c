@@ -58,7 +58,7 @@ struct message_detail message_info[END_OF_LIST] = {
 	[ECU_PKT + TRIGGER_ERR]        = { .subscribed = false,    .len = 4,    .transport = 0                   },
 	[ECU_PKT + CAM_ANGLE1]         = { .subscribed = false,    .len = 4,    .transport = 0                   },
 	[ECU_PKT + CAM_ANGLE2]         = { .subscribed = false,    .len = 4,    .transport = 0                   },
-	[ECU_PKT + ROAD_SPEED]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD }, /* Check if this contains any data */
+	[ECU_PKT + ROAD_SPEED]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
 	[ECU_PKT + MAP_SENSOR]         = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
 	[ECU_PKT + BATTERY_V]          = { .subscribed = false,    .len = 4,    .transport = 0 | CAN | XBEE | SD },
 	[ECU_PKT + LAMBDA_V]           = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
@@ -93,6 +93,9 @@ void can_unsubscribe(enum message_id id) {
 }
 
 
+/**
+ * Subscribe to to all messages.
+ */
 void can_subscribe_all(void) {
 	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = true;
@@ -100,6 +103,9 @@ void can_subscribe_all(void) {
 }
 
 
+/**
+ * Unsubscribe to to all messages.
+ */
 void can_unsubscribe_all(void) {
 	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = false;

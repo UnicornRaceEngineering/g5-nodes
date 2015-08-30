@@ -45,9 +45,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define IGNITION_CUT()			( IO_SET_HIGH(IGN_PORT, IGN_PIN) )
 #define IGNITION_UNCUT()		( IO_SET_LOW(IGN_PORT, IGN_PIN) )
 
-#define TIMEOUT                     (700) 	// Timeout for gearshift given in timer ticks
+#define TIMEOUT                     (1500) 	// Timeout for gearshift given in timer ticks
 #define TIMEOUT_NEUTRAL            (2000)	// Like TIMEOUT just for when going to neutral
-#define MOTOR_STARTUP_TIME	(TIMEOUT / 2)	// Time passing before "looking" at filtered measurements
+#define MOTOR_STARTUP_TIME	        (150)	// Time passing before "looking" at filtered measurements
 #define MAX_CURRENT_SENSE            (75)	// Measured power limit (stop gear motor at this value)
 
 
@@ -63,6 +63,8 @@ void stop_gearshift(void);
 void gearshift_procedure(uint8_t gear_request);
 void gear_estimate(uint8_t gear_request);
 void go_slow(uint8_t gear_request);
+bool moving_avg_filter(void);
+bool diff_filter(void);
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
@@ -74,19 +76,19 @@ uint8_t neutral_button = 0;
 
 static int shift_gear(int gear_dir) {
 	switch (gear_dir) {
-		case GEAR_DOWN:
+		case GEAR_UP:
 			dewalt_set_direction_B();
 			dewalt_set_pwm_dutycycle(100);
 			break;
-		case GEAR_UP:
+		case GEAR_DOWN:
 			dewalt_set_direction_A();
 			dewalt_set_pwm_dutycycle(100);
 			break;
-		case GEAR_NEUTRAL_DOWN:
+		case GEAR_NEUTRAL_UP:
 			dewalt_set_direction_B();
 			dewalt_set_pwm_dutycycle(50);
 			break;
-		case GEAR_NEUTRAL_UP:
+		case GEAR_NEUTRAL_DOWN:
 			dewalt_set_direction_A();
 			dewalt_set_pwm_dutycycle(50);
 			break;
@@ -213,13 +215,80 @@ void start_gearshift(uint8_t gear_request) {
 
 	// Reset
 	neutral_flag = 0;
-	tick = 0;
 
+	bool high_resistance = moving_avg_filter();
+	//bool high_resistance = diff_filter();
+
+	if (high_resistance) {
+		const uint16_t limit_time = tick;
+		printf("reached limit - with time %d\n", limit_time);
+	} else {
+		printf("timeout\n");
+	}
+}
+
+
+bool diff_filter() {
+	bool high_resistance = false;
+	tick = 0;
 	// Moving average buffer
 	uint16_t buf[16] = {0}; // pow2 so division can be done with bitshifts
 	size_t buf_i = 0;
 
+	uint16_t cs_old = 0;
+	uint16_t cs_new = 0;
+
+	uint16_t pr_fitty = 300;
+
+	while(tick <= TIMEOUT) {
+		// add new data to array
+		const uint16_t current_sense = vnh2sp30_read_CS();
+		buf[buf_i++] = current_sense;
+		if (buf_i == ARR_LEN(buf)) buf_i = 0;
+
+		// Low pass moving avarage filter data
+		uint32_t sum = 0;
+		for (size_t i = 0; i < ARR_LEN(buf); i++) {
+			sum += buf[i];
+		}
+		const uint16_t filtered_cs = sum / ARR_LEN(buf);
+
+		if (tick > pr_fitty) {
+			cs_old = cs_new;
+			cs_new = filtered_cs;
+			pr_fitty += 50;
+			if ((cs_new + 20) >= cs_old) {
+				high_resistance = true;
+				printf("Sudden jump in resistance\n");
+				break;
+			}
+		}
+
+		printf("%d;%d\n", tick, filtered_cs);
+
+		if (GEAR_IS_NEUTRAL()) {
+			neutral_flag = 1;
+		}
+
+		if (tick > MOTOR_STARTUP_TIME) {
+			if (filtered_cs > MAX_CURRENT_SENSE) {
+				high_resistance = true;
+				printf("WARNING HIGH CURRENT\n");
+				break;
+			}
+		}
+	}
+
+	return high_resistance;
+}
+
+
+bool moving_avg_filter() {
 	bool high_resistance = false;
+	tick = 0;
+	// Moving average buffer
+	uint16_t buf[16] = {0}; // pow2 so division can be done with bitshifts
+	size_t buf_i = 0;
 	while(tick <= TIMEOUT) {
 		// add new data to array
 		const uint16_t current_sense = vnh2sp30_read_CS();
@@ -233,7 +302,7 @@ void start_gearshift(uint8_t gear_request) {
 		}
 		const uint16_t filtered_cs = accumulator / ARR_LEN(buf);
 
-		//printf("%d;%d\n", tick, filtered_cs);
+		printf("%d;%d\n", tick, filtered_cs);
 
 		if (GEAR_IS_NEUTRAL()) {
 			neutral_flag = 1;
@@ -245,16 +314,11 @@ void start_gearshift(uint8_t gear_request) {
 				break;
 			}
 		}
-
 	}
 
-	if (high_resistance) {
-		const uint16_t limit_time = tick;
-		printf("reached limit - with time %d\n", limit_time);
-	} else {
-		printf("timeout\n");
-	}
+	return high_resistance;
 }
+
 
 void stop_gearshift() {
 	IGNITION_UNCUT();
