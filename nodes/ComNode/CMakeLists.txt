@@ -5,7 +5,7 @@ set(SRC_FILES
 	ecu.c
 	xbee.c
 	bson.c
-	# log.c
+	log.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})

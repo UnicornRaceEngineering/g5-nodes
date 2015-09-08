@@ -63,6 +63,13 @@ static FILE *ecu = &usart0_io;
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
+static void send_request(void) {
+	const uint8_t heart_beat[] = {0x12, 0x34, 0x56, 0x78, 0x17, 0x08, 0, 0, 0, 0};
+	for (size_t i = 0; i < ARR_LEN(heart_beat); ++i) {
+		fputc(heart_beat[i], ecu);
+	}
+}
+
 static inline float clamp(float value) {
 	uint32_t u32;
 	memcpy(&u32, &value, sizeof(value));
@@ -72,6 +79,7 @@ static inline float clamp(float value) {
 }
 
 void ecu_parse_package(void) {
+	send_request();
 
 	struct ecu_package {
 		struct sensor sensor;
@@ -168,36 +176,11 @@ void ecu_parse_package(void) {
 			}
 
 			if (transport & XBEE) xbee_send(buf, ARR_LEN(buf));
-			// if (transport & SD) log_append(buf, ARR_LEN(buf));
+			if (transport & SD) log_append(buf, ARR_LEN(buf));
 		}
 	}
 }
 
 void ecu_init(void) {
 	usart0_init(ECU_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));  // ECU
-
-	// setup timer 0 which periodically sends heartbeat to the ECU
-	{
-		// 1/((F_CPU/Prescaler)/n_timersteps)
-		// 1/((11059200/1024)/256) = approx 23.7 ms or about 42 Hz
-		OCR0A = 100;                     // Set start value
-		TIMSK0 |= 1 << OCIE0A;           // Enable timer compare match interrupt
-		TCCR0A |= 1 << CS02 | 1 << CS00; // Set prescaler 1024
-	}
-}
-
-
-ISR(ECU_HEARTBEAT_ISR_VECT) {
-	static int delay = HEARTBEAT_DELAY_LENGTH;
-
-	// We have to send a start sequence to the ECU to force it respond with data
-	// but if we ask too often it crashes
-	if (!delay--) {
-		const uint8_t heart_beat[] = {0x12, 0x34, 0x56, 0x78, 0x17, 0x08, 0, 0, 0, 0};
-		for (size_t i = 0; i < ARR_LEN(heart_beat); ++i) {
-			fputc(heart_beat[i], ecu);
-		}
-		delay = HEARTBEAT_DELAY_LENGTH; // Reset the delay
-	}
-
 }

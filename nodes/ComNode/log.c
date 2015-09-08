@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>    // for uint8_t
 #include <string.h>    // for memcpy, memset
 #include <util/delay.h>
+#include <stdio.h>
 
 #include "log.h"
 
@@ -40,16 +41,24 @@ static struct payload {
 	size_t i;
 } p;
 
+#include <usart.h>
 void log_init(void) {
 	memset(&p, 0, sizeof(p));
-	f_mount(&fs, "", 1);
+
+	printf("Trying to mount...\t");
+	if (f_mount(&fs, "", 1) != FR_OK) {
+			printf("FAILED\n");
+	} else {
+		printf("OK\n");
+	}
 
 	// increment filename until we have a new file that does not already exists.
 	char file_name[32] = {'\0'};
 	unsigned i = 0;
 	do {
 		sprintf_P(file_name, PSTR("log%u.dat"), i++);
-	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) == FR_EXIST);
+		if (i > 1000) break;
+	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
 }
 
 static int flush_to_sd(void) {

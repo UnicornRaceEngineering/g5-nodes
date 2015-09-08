@@ -35,12 +35,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "../nodes/ComNode/ecu.h"  // for ecu_init, ecu_parse_package
 #include "xbee.h"                  // for xbee_init, xbee_send
+#include "log.h"
 
 static void init(void) {
 	rtc_init();
 	ecu_init();
 	xbee_init();
-	// log_init();
+	log_init();
 	sysclock_init();
 	can_init();
 
@@ -63,8 +64,8 @@ int main(void) {
 			const uint8_t transport = can_msg_transport(msg.id);
 
 			if (transport & SD) {
-				// log_append(&msg->index, sizeof(msg.id));
-				// log_append(msg->data, len);
+				log_append(&msg.id, sizeof(msg.id));
+				log_append(msg.data, msg.len);
 			}
 
 			if (transport & XBEE) {
