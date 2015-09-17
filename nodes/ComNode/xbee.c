@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>  // for memcpy, memset
 #include <usart.h>   // for usart1_init, usart1_byte_output
 #include <utils.h>   // for ARR_LEN
+#include <util/delay.h>
 #include <system_messages.h>
 
 #include "log.h"
@@ -61,9 +62,6 @@ static void prepare_multi_package(enum data_request r) {
 	n_multi = 1;
 	req = REQUEST_OFFSET+r;
 	xbee_flush();
-	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
-	xbee_send(&((uint8_t){req}), sizeof(uint8_t)); // Dummy
-	xbee_flush();
 }
 
 static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
@@ -76,6 +74,8 @@ static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
 	n_multi++;
 	xbee_send(buf, n);
 	xbee_flush();
+
+	_delay_ms(15); // We have to delay so we dont murder the xbee hardware buffer (not our software buffer)
 
 	return n;
 }
@@ -125,7 +125,7 @@ int request_log(void) {
 
 	const uint16_t lognr = MERGE_BYTE(hi, lo);
 
-	prepare_multi_package(REQUEST_NUM_LOGS);
+	prepare_multi_package(REQUEST_LOG);
 	int rc = log_read(lognr, &send_multi_pkt); // TODO something about multi frame messages and that log_read does not use the standard package format and then breaks everything
 	end_multi_pkt();
 	return rc;
@@ -135,7 +135,7 @@ int request_num_logs(void) {
 	prepare_multi_package(REQUEST_NUM_LOGS);
 
 	uint16_t n_logs = log_get_num_logs();
-	send_multi_pkt((uint8_t*)&((uint16_t){n_logs}), sizeof(n_logs));
+	send_multi_pkt((uint8_t*)&n_logs, sizeof(n_logs));
 
 	end_multi_pkt();
 	return 0;
