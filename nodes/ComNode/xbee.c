@@ -41,7 +41,7 @@ static FILE *xbee_in = &usart1_io;
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
-static uint32_t n_multi = 0; // Number of multi packages send
+static uint32_t n_multi = 1; // Number of multi packages send,
 
 enum data_request {
 	REQUEST_NONE,
@@ -56,11 +56,10 @@ static struct payload {
 	size_t i;
 } p;
 
-static void prepare_multi_package(uint32_t nbytes, enum data_request r) {
-	n_multi = 0;
+static void prepare_multi_package(enum data_request r) {
+	n_multi = 1;
 	xbee_flush();
 	xbee_send((uint8_t*)&((uint16_t){REQUEST_OFFSET+r}), sizeof(uint16_t));
-	xbee_send((uint8_t*)&((uint32_t){nbytes}), sizeof(uint32_t));
 }
 
 static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
@@ -74,6 +73,10 @@ static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
 	xbee_flush();
 
 	return n;
+}
+static void end_multi_pkt(void) {
+	n_multi = 0; // zero means eof
+	xbee_send(&((uint8_t){0}), sizeof(uint8_t));
 }
 
 void xbee_init(void) {
@@ -114,14 +117,19 @@ int request_log(void) {
 
 	const uint16_t lognr = MERGE_BYTE(hi, lo);
 
-	return log_read(lognr, xbee_out); // TODO something about multi frame messages and that log_read does not use the standard package format and then breaks everything
+	prepare_multi_package(REQUEST_NUM_LOGS);
+	int rc = log_read(lognr, &send_multi_pkt); // TODO something about multi frame messages and that log_read does not use the standard package format and then breaks everything
+	end_multi_pkt();
+	return rc;
 }
 
 int request_num_logs(void) {
-	prepare_multi_package(sizeof(uint16_t), REQUEST_NUM_LOGS);
+	prepare_multi_package(REQUEST_NUM_LOGS);
 
 	uint16_t n_logs = log_get_num_logs();
 	send_multi_pkt((uint8_t*)&((uint16_t){n_logs}), sizeof(n_logs));
+
+	end_multi_pkt();
 	return 0;
 }
 

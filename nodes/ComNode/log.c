@@ -90,46 +90,31 @@ void log_sync(void) {
 	flush_to_sd();
 }
 
-int log_read(uint16_t lognr, FILE* fd) {
-	// TODO use f_forward instead? http://elm-chan.org/fsw/ff/en/forward.html
-	if (fd == NULL) return -1;
-
+int log_read(uint16_t lognr, unsigned (*forward) (const uint8_t*, unsigned)) {
 	char file_name[16] = {'\0'};
 	sprintf_P(file_name, FMT_LOG_NAME, lognr);
 
 	log_sync();
 
 	FIL f;
-	if (f_open(&f, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) goto err;
+	if (f_open(&f, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) return -1;
 
-	const uint32_t fsize = f_size(&f);
-	for (size_t i = 0; i < sizeof(fsize); i++) {
-		fputc(((uint8_t*)&fsize)[i], fd);
-	}
+	// const uint32_t fsize = f_size(&f);
+	// for (size_t i = 0; i < sizeof(fsize); i++) {
+	// 	fputc(((uint8_t*)&fsize)[i], fd);
+	// }
 
 	// seek to the start of file
-	if (f_lseek(&f, 0) != FR_OK) goto err;
+	if (f_lseek(&f, 0) != FR_OK) return -1;
 
-	uint32_t bytes_left = fsize;
-	while (bytes_left != 0) {
-		uint8_t buf[32];
-
-		const unsigned btr = (ARR_LEN(buf) < bytes_left) ? ARR_LEN(buf) : bytes_left;
-		unsigned br;
-		if (f_read(&f, buf, btr, &br) != FR_OK) goto err;
-		bytes_left -= br;
-
-		for (size_t i = 0; i < br; i++) {
-			fputc(buf[i], fd);
-		}
+	FRESULT rc = FR_OK;
+	while (rc == FR_OK && !f_eof(&f)) {
+		unsigned n;
+		rc = f_forward(&f, forward, 32, &n);
 	}
+	f_close(&f);
 
-	log_init();
 	return 0;
-
-err:
-	log_init();
-	return -1;
 }
 
 unsigned log_get_num_logs(void) {
