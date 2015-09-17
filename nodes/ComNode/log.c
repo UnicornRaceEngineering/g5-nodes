@@ -98,16 +98,17 @@ int log_read(uint16_t lognr, FILE* fd) {
 	sprintf_P(file_name, FMT_LOG_NAME, lognr);
 
 	log_sync();
-	if (f_close(&file) != FR_OK) goto err;
-	if (f_open(&file, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) goto err;
 
-	const uint32_t fsize = f_size(&file);
+	FIL f;
+	if (f_open(&f, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) goto err;
+
+	const uint32_t fsize = f_size(&f);
 	for (size_t i = 0; i < sizeof(fsize); i++) {
 		fputc(((uint8_t*)&fsize)[i], fd);
 	}
 
 	// seek to the start of file
-	if (f_lseek(&file, 0) != FR_OK) goto err;
+	if (f_lseek(&f, 0) != FR_OK) goto err;
 
 	uint32_t bytes_left = fsize;
 	while (bytes_left != 0) {
@@ -115,7 +116,7 @@ int log_read(uint16_t lognr, FILE* fd) {
 
 		const unsigned btr = (ARR_LEN(buf) < bytes_left) ? ARR_LEN(buf) : bytes_left;
 		unsigned br;
-		if (f_read(&file, buf, btr, &br) != FR_OK) goto err;
+		if (f_read(&f, buf, btr, &br) != FR_OK) goto err;
 		bytes_left -= br;
 
 		for (size_t i = 0; i < br; i++) {

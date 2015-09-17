@@ -41,6 +41,8 @@ static FILE *xbee_in = &usart1_io;
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
+static uint32_t n_multi = 0; // Number of multi packages send
+
 enum data_request {
 	REQUEST_NONE,
 	REQUEST_LOG,
@@ -53,6 +55,26 @@ static struct payload {
 	uint8_t buf[64 - 3 - 1 - 1];
 	size_t i;
 } p;
+
+static void prepare_multi_package(uint32_t nbytes, enum data_request r) {
+	n_multi = 0;
+	xbee_flush();
+	xbee_send((uint8_t*)&((uint16_t){REQUEST_OFFSET+r}), sizeof(uint16_t));
+	xbee_send((uint8_t*)&((uint32_t){nbytes}), sizeof(uint32_t));
+}
+
+static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
+	if (n == 0) return 1;
+
+	if (n + sizeof(n_multi) > ARR_LEN(p.buf)) return 0;
+
+	xbee_send((uint8_t*)&n_multi, sizeof(n_multi));
+	n_multi++;
+	xbee_send(buf, n);
+	xbee_flush();
+
+	return n;
+}
 
 void xbee_init(void) {
 	memset(&p, 0, sizeof(p));
@@ -96,8 +118,10 @@ int request_log(void) {
 }
 
 int request_num_logs(void) {
-	unsigned n_logs = log_get_num_logs();
-	xbee_send((uint8_t*)&((uint16_t){n_logs}), sizeof(uint16_t));
+	prepare_multi_package(sizeof(uint16_t), REQUEST_NUM_LOGS);
+
+	uint16_t n_logs = log_get_num_logs();
+	send_multi_pkt((uint8_t*)&((uint16_t){n_logs}), sizeof(n_logs));
 	return 0;
 }
 
@@ -105,9 +129,6 @@ int xbee_check_request(void) {
 	if (!xbee_has_data()) return 0;
 
 	const enum data_request r = (int)fgetc(xbee_in);
-
-	xbee_flush();
-	xbee_send((uint8_t*)&((uint16_t){REQUEST_OFFSET+r}), sizeof(uint16_t));
 
 	int rc;
 	switch (r) {
