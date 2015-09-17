@@ -51,6 +51,7 @@ uint32_t last_heartbeat[5] = {0};
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sysclock_init();
+	can_subscribe(HEARTBEAT);
 	can_init();
 
 	sei();
