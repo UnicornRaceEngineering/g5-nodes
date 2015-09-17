@@ -34,6 +34,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define XBEE_BAUD 	(115200)
 
+enum data_request {
+	REQUEST_NONE,
+	REQUEST_LOG,
+	REQUEST_NUM_LOGS,
+};
+
 static FILE *xbee_out = &usart1_byte_output;
 static FILE *xbee_in = &usart1_io;
 #define xbee_has_data()	usart1_has_data()
@@ -42,12 +48,7 @@ static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
 static uint32_t n_multi = 1; // Number of multi packages send,
-
-enum data_request {
-	REQUEST_NONE,
-	REQUEST_LOG,
-	REQUEST_NUM_LOGS,
-};
+static enum data_request req;
 
 static struct payload {
 	// the buffer is the size of uart buffer with package overhead substracted.
@@ -58,15 +59,19 @@ static struct payload {
 
 static void prepare_multi_package(enum data_request r) {
 	n_multi = 1;
+	req = REQUEST_OFFSET+r;
 	xbee_flush();
-	xbee_send((uint8_t*)&((uint16_t){REQUEST_OFFSET+r}), sizeof(uint16_t));
+	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
+	xbee_send(&((uint8_t){req}), sizeof(uint8_t)); // Dummy
+	xbee_flush();
 }
 
 static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
 	if (n == 0) return 1;
 
-	if (n + sizeof(n_multi) > ARR_LEN(p.buf)) return 0;
+	if (n + sizeof(n_multi) + sizeof(uint16_t) > ARR_LEN(p.buf)) return 0;
 
+	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
 	xbee_send((uint8_t*)&n_multi, sizeof(n_multi));
 	n_multi++;
 	xbee_send(buf, n);
@@ -76,7 +81,10 @@ static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
 }
 static void end_multi_pkt(void) {
 	n_multi = 0; // zero means eof
-	xbee_send(&((uint8_t){0}), sizeof(uint8_t));
+
+	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
+	xbee_send((uint8_t*)&n_multi, sizeof(n_multi));
+	xbee_flush();
 }
 
 void xbee_init(void) {
