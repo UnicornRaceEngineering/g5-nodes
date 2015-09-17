@@ -85,6 +85,7 @@ int main(void) {
 		}
 
 		ecu_parse_package();
+		xbee_check_request();
 	}
 
     return 0;

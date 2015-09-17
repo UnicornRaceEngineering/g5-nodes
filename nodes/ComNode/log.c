@@ -28,11 +28,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>    // for memcpy, memset
 #include <util/delay.h>
 #include <stdio.h>
+#include <utils.h>
 
 #include "log.h"
 
 static FATFS fs;
 static FIL file;
+
+#define FMT_LOG_NAME PSTR("log%u.dat")
 
 #define BUF_SIZE	512
 
@@ -41,22 +44,18 @@ static struct payload {
 	size_t i;
 } p;
 
-#include <usart.h>
 void log_init(void) {
 	memset(&p, 0, sizeof(p));
 
-	printf("Trying to mount...\t");
 	if (f_mount(&fs, "", 1) != FR_OK) {
-			printf("FAILED\n");
-	} else {
-		printf("OK\n");
+		// Error
 	}
 
 	// increment filename until we have a new file that does not already exists.
 	char file_name[32] = {'\0'};
 	unsigned i = 0;
 	do {
-		sprintf_P(file_name, PSTR("log%u.dat"), i++);
+		sprintf_P(file_name, FMT_LOG_NAME, i++);
 		if (i > 1000) break;
 	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
 }
@@ -79,7 +78,6 @@ int log_append(void *data, size_t n) {
 		n -= reminder;
 		data += reminder;
 		log_sync();
-		flush_to_sd();
 	}
 
 	memcpy(&p.buf[p.i], data, n);
@@ -89,4 +87,59 @@ int log_append(void *data, size_t n) {
 
 void log_sync(void) {
 	f_sync(&file);
+	flush_to_sd();
+}
+
+int log_read(uint16_t lognr, FILE* fd) {
+	// TODO use f_forward instead? http://elm-chan.org/fsw/ff/en/forward.html
+	if (fd == NULL) return -1;
+
+	char file_name[16] = {'\0'};
+	sprintf_P(file_name, FMT_LOG_NAME, lognr);
+
+	log_sync();
+	if (f_close(&file) != FR_OK) goto err;
+	if (f_open(&file, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) goto err;
+
+	const uint32_t fsize = f_size(&file);
+	for (size_t i = 0; i < sizeof(fsize); i++) {
+		fputc(((uint8_t*)&fsize)[i], fd);
+	}
+
+	// seek to the start of file
+	if (f_lseek(&file, 0) != FR_OK) goto err;
+
+	uint32_t bytes_left = fsize;
+	while (bytes_left != 0) {
+		uint8_t buf[32];
+
+		const unsigned btr = (ARR_LEN(buf) < bytes_left) ? ARR_LEN(buf) : bytes_left;
+		unsigned br;
+		if (f_read(&file, buf, btr, &br) != FR_OK) goto err;
+		bytes_left -= br;
+
+		for (size_t i = 0; i < br; i++) {
+			fputc(buf[i], fd);
+		}
+	}
+
+	log_init();
+	return 0;
+
+err:
+	log_init();
+	return -1;
+}
+
+unsigned log_get_num_logs(void) {
+	char file_name[32] = {'\0'};
+
+	unsigned i = 0;
+	while (1) {
+		sprintf_P(file_name, FMT_LOG_NAME, i++);
+
+		FILINFO info;
+		if (f_stat(file_name, &info) == FR_NO_FILE) break;
+	}
+	return i-1; // -1 because we incremented i before we checked the string
 }

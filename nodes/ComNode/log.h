@@ -29,5 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 void log_init(void);
 int log_append(void *buf, size_t n);
 void log_sync(void);
+int log_read(uint16_t lognr, FILE* fd);
+unsigned log_get_num_logs(void);
 
 #endif /* LOG_H */
