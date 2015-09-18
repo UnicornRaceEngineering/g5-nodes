@@ -33,7 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "log.h"
 
 static FATFS fs;
-static FIL file;
+static FIL log_file;
 
 #define FMT_LOG_NAME PSTR("log%u.dat")
 
@@ -57,13 +57,13 @@ void log_init(void) {
 	do {
 		sprintf_P(file_name, FMT_LOG_NAME, i++);
 		if (i > 1000) break;
-	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
+	} while (f_open(&log_file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
 }
 
 static int flush_to_sd(void) {
 	int err = 0;
 	unsigned bw;
-	if(f_write(&file, p.buf, p.i, &bw) != FR_OK) err = -1;
+	if(f_write(&log_file, p.buf, p.i, &bw) != FR_OK) err = -1;
 	p.i = 0;
 	err = (bw == p.i) ? 0 : -1;
 	return err;
@@ -86,7 +86,7 @@ int log_append(void *data, size_t n) {
 }
 
 void log_sync(void) {
-	f_sync(&file);
+	f_sync(&log_file);
 	flush_to_sd();
 }
 
