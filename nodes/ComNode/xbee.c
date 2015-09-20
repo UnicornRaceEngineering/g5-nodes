@@ -35,10 +35,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define XBEE_BAUD 	(115200)
 
+#define MAX_LABEL_SIZE	(32)
+
 enum data_request {
 	REQUEST_NONE,
 	REQUEST_LOG,
 	REQUEST_NUM_LOGS,
+	REQUEST_INSERT_LABEL,
 };
 
 static FILE *xbee_out = &usart1_byte_output;
@@ -119,25 +122,42 @@ void xbee_flush(void) {
 	p.i = 0; // Reset payload index
 }
 
-int request_log(void) {
+static int request_log(void) {
 	const uint8_t lo = fgetc(xbee_in);
 	const uint8_t hi = fgetc(xbee_in);
 
 	const uint16_t lognr = MERGE_BYTE(hi, lo);
 
 	prepare_multi_package(REQUEST_LOG);
-	int rc = log_read(lognr, &send_multi_pkt); // TODO something about multi frame messages and that log_read does not use the standard package format and then breaks everything
+	int rc = log_read(lognr, &send_multi_pkt);
 	end_multi_pkt();
 	return rc;
 }
 
-int request_num_logs(void) {
+static int request_num_logs(void) {
 	prepare_multi_package(REQUEST_NUM_LOGS);
 
 	uint16_t n_logs = log_get_num_logs();
 	send_multi_pkt((uint8_t*)&n_logs, sizeof(n_logs));
 
 	end_multi_pkt();
+	return 0;
+}
+
+static int request_insert_label(void) {
+	char label[MAX_LABEL_SIZE] = {'\0'};
+	size_t len;
+	for (len = 0; len < ARR_LEN(label); len++) {
+		label[len] = fgetc(xbee_in);
+		if (label[len] == '\0') break;
+	}
+
+	// If a label that is longer than what is allowed, drop the rest.
+	while(xbee_has_data() && len >= ARR_LEN(label)) fgetc(xbee_in);
+
+	const uint16_t id = REQUEST_OFFSET + REQUEST_INSERT_LABEL;
+	log_append((uint8_t*)&id, sizeof(id));
+	log_append(label, len);
 	return 0;
 }
 
@@ -148,8 +168,9 @@ int xbee_check_request(void) {
 
 	int rc;
 	switch (r) {
-		case REQUEST_LOG: 		rc = request_log(); break;
-		case REQUEST_NUM_LOGS: 	rc = request_num_logs(); break;
+		case REQUEST_LOG:           rc = request_log();          break;
+		case REQUEST_NUM_LOGS:      rc = request_num_logs();     break;
+		case REQUEST_INSERT_LABEL:  rc = request_insert_label(); break;
 
 		case REQUEST_NONE:
 		default:
