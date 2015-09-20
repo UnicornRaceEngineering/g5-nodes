@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <stdbool.h>
 #include <can.h>
-
+#include "event_manager.h"
 #include "sysclock.h"         // for get_tick, sysclock_init
 #include "system_messages.h"  // for message_detail, node_id::N_NODES, etc
 #include "utils.h"            // for ARR_LEN
@@ -39,6 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define HEARTBEAT_TIMEOUT 100
 
 
+void recieve_heartbeat(void);
+void decl_dead(uint32_t tick);
 void handle_heartbeat(struct can_message msg);
 
 static uint8_t buf_in[64];
@@ -62,28 +64,49 @@ int main(void) {
 	init();
 
 	while (1) {
-		while (can_has_data()) {
-			struct can_message msg;
-			read_message(&msg);
+		static uint32_t timers[1] = {0};
+		uint32_t tick = get_tick();
+		uint8_t event = 0;
 
-			switch(msg.id) {
-				case HEARTBEAT: handle_heartbeat(msg); break;
-				default: break;
-			}
+		event_manager(&event, tick);
+
+		if (tick > timers[0]) {
+			decl_dead(tick);
+			timers[0] += 10;
 		}
 
-		for (uint8_t i = 0; i < 5; ++i) {
-			if (node_state[i]) {
-				if ((get_tick() - last_heartbeat[i]) > HEARTBEAT_TIMEOUT) {
-					node_state[i] = 0;
-					printf("node %d is unreachable\n", i);
-				}
-			}
-
+		switch (event) {
+			case E_CAN_REC: recieve_heartbeat(); break;
+			default: break;
 		}
 	}
 
 	return 0;
+}
+
+
+void decl_dead(uint32_t tick) {
+	for (uint8_t i = 0; i < 5; ++i) {
+		if (node_state[i]) {
+			if ((tick - last_heartbeat[i]) > HEARTBEAT_TIMEOUT) {
+				node_state[i] = 0;
+				printf("node %d is unreachable\n", i);
+			}
+		}
+	}
+}
+
+
+void recieve_heartbeat() {
+	while (can_has_data()) {
+		struct can_message msg;
+		read_message(&msg);
+
+		switch(msg.id) {
+			case HEARTBEAT: handle_heartbeat(msg); break;
+			default: break;
+		}
+	}
 }
 
 

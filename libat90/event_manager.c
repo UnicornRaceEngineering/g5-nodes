@@ -22,46 +22,59 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
-#include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include <stdint.h>           // for uint8_t
-#include <usart.h>            // for usart1_init
+#include <stdint.h>
+#include <stdio.h>
 #include <util/delay.h>
-#include <can.h>
 
 #include "event_manager.h"
-#include "sysclock.h"         // for sysclock_init
-#include "system_messages.h"  // for node_id::TEST_NODE, etc
-#include "utils.h"            // for ARR_LEN
+#include "sysclock.h"
 
-static uint8_t buf_in[64];
-static uint8_t buf_out[64];
 
-static void init(void) {
-	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
-	sysclock_init();
-	can_init();
+static uint8_t e = 0;
+static uint16_t load_intv = 1000; // default millisec.
 
-	sei();
-	puts_P(PSTR("Init complete\n\n"));
-}
 
-int main(void) {
-	init();
-
-	while (1) {
-		static uint32_t timers[1] = {0};
-		uint32_t tick = get_tick();
-		uint8_t event = 0;
-
-		event_manager(&event, tick);
-
-		if (tick > timers[0]) {
-			uint8_t node_id = 2;
-			can_broadcast(HEARTBEAT, &node_id);
-			timers[0] += 30;
-		}
+extern uint8_t set_load_intv(uint16_t time_intv) {
+	// The time between calculating load cannot be less than 1 millisec
+	// and in some situations stops making sence if less than 100 times the idle
+	// wait time (WAIT_US / 10). 
+	if (time_intv < 1 || time_intv < (WAIT_US / 10)) {
+		return 1;
 	}
 
+	load_intv = time_intv;
 	return 0;
+}
+
+
+extern void set_event(uint8_t event) {
+	e = event;
+}
+
+
+extern uint8_t get_event(void) {
+	return e;
+}
+
+
+extern uint8_t event_manager(uint8_t *event, uint32_t tick) {
+	static uint8_t load = 0;
+	static uint32_t tock = 0;
+	static uint32_t load_timer = 0;
+
+	if (e) {
+		*event = e;
+		e = 0;
+	} else {
+		++tock;
+		_delay_us(WAIT_US);
+	}
+
+	if (tick > load_timer) {
+		load = 100 - (((tock * WAIT_US) / (double)((uint32_t)1000 * load_intv)) * 100);
+		load_timer = tick + load_intv;
+		tock = 0;
+	}
+
+	return load;
 }

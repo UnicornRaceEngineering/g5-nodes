@@ -9,6 +9,7 @@ set(SRC_FILES
 	system_messages.c
 	utils.c
 	sysclock.c
+	event_manager.c
 )
 
 add_library(libat90 ${SRC_FILES})

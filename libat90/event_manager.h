@@ -21,47 +21,22 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef EVENT_MANAGER_H
+#define EVENT_MANAGER_H
 
-#include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include <stdint.h>           // for uint8_t
-#include <usart.h>            // for usart1_init
-#include <util/delay.h>
-#include <can.h>
 
-#include "event_manager.h"
-#include "sysclock.h"         // for sysclock_init
-#include "system_messages.h"  // for node_id::TEST_NODE, etc
-#include "utils.h"            // for ARR_LEN
+#include <stdint.h>
 
-static uint8_t buf_in[64];
-static uint8_t buf_out[64];
+#define WAIT_US 100
 
-static void init(void) {
-	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
-	sysclock_init();
-	can_init();
+extern uint8_t event_manager(uint8_t *event, uint32_t tick);
+extern void set_event(uint8_t);
+extern uint8_t get_event(void);
 
-	sei();
-	puts_P(PSTR("Init complete\n\n"));
-}
+enum event_t {
+	E_NONE,
+	E_USART_REC,
+	E_CAN_REC,
+};
 
-int main(void) {
-	init();
-
-	while (1) {
-		static uint32_t timers[1] = {0};
-		uint32_t tick = get_tick();
-		uint8_t event = 0;
-
-		event_manager(&event, tick);
-
-		if (tick > timers[0]) {
-			uint8_t node_id = 2;
-			can_broadcast(HEARTBEAT, &node_id);
-			timers[0] += 30;
-		}
-	}
-
-	return 0;
-}
+#endif /* EVENT_MANAGER_H */
