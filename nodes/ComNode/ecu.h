@@ -85,21 +85,21 @@ enum ecu_id {
 
 #define ECU_ID_NAME(ecu_id) ((char const* const[]) { \
 	[EMPTY] = "", \
-	[FUEL_PRESSURE] = "Fuel Press.", \
+	[FUEL_PRESSURE] = "Fuel Press(bar).", \
 	[STATUS_LAP_COUNT] = "Status Lap Counter", \
 	[STATUS_INJ_SUM] = "Status Injection Sum", \
 	[LAST_GEAR_SHIFT] = "Last Gear Shift", \
-	[MOTOR_OILTEMP] = "Motor Oil Temp", \
-	[OIL_PRESSURE] = "Oil Pressure", \
+	[MOTOR_OILTEMP] = "Motor Oil Temp(cel)", \
+	[OIL_PRESSURE] = "Oil Pressure(on/off)", \
 	[STATUS_TIME] = "Status Time", \
 	[STATUS_LAP_TIME] = "Status Lap Time", \
 	[GEAR_OIL_TEMP] = "Gear Oil Temp", \
 	[STATUS_TRACTION] = "Status Traction", \
 	[STATUS_GAS]  = "Status Gas", \
 	[STATUS_LAMBDA_V2] = "Status LambdaV2", \
-	[STATUS_CAM_TRIG_P1] = "Status Cam Trig P1", \
-	[STATUS_CAM_TRIG_P2] = "Status Cam Trig P2", \
-	[STATUS_CHOKER_ADD] = "Status Choker Add", \
+	[STATUS_CAM_TRIG_P1] = "Status Cam shaft Trig P1", \
+	[STATUS_CAM_TRIG_P2] = "Status Cam shaft Trig P2", \
+	[STATUS_CHOKER_ADD] = "Status Choker Add (open/closed air intake)", \
 	[STATUS_LAMBDA_PWM] = "Status Lambda PWM", \
 	[WATER_TEMP] = "WaterMotor temp", \
 	[MANIFOLD_AIR_TEMP] = "ManifoldAir temp", \
@@ -111,8 +111,8 @@ enum ecu_id {
 	[ROAD_SPEED] = "RoadSpeed (km/h)", \
 	[MAP_SENSOR] = "Manifold press. (mBar)", \
 	[BATTERY_V] = "Batt. volt", \
-	[LAMBDA_V] = "Lambda (<1 => Rich)", \
-	[LOAD] = "Load", \
+	[LAMBDA_V] = "Lambda (fuel mix) (<1 => Rich)", \
+	[LOAD] = "Load (motor resistance procentage)", \
 	[INJECTOR_TIME] = "Injector Time", \
 	[IGNITION_TIME] = "Ignition Time", \
 	[DWELL_TIME] = "Dwell Time", \
