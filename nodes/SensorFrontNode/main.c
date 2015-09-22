@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>            // for ARR_LEN, BIT_SET
 #include <stdbool.h>
 #include <can.h>
-
+#include <event_manager.h>
 #include "system_messages.h"  // for message_id, etc
 
 
@@ -74,39 +74,39 @@ static void init(void) {
 	puts_P(PSTR("Init complete\n\n"));
 }
 
-void wheel_speed(enum message_id wheel_id) {
+void wheel_speed(enum message_id wheel_id, const uint32_t current_time) {
 	static uint32_t last_time = 0;
 
-	const uint32_t current_time = get_tick();
-	const uint32_t duration     = (current_time - last_time);
+	const uint32_t duration = (current_time - last_time);
+	const float holes_pr_ms = (float)wheel_tick / duration;
+	const float rpm = (1000.0 * 60.0) / (HOLES_PR_WHEEL / holes_pr_ms); // Convert ms to min
 
-	if (duration > 50) {
-		const float holes_pr_ms = (float)wheel_tick / duration;
-		const float rpm = (1000.0 * 60.0) / (HOLES_PR_WHEEL / holes_pr_ms); // Convert ms to min
+	const float v_mps = WHEEL_CIRC * rpm / 60.0; // m/s
+	float v_kmph  = v_mps * ((60.0*60.0)/1000.0); // km/h
 
-		const float v_mps = WHEEL_CIRC * rpm / 60.0; // m/s
-		float v_kmph  = v_mps * ((60.0*60.0)/1000.0); // km/h
+	printf("ticks: %4u, holes/ms: %4.3f, rpm: %4.3f, v (km/h): %4.3f, v (m/s) %4.3f\n", wheel_tick, (double)holes_pr_ms, (double)rpm, (double)v_kmph, (double)v_mps);
 
-		printf("ticks: %4u, holes/ms: %4.3f, rpm: %4.3f, v (km/h): %4.3f, v (m/s) %4.3f\n", wheel_tick, (double)holes_pr_ms, (double)rpm, (double)v_kmph, (double)v_mps);
+	can_broadcast(wheel_id, (void*)&v_kmph);
 
-		can_broadcast(wheel_id, (void*)&v_kmph);
-
-		// Reset
-		last_time  = current_time;
-		wheel_tick = 0;
-	}
+	// Reset
+	last_time  = current_time;
+	wheel_tick = 0;
 }
 
 int main(void) {
 	init();
 
 	while (1) {
-		while (can_has_data()) {
-			struct can_message msg;
-			read_message(&msg);
-		}
+		static uint32_t timers[1] = {0};
+		uint32_t tick = get_tick();
+		uint8_t event = 0;
 
-		wheel_speed(FRONT_RIGHT_WHEEL_SPEED);
+		event_manager(&event, tick);
+
+		if (tick > timers[0]) {
+			wheel_speed(FRONT_RIGHT_WHEEL_SPEED, tick);
+			timers[0] += 50;
+		}
 	}
 
 	return 0;

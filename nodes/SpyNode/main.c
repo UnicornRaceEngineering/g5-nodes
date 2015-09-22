@@ -28,12 +28,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>            // for usart1_init
 #include <stdbool.h>
 #include <can.h>
-
+#include <event_manager.h>
+#include <sysclock.h>
 #include "system_messages.h"  // for MESSAGE_INFO, message_detail, etc
 #include "utils.h"            // for ARR_LEN
 
 
-void read_msg(struct can_message message);
+void read_msg(const uint8_t load);
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
@@ -56,10 +57,14 @@ int main(void) {
 	init();
 
 	while (1) {
-		while(can_has_data()) {
-			struct can_message msg;
-			read_message(&msg);
-			read_msg(msg);
+		uint32_t tick = get_tick();
+		uint8_t event = 0;
+
+		const uint8_t load = event_manager(&event, tick);
+
+		switch (event) {
+			case E_CAN_REC: read_msg(load); break;
+			default: break;
 		}
 	}
 
@@ -67,10 +72,15 @@ int main(void) {
 }
 
 
-void read_msg(struct can_message msg) {
-	printf("MSG:%5u | recieved: %4u | error: %4u |  Got id: %4u and length: %1u\t", msg_num++, get_counter(RX_COMP), get_counter(TOTAL_ERR), msg.id, msg.len);
-	for (uint8_t i = 0; i < msg.len; ++i) {
-		printf("%3d; 0x%02x  |  ", msg.data[i], msg.data[i]);
+void read_msg(const uint8_t load) {
+	while(can_has_data()) {
+		struct can_message msg;
+		read_message(&msg);
+		printf("Load:%3u | MSG:%5u | recieved: %4u | error: %4u |  Got id: %4u and length: %1u\t",
+			load, msg_num++, get_counter(RX_COMP), get_counter(TOTAL_ERR), msg.id, msg.len);
+		for (uint8_t i = 0; i < msg.len; ++i) {
+			printf("%3d; 0x%02x  |  ", msg.data[i], msg.data[i]);
+		}
+		printf("\n");
 	}
-	printf("\n");
 }
