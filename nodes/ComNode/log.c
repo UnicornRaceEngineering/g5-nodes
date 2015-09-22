@@ -28,11 +28,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>    // for memcpy, memset
 #include <util/delay.h>
 #include <stdio.h>
+#include <utils.h>
 
 #include "log.h"
 
 static FATFS fs;
-static FIL file;
+static FIL log_file;
+
+#define FMT_LOG_NAME PSTR("log%u.dat")
 
 #define BUF_SIZE	512
 
@@ -41,30 +44,26 @@ static struct payload {
 	size_t i;
 } p;
 
-#include <usart.h>
 void log_init(void) {
 	memset(&p, 0, sizeof(p));
 
-	printf("Trying to mount...\t");
 	if (f_mount(&fs, "", 1) != FR_OK) {
-			printf("FAILED\n");
-	} else {
-		printf("OK\n");
+		// Error
 	}
 
 	// increment filename until we have a new file that does not already exists.
 	char file_name[32] = {'\0'};
 	unsigned i = 0;
 	do {
-		sprintf_P(file_name, PSTR("log%u.dat"), i++);
+		sprintf_P(file_name, FMT_LOG_NAME, i++);
 		if (i > 1000) break;
-	} while (f_open(&file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
+	} while (f_open(&log_file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
 }
 
 static int flush_to_sd(void) {
 	int err = 0;
 	unsigned bw;
-	if(f_write(&file, p.buf, p.i, &bw) != FR_OK) err = -1;
+	if(f_write(&log_file, p.buf, p.i, &bw) != FR_OK) err = -1;
 	p.i = 0;
 	err = (bw == p.i) ? 0 : -1;
 	return err;
@@ -79,7 +78,6 @@ int log_append(void *data, size_t n) {
 		n -= reminder;
 		data += reminder;
 		log_sync();
-		flush_to_sd();
 	}
 
 	memcpy(&p.buf[p.i], data, n);
@@ -88,5 +86,46 @@ int log_append(void *data, size_t n) {
 }
 
 void log_sync(void) {
-	f_sync(&file);
+	f_sync(&log_file);
+	flush_to_sd();
+}
+
+int log_read(uint16_t lognr, unsigned (*forward) (const uint8_t*, unsigned)) {
+	char file_name[16] = {'\0'};
+	sprintf_P(file_name, FMT_LOG_NAME, lognr);
+
+	log_sync();
+
+	FIL f;
+	if (f_open(&f, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) return -1;
+
+	// const uint32_t fsize = f_size(&f);
+	// for (size_t i = 0; i < sizeof(fsize); i++) {
+	// 	fputc(((uint8_t*)&fsize)[i], fd);
+	// }
+
+	// seek to the start of file
+	if (f_lseek(&f, 0) != FR_OK) return -1;
+
+	FRESULT rc = FR_OK;
+	while (rc == FR_OK && !f_eof(&f)) {
+		unsigned n;
+		rc = f_forward(&f, forward, 32, &n);
+	}
+	f_close(&f);
+
+	return 0;
+}
+
+unsigned log_get_num_logs(void) {
+	char file_name[32] = {'\0'};
+
+	unsigned i = 0;
+	while (1) {
+		sprintf_P(file_name, FMT_LOG_NAME, i++);
+
+		FILINFO info;
+		if (f_stat(file_name, &info) == FR_NO_FILE) break;
+	}
+	return i-1; // -1 because we incremented i before we checked the string
 }

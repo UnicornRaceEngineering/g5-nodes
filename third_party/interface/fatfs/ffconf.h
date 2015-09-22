@@ -23,7 +23,7 @@
 /  and optional writing functions as well. */
 
 
-#define _FS_MINIMIZE	2
+#define _FS_MINIMIZE	0
 /* This option defines minimization level to remove some basic API functions.
 /
 /   0: All basic functions are enabled.
@@ -60,7 +60,7 @@
 /  (0:Disable or 1:Enable) */
 
 
-#define	_USE_FORWARD	0
+#define	_USE_FORWARD	1
 /* This option switches f_forward() function. (0:Disable or 1:Enable)
 /  To enable it, also _FS_TINY need to be set to 1. */
 
@@ -263,4 +263,3 @@
 /   PIC24       0           H8S         0           MSP430      0
 /   PIC32       0           H8/300H     0           8051        0/1
 */
-

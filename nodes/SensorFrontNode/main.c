@@ -82,7 +82,7 @@ void wheel_speed(enum message_id wheel_id, const uint32_t current_time) {
 	const float rpm = (1000.0 * 60.0) / (HOLES_PR_WHEEL / holes_pr_ms); // Convert ms to min
 
 	const float v_mps = WHEEL_CIRC * rpm / 60.0; // m/s
-	float v_kmph  = v_mps * ((60.0*60.0)/1000.0); // km/h
+	const float v_kmph  = v_mps * ((60.0*60.0)/1000.0); // km/h
 
 	printf("ticks: %4u, holes/ms: %4.3f, rpm: %4.3f, v (km/h): %4.3f, v (m/s) %4.3f\n", wheel_tick, (double)holes_pr_ms, (double)rpm, (double)v_kmph, (double)v_mps);
 

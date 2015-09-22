@@ -57,6 +57,9 @@ enum message_id {
 	// Public
 	TIME_SYNC,
 
+	// Xbee requests
+	REQUEST_OFFSET,
+
 	// end
 	END_OF_LIST,
 };
