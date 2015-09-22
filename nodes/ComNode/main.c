@@ -57,6 +57,14 @@ int main(void) {
 	while(1){
 		// Main work loop
 
+		uint32_t tick_timer = 0;
+		const uint32_t tick = get_tick();
+		if (tick > tick_timer) {
+			log_append((uint16_t*)&((uint16_t){SYSTIME}), sizeof(uint16_t));
+			log_append((uint8_t*)&tick, sizeof(tick));
+			tick_timer = tick + 10;
+		}
+
 		while (can_has_data()) {
 			struct can_message msg;
 			read_message(&msg);

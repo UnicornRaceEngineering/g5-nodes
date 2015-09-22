@@ -59,6 +59,9 @@ enum message_id {
 
 	// Xbee requests
 	REQUEST_OFFSET,
+	REQUEST_END = REQUEST_OFFSET + 3,
+
+	SYSTIME,
 
 	// end
 	END_OF_LIST,

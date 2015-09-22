@@ -80,6 +80,7 @@ struct message_detail message_info[END_OF_LIST] = {
 	[NEUTRAL_ENABLED]              = { .subscribed = false,    .len = 1,    .transport = 0 | CAN | XBEE | SD },
 	[FRONT_RIGHT_WHEEL_SPEED]      = { .subscribed = false,    .len = 4,    .transport = 0 | CAN | XBEE | SD },
 	[FRONT_LEFT_WHEEL_SPEED]       = { .subscribed = false,    .len = 4,    .transport = 0 | CAN | XBEE | SD },
+	[SYSTIME]                      = { .subscribed = false,    .len = 4,    .transport = 0       | XBEE | SD },
 };
 
 
