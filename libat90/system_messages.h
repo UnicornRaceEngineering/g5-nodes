@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdbool.h>
 
 #include "../nodes/ComNode/ecu.h"
+#include "../nodes/ComNode/xbee.h"
 
 
 enum message_id {
@@ -59,7 +60,7 @@ enum message_id {
 
 	// Xbee requests
 	REQUEST_OFFSET,
-	REQUEST_END = REQUEST_OFFSET + 3,
+	REQUEST_END = REQUEST_OFFSET + N_REQUEST,
 
 	SYSTIME,
 

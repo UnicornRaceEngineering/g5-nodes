@@ -37,12 +37,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define MAX_LABEL_SIZE	(32)
 
-enum data_request {
-	REQUEST_NONE,
-	REQUEST_LOG,
-	REQUEST_NUM_LOGS,
-	REQUEST_INSERT_LABEL,
-};
 
 static FILE *xbee_out = &usart1_byte_output;
 static FILE *xbee_in = &usart1_io;

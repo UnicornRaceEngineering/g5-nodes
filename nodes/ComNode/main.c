@@ -32,6 +32,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <stdbool.h>
 #include <can.h>
+#include <string.h>
+#include <utils.h>
 
 #include "../nodes/ComNode/ecu.h"  // for ecu_init, ecu_parse_package
 #include "xbee.h"                  // for xbee_init, xbee_send
@@ -60,8 +62,11 @@ int main(void) {
 		uint32_t tick_timer = 0;
 		const uint32_t tick = get_tick();
 		if (tick > tick_timer) {
-			log_append((uint16_t*)&((uint16_t){SYSTIME}), sizeof(uint16_t));
-			log_append((uint8_t*)&tick, sizeof(tick));
+			uint8_t buf[sizeof(uint16_t) + sizeof(uint32_t)] = {0};
+			memcpy(buf, (uint8_t*)&((uint16_t){SYSTIME}), 2);
+			memcpy(buf+sizeof(uint16_t), (uint8_t*)&tick, 4);
+			xbee_send(buf, ARR_LEN(buf));
+			log_append(buf, ARR_LEN(buf));
 			tick_timer = tick + 10;
 		}
 
@@ -92,7 +97,7 @@ int main(void) {
 			}
 		}
 
-		// ecu_parse_package();
+		ecu_parse_package();
 		xbee_check_request();
 	}
 

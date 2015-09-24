@@ -26,6 +26,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 
+
+enum data_request {
+	REQUEST_NONE,
+	REQUEST_LOG,
+	REQUEST_NUM_LOGS,
+	REQUEST_INSERT_LABEL,
+
+	N_REQUEST,
+};
+
+
 void xbee_init(void);
 void xbee_send(const uint8_t *arr, uint8_t len);
 void xbee_flush(void);
