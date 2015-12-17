@@ -8,12 +8,6 @@ set(CAN_BAUDRATE 204800)
 # This bug should be fixed in gcc version 4.8.3
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
 			OUTPUT_VARIABLE GCC_VERSION)
-if ((GCC_VERSION VERSION_LESS 4.8.3) AND NOT(GCC_VERSION VERSION_EQUAL 4.8.1))
-	message(STATUS "Compiling with out Link Time Optimizations - LTO OFF")
-else()
-	set(LTO "-flto")
-	message(STATUS "Compiling with Link Time Optimizations - LTO ON")
-endif()
 
 # Name of target Micro Controller Unit
 # see the available avr-gcc mmcu options for possible values
