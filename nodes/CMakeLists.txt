@@ -1,4 +1,5 @@
 add_subdirectory(ComNode)
+add_subdirectory(ComNode_old)
 add_subdirectory(GearNode)
 add_subdirectory(GPSNode)
 add_subdirectory(SteeringNode)

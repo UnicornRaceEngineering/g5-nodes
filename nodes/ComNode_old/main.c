@@ -70,6 +70,33 @@ int main(void) {
 			tick_timer = tick + 10;
 		}
 
+		while (can_has_data()) {
+			struct can_message msg;
+			read_message(&msg);
+
+			const uint8_t transport = can_msg_transport(msg.id);
+
+			if (transport & SD) {
+				log_append(&msg.id, sizeof(msg.id));
+				log_append(msg.data, msg.len);
+			}
+
+			if (transport & XBEE) {
+				uint8_t buf[sizeof(msg.id) + msg.len];
+				size_t buf_i = 0;
+
+				for (size_t i = 0; i < sizeof(msg.id); i++) {
+					buf[buf_i++] = ((uint8_t*)&msg.id)[i];
+				}
+
+				for (size_t i = 0; i < msg.len; i++) {
+					buf[buf_i++] = msg.data[i];
+				}
+
+				xbee_send(buf, sizeof(msg.id) + msg.len);
+			}
+		}
+
 		ecu_parse_package();
 		xbee_check_request();
 	}
