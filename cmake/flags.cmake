@@ -1,5 +1,5 @@
 set(F_CPU 11059200)
-set(CAN_BAUDRATE 204800)
+set(CAN_BAUDRATE 125000)
 
 # In relation to GCC Bugzilla – Bug 59396
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59396
