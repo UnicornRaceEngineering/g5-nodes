@@ -37,7 +37,7 @@ static uint16_t load_intv = 1000; // default millisec.
 extern uint8_t set_load_intv(uint16_t time_intv) {
 	// The time between calculating load cannot be less than 1 millisec
 	// and in some situations stops making sence if less than 100 times the idle
-	// wait time (WAIT_US / 10). 
+	// wait time (WAIT_US / 10).
 	if (time_intv < 1 || time_intv < (WAIT_US / 10)) {
 		return 1;
 	}
