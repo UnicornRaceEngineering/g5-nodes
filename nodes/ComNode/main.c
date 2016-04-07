@@ -31,7 +31,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <system_messages.h>       // for message_detail, MESSAGE_INFO, etc
 #include <util/delay.h>
 #include <stdbool.h>
-#include <can.h>
 #include <string.h>
 #include <utils.h>
 
@@ -40,14 +39,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "log.h"
 
 static void init(void) {
-	rtc_init();
 	ecu_init();
 	xbee_init();
 	log_init();
 	sysclock_init();
-	can_init();
-
-	can_subscribe_all();
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -56,8 +51,8 @@ static void init(void) {
 int main(void) {
 	init();
 
+	// Main work loop
 	while(1){
-		// Main work loop
 
 		uint32_t tick_timer = 0;
 		const uint32_t tick = get_tick();
@@ -74,5 +69,5 @@ int main(void) {
 		xbee_check_request();
 	}
 
-    return 0;
+	return 0;
 }
