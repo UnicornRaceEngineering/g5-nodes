@@ -39,6 +39,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "log.h"
 
 static void init(void) {
+	rtc_init();
 	ecu_init();
 	xbee_init();
 	log_init();
