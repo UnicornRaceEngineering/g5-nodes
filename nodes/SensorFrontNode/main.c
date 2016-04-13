@@ -32,7 +32,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <utils.h>            // for ARR_LEN, BIT_SET
 #include <stdbool.h>
 #include <can.h>
-#include <event_manager.h>
 #include "system_messages.h"  // for message_id, etc
 
 
@@ -99,9 +98,6 @@ int main(void) {
 	while (1) {
 		static uint32_t timers[1] = {0};
 		uint32_t tick = get_tick();
-		uint8_t event = 0;
-
-		event_manager(&event, tick);
 
 		if (tick > timers[0]) {
 			wheel_speed(FRONT_RIGHT_WHEEL_SPEED, tick);

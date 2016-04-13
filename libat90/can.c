@@ -41,7 +41,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "utils.h"     // for BIT_CLEAR, BIT_SET, BITMASK_SET, BIT_CHECK, etc
 #include "ringbuffer.h"
 #include "system_messages.h"
-#include "event_manager.h"
 
 
 //_____ D E F I N I T I O N S __________________________________________________
@@ -426,7 +425,6 @@ ISR (CANIT_vect) {
 					MOB_EN_RX();
 					continue;
 				} else {
-					set_event(E_CAN_REC);
 					receive_frame(mob, id);
 				}
 				break;

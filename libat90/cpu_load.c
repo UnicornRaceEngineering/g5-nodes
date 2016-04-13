@@ -21,22 +21,45 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef EVENT_MANAGER_H
-#define EVENT_MANAGER_H
-
 
 #include <stdint.h>
+#include <util/delay.h>
+#include <stdbool.h>
 
-#define WAIT_US 100
+#include "cpu_load.h"
 
-extern uint8_t event_manager(uint8_t *event, uint32_t tick);
-extern void set_event(uint8_t);
-extern uint8_t get_event(void);
 
-enum event_t {
-	E_NONE,
-	E_USART_REC,
-	E_CAN_REC,
-};
+static uint16_t load_intv = 1000; // default millisec.
 
-#endif /* EVENT_MANAGER_H */
+
+extern uint8_t set_load_intv(uint16_t time_intv) {
+	// The time between calculating load cannot be less than 1 millisec
+	// and in some situations stops making sence if less than 100 times the idle
+	// wait time (WAIT_US / 10).
+	if (time_intv < 1 || time_intv < (WAIT_US / 10)) {
+		return 1;
+	}
+
+	load_intv = time_intv;
+	return 0;
+}
+
+
+extern uint8_t load_counter(bool take_a_break, uint32_t tick) {
+	static uint8_t load = 0;
+	static uint32_t breaks = 0;
+	static uint32_t load_timer = 0;
+
+	if (take_a_break) {
+		++breaks;
+		_delay_us(WAIT_US);
+	}
+
+	if (tick > load_timer) {
+		load = 100 - (((breaks * WAIT_US) / (double)((uint32_t)1000 * load_intv)) * 100);
+		load_timer = tick + load_intv;
+		breaks = 0;
+	}
+
+	return load;
+}

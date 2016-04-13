@@ -9,7 +9,7 @@ set(SRC_FILES
 	system_messages.c
 	utils.c
 	sysclock.c
-	event_manager.c
+	cpu_load.c
 )
 
 add_library(libat90 ${SRC_FILES})
@@ -18,4 +18,3 @@ target_include_directories(libat90
 	PRIVATE ${PROJECT_SOURCE_DIR}/drivers)
 
 target_link_libraries(libat90 drivers)
-
