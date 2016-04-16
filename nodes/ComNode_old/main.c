@@ -35,7 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>
 #include <utils.h>
 
-#include "../nodes/ComNode/ecu.h"  // for ecu_init, ecu_parse_package
+#include "ecu.h"  // for ecu_init, ecu_parse_package
 #include "xbee.h"                  // for xbee_init, xbee_send
 #include "log.h"
 

@@ -31,8 +31,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdbool.h>
 
-#include "../nodes/ComNode/ecu.h"
-#include "../nodes/ComNode/xbee.h"
+#include "../nodes/ComNode_old/ecu.h"
+#include "../nodes/ComNode_old/xbee.h"
 
 
 enum message_id {
