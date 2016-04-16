@@ -80,6 +80,14 @@ typedef struct ringbuffer_t{
 
 
 /**
+ * Number of bytes used in buffer.
+ * @param  B pointer to the ringbuffer_t
+ * @return   size_t bytes
+ */
+#define rb_bytesUsed(B)			(((b)->end - (b)->start) + (-((int)((b)->end < (b)->start)) & (b)->size))
+
+
+/**
  * @brief
  * Initializes the ring buffer to it's initial values and zero the buffer.
  * @param buffer The buffer to initialize
