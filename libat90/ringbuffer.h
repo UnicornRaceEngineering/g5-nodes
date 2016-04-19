@@ -84,7 +84,7 @@ typedef struct ringbuffer_t{
  * @param  B pointer to the ringbuffer_t
  * @return   size_t bytes
  */
-#define rb_bytesUsed(B)			(((b)->end - (b)->start) + (-((int)((b)->end < (b)->start)) & (b)->size))
+#define rb_bytesUsed(B)			(((B)->end - (B)->start) + (-((int)((B)->end < (B)->start)) & (B)->size))
 
 
 /**
