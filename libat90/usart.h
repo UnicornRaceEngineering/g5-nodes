@@ -90,6 +90,8 @@ enum usart_operationModes_t {
 							enum usart_operationModes_t mode);
 
 	bool usart0_has_data(void);
+	size_t usart0_input_buffer_bytes(void);
+	size_t usart0_output_buffer_bytes(void);
 	int usart0_getc(FILE *stream);
 	int usart0_putbyte(char c, FILE *stream);
 	int usart0_putc(char c, FILE *stream);
@@ -137,6 +139,8 @@ enum usart_operationModes_t {
 							enum usart_operationModes_t mode);
 
 	bool usart1_has_data(void);
+	size_t usart1_input_buffer_bytes(void);
+	size_t usart1_output_buffer_bytes(void);
 	int usart1_getc(FILE *stream);
 	int usart1_putbyte(char b, FILE *stream);
 	int usart1_putc(char c, FILE *stream);

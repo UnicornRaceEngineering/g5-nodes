@@ -164,6 +164,22 @@ bool usart0_has_data(void){
 }
 
 /**
+ * Returns the number of bytes in input buffer.
+ * @return size_t number of bytes.
+ */
+size_t usart0_input_buffer_bytes(void) {
+	return rb_bytesUsed(&usart0_rb_in);
+}
+
+/**
+ * Returns the number of bytes in output buffer.
+ * @return size_t number of bytes.
+ */
+size_t usart0_output_buffer_bytes(void) {
+	return rb_bytesUsed(&usart0_rb_out);
+}
+
+/**
  * Get a byte from USART. This call is alway blocking. if input buffer is
  * enabled use usart[N]_hasData() to check if data is available.
  * @return  received byte
@@ -288,6 +304,22 @@ void usart1_setBaudrate(const uint32_t baudrate,
  */
 bool usart1_has_data(void){
 	return !rb_isEmpty(&usart1_rb_in);
+}
+
+/**
+ * Returns the number of bytes in input buffer.
+ * @return size_t number of bytes.
+ */
+size_t usart1_input_buffer_bytes(void) {
+	return rb_bytesUsed(&usart1_rb_in);
+}
+
+/**
+ * Returns the number of bytes in output buffer.
+ * @return size_t number of bytes.
+ */
+size_t usart1_output_buffer_bytes(void) {
+	return rb_bytesUsed(&usart1_rb_out);
 }
 
 /**
