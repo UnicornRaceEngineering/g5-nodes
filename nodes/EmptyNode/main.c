@@ -24,10 +24,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>                 // for puts_p
+#include <usart.h>   // for usart1_init
+#include <util/delay.h>
 
+
+static uint8_t buf_in[64];
+static uint8_t buf_out[64];
 
 static void init(void) {
-
+	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
 }
@@ -36,7 +41,10 @@ static void init(void) {
 int main(void) {
 	init();
 
-	while (1);
+	while (1) {
+		printf("PING\n");
+		_delay_ms(100);
+	}
 
 	return 0;
 }
