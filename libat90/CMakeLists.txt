@@ -10,6 +10,7 @@ set(SRC_FILES
 	utils.c
 	sysclock.c
 	cpu_load.c
+	bson.c
 )
 
 add_library(libat90 ${SRC_FILES})
