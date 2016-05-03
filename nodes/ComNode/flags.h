@@ -21,35 +21,14 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <avr/interrupt.h> // sei()
-#include <avr/pgmspace.h>
-#include <m41t81s_rtc.h>           // for rtc_init
-#include <stdio.h>                 // for puts_p
-#include <sysclock.h>              // for sysclock_init
-#include <util/delay.h>
-#include <usart.h>
 
-#include "ecu.h"  // for ecu_init, ecu_parse_package
-#include "xbee.h"                  // for xbee_init, xbee_send
-#include "log.h"
-#include "state_machine.h"
-#include "flags.h"
+ #ifndef FLAGMASTER_H
+ #define FLAGMASTER_H
 
 
-static void init(void) {
-	rtc_init();
-	flags_init();
-	sysclock_init();
-	ecu_init();
-	xbee_init();
-	log_init();
+ void flags_init(void);
+ void reset_all_flags(void);
+ uint32_t get_all_flags(void);
 
-	sei();
-}
 
-int main(void) {
-	init();
-	state_machine();
-
-	return 0;
-}
+ #endif /* FLAGMASTER_H */

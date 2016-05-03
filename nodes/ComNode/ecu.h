@@ -39,6 +39,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ECU_H
 
 #include <stdint.h>
+#include <stddef.h>
+
+
 
 enum ecu_id {
 	EMPTY,
@@ -124,13 +127,15 @@ enum ecu_id {
 	[TIME] = "Time", \
 }[ecu_id])
 
+
 struct sensor {
 	enum ecu_id id;
 	float value;
 };
 
 void ecu_init(void);
-void ecu_parse_package(void);
-void ecu_send_schema(void);
+void ecu_send_request(void);
+bool ecu_has_packet(void);
+bool ecu_read_data(struct sensor *data);
 
 #endif /* ECU_H */

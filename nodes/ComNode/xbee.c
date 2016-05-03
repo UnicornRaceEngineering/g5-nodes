@@ -23,154 +23,147 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>  // for uint8_t
-#include <stdio.h>   // for fputc, FILE
-#include <string.h>  // for memcpy, memset
+#include <stdio.h>   // for fputc
 #include <usart.h>   // for usart1_init, usart1_byte_output
-#include <utils.h>   // for ARR_LEN
-#include <util/delay.h>
-#include <system_messages.h>
+#include <stdbool.h>
+#include <string.h>
 
-#include "log.h"
 #include "xbee.h"
 
 #define XBEE_BAUD 	(115200)
 
-#define MAX_LABEL_SIZE	(32)
 
+static void flag_do_nothing(enum xbee_flags flag);
 
 static FILE *xbee_out = &usart1_byte_output;
 static FILE *xbee_in = &usart1_io;
-#define xbee_has_data()	usart1_has_data()
 
-static uint8_t buf_in[64];
-static uint8_t buf_out[64];
+static uint8_t buf_in[128];
+static uint8_t buf_out[128];
 
-static uint32_t n_multi = 1; // Number of multi packages send,
-static enum data_request req;
+static void (*flag)(enum xbee_flags) = flag_do_nothing;
 
-static struct payload {
-	// the buffer is the size of uart buffer with package overhead substracted.
-	// This is to avoid filling the uart buffer.
-	uint8_t buf[64 - 3 - 1 - 1];
-	size_t i;
-} p;
 
-static void prepare_multi_package(enum data_request r) {
-	n_multi = 1;
-	req = REQUEST_OFFSET+r;
-	xbee_flush();
+static void flag_do_nothing(enum xbee_flags flag) {
+	(void)flag;
 }
 
-static unsigned send_multi_pkt(const uint8_t *buf, unsigned n) {
-	if (n == 0) return 1;
 
-	if (n + sizeof(n_multi) + sizeof(uint16_t) > ARR_LEN(p.buf)) return 0;
-
-	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
-	xbee_send((uint8_t*)&n_multi, sizeof(n_multi));
-	n_multi++;
-	xbee_send(buf, n);
-	xbee_flush();
-
-	_delay_ms(15); // We have to delay so we dont murder the xbee hardware buffer (not our software buffer)
-
-	return n;
+void xbee_set_flag_callback(void(*func)(enum xbee_flags)) {
+	flag = func;
 }
-static void end_multi_pkt(void) {
-	n_multi = 0; // zero means eof
 
-	xbee_send((uint8_t*)&((uint16_t){req}), sizeof(uint16_t));
-	xbee_send((uint8_t*)&n_multi, sizeof(n_multi));
-	xbee_flush();
-}
 
 void xbee_init(void) {
-	memset(&p, 0, sizeof(p));
 	usart1_init(XBEE_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
 }
 
-void xbee_send(const uint8_t *arr, uint8_t len) {
-	// Check if buffer has room for data
-	if (p.i + len >= ARR_LEN(p.buf)) {
-		xbee_flush();
+
+void xbee_send_ACK(void) {
+	struct xbee_packet p = { .buf = {1}, .len = 1, .type = ACK};
+	xbee_send_packet(&p);
+}
+
+
+void xbee_send_NACK(void) {
+	struct xbee_packet p = { .buf = {0}, .len = 1, .type = NACK};
+	xbee_send_packet(&p);
+}
+
+
+void xbee_send_RESEND(void) {
+	struct xbee_packet p = { .buf = {2}, .len = 1, .type = RESEND};
+	xbee_send_packet(&p);
+}
+
+
+void xbee_send_packet(struct xbee_packet *p) {
+	/* Send start sequence */
+	fputc(0xA1, xbee_out);
+
+	/* Send header */
+	const uint8_t header = (p->type << 6) | (0x3F & p->len);
+	fputc(header, xbee_out);
+
+	/* Send payload and calculate checksum */
+	uint8_t checksum = 0;
+	for (size_t i = 0; i < p->len; ++i) {
+		fputc(p->buf[i], xbee_out);
+		checksum ^= p->buf[i];
 	}
 
-	// Then add it to payload
-	memcpy(&p.buf[p.i], arr, len);
-	p.i += len;
+	/* Send checksum */
+	fputc(checksum, xbee_out);
 }
 
-void xbee_flush(void) {
-	const uint8_t start_seq[] = {0xA1, 0xB2, 0xC3};
-	for (size_t i = 0; i < ARR_LEN(start_seq); ++i) fputc(start_seq[i], xbee_out);
 
-	fputc(p.i+1, xbee_out); // size of payload + chksum
-
-	uint8_t chksum = 0;
-	for (size_t i = 0; i < p.i; ++i) {
-		fputc(p.buf[i], xbee_out);
-		chksum ^= p.buf[i];
-	}
-	fputc(chksum, xbee_out);
-
-	p.i = 0; // Reset payload index
-}
-
-static int request_log(void) {
-	const uint8_t lo = fgetc(xbee_in);
-	const uint8_t hi = fgetc(xbee_in);
-
-	const uint16_t lognr = MERGE_BYTE(hi, lo);
-
-	prepare_multi_package(REQUEST_LOG);
-	int rc = log_read(lognr, &send_multi_pkt);
-	end_multi_pkt();
-	return rc;
-}
-
-static int request_num_logs(void) {
-	prepare_multi_package(REQUEST_NUM_LOGS);
-
-	uint16_t n_logs = log_get_num_logs();
-	send_multi_pkt((uint8_t*)&n_logs, sizeof(n_logs));
-
-	end_multi_pkt();
-	return 0;
-}
-
-static int request_insert_label(void) {
-	char label[MAX_LABEL_SIZE] = {'\0'};
-	size_t len;
-	for (len = 0; len < ARR_LEN(label); len++) {
-		label[len] = fgetc(xbee_in);
-		if (label[len] == '\0') break;
+bool xbee_read_packet(struct xbee_packet *p) {
+	/* Return false if nothing has been recieved */
+	/* Note that we don't wait for the complete packet to arrive */
+	if (!usart1_has_data()) {
+		return false;
 	}
 
-	// If a label that is longer than what is allowed, drop the rest.
-	while(xbee_has_data() && len >= ARR_LEN(label)) fgetc(xbee_in);
-
-	const uint16_t id = REQUEST_OFFSET + REQUEST_INSERT_LABEL;
-	log_append((uint8_t*)&id, sizeof(id));
-	log_append(label, len);
-	return 0;
-}
-
-int xbee_check_request(void) {
-	if (!xbee_has_data()) return 0;
-
-	const enum data_request r = (int)fgetc(xbee_in);
-
-	int rc;
-	switch (r) {
-		case REQUEST_LOG:           rc = request_log();          break;
-		case REQUEST_NUM_LOGS:      rc = request_num_logs();     break;
-		case REQUEST_INSERT_LABEL:  rc = request_insert_label(); break;
-
-		case REQUEST_NONE:
-		default:
-			rc = 0; break;
+	/* Check if start sequence (single byte) is correct */
+	const uint8_t start_seq = (uint8_t)fgetc(xbee_in);
+	if (start_seq != 0xA1) {
+		flag(WRONG_START_SEQ);
+		return false;
 	}
 
-	xbee_flush();
-	return rc;
+	/* Retrieve the header from the next byte */
+	const uint8_t header = (uint8_t)fgetc(xbee_in);
+	p->type = BITMASK_CHECK(0xC0, header) >> 6; //Check 2 most significant bits.
+	p->len = BITMASK_CHECK(0x3F, header); //Check remaining 6 lowest significant bits.
+
+	/* Read payload and calculate checksum */
+	uint8_t payload_checksum = 0;
+	for (uint8_t i = 0; i < p->len; ++i) {
+		p->buf[i] = (uint8_t)fgetc(xbee_in);
+		payload_checksum ^= p->buf[i];
+	}
+
+	/* Check if the calculated checksum is a match with the real one. */
+	const uint8_t checksum = (uint8_t)fgetc(xbee_in);
+	if (checksum != payload_checksum){
+		flag(WRONG_CHECKSUM);
+		xbee_send_RESEND();
+		return false;
+	}
+
+	/* We use the type and length to check packets for their validity. */
+	switch (p->type) {
+	case HANDSHAKE:
+		if (!p->len) {
+			/* Handshakes are expected to be empty. */
+			flag(INVALID_LENGTH);
+			xbee_send_NACK();
+			return false;
+		}
+		break;
+	case ACK|NACK|RESEND:
+		if (p->len != 1) {
+			/* Packets of these type can only have length 1. */
+			flag(INVALID_LENGTH);
+			xbee_send_NACK();
+			return false;
+		}
+		break;
+	case REQUEST|RESPONCE:
+		if (!p->len) {
+			/* An empty request is invalid. */
+			flag(INVALID_LENGTH);
+			xbee_send_NACK();
+			return false;
+		}
+		break;
+	case LIVE_STREAM:
+		/* We do not expect to encounter this type at all. */
+		flag(INVALID_TYPE);
+		xbee_send_NACK();
+		return false;
+	}
+
+	/* Return true if message retrievel is succesful. */
+	return true;
 }

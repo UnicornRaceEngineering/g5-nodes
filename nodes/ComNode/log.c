@@ -29,98 +29,106 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <util/delay.h>
 #include <stdio.h>
 #include <utils.h>
+#include <stdbool.h>
 
 #include "log.h"
 
+#define FMT_LOG_NAME PSTR("LOG%u.DAT")
+
+
+static void flag_do_nothing(enum log_flags flag);
+
 static FATFS fs;
-static FIL log_file;
+static void (*flag)(enum log_flags) = flag_do_nothing;
 
-#define FMT_LOG_NAME PSTR("log%u.dat")
 
-#define BUF_SIZE	512
+static void flag_do_nothing(enum log_flags flag) {
+	(void)flag;
+}
 
-static struct payload {
-	uint8_t buf[BUF_SIZE];
-	size_t i;
-} p;
+
+void log_set_flag_callback(void(*func)(enum log_flags)) {
+	flag = func;
+}
+
 
 void log_init(void) {
-	memset(&p, 0, sizeof(p));
-
+	_delay_ms(1000); /* Wait for SD card to be ready */
 	if (f_mount(&fs, "", 1) != FR_OK) {
-		// Error
+		flag(MOUNT_ERR);
 	}
+}
 
+
+void create_file(FIL *f) {
 	// increment filename until we have a new file that does not already exists.
 	char file_name[32] = {'\0'};
 	unsigned i = 0;
 	do {
 		sprintf_P(file_name, FMT_LOG_NAME, i++);
-		if (i > 1000) break;
-	} while (f_open(&log_file, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
+		if (i > 1000) {
+			flag(CREATE_FILE_ERR);
+			return;
+		}
+	} while (f_open(f, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
 }
 
-static int flush_to_sd(void) {
-	int err = 0;
-	unsigned bw;
-	if(f_write(&log_file, p.buf, p.i, &bw) != FR_OK) err = -1;
-	p.i = 0;
-	err = (bw == p.i) ? 0 : -1;
-	return err;
+
+uint32_t size_of_file(FIL *f) {
+	return f_size(f);
 }
 
-int log_append(void *data, size_t n) {
-	int err = 0;
-	if (p.i + n > BUF_SIZE) {
-		const size_t reminder = n - ((p.i + n) - BUF_SIZE);
-		memcpy(&p.buf[p.i], data, reminder);
-		p.i += reminder;
-		n -= reminder;
-		data += reminder;
-		log_sync();
-	}
 
-	memcpy(&p.buf[p.i], data, n);
-	p.i += n;
-	return err;
-}
-
-void log_sync(void) {
-	f_sync(&log_file);
-	flush_to_sd();
-}
-
-int log_read(uint16_t lognr, unsigned (*forward) (const uint8_t*, unsigned)) {
+bool open_file(FIL *f, uint16_t lognr, uint8_t mode) {
 	char file_name[16] = {'\0'};
 	sprintf_P(file_name, FMT_LOG_NAME, lognr);
-
-	log_sync();
-
-	FIL f;
-	if (f_open(&f, file_name, FA_READ|FA_OPEN_EXISTING) != FR_OK) return -1;
-
-	// const uint32_t fsize = f_size(&f);
-	// for (size_t i = 0; i < sizeof(fsize); i++) {
-	// 	fputc(((uint8_t*)&fsize)[i], fd);
-	// }
-
-	// seek to the start of file
-	if (f_lseek(&f, 0) != FR_OK) return -1;
-
-	FRESULT rc = FR_OK;
-	while (rc == FR_OK && !f_eof(&f)) {
-		unsigned n;
-		rc = f_forward(&f, forward, 32, &n);
+	if (f_open(f, file_name, mode) != FR_OK) {
+		flag(OPEN_FILE_ERR);
+		return false;
 	}
-	f_close(&f);
 
-	return 0;
+	return true;
 }
 
-unsigned log_get_num_logs(void) {
+
+bool read_file(FIL *f, uint8_t *buf, size_t len) {
+	unsigned int bw;
+	const FRESULT rc = f_read(f, buf, len, &bw);
+	if ((len != bw) || (rc != FR_OK)) {
+		flag(READ_FILE_ERR);
+		return false;
+	}
+
+	return true;
+}
+
+
+bool file_seek(FIL *f, size_t offset) {
+	if (f_lseek(f, offset) != FR_OK) {
+		flag(ERR_SEEKING);
+		return false;
+	}
+
+	return true;
+}
+
+
+bool file_write(FIL *f, uint8_t *buf, size_t len) {
+	unsigned int bw;
+	const FRESULT rc = f_write(f, buf, len, &bw);
+	if((rc != FR_OK) || (bw != len)) {
+		flag(WRITE_FILE_ERR);
+		return false;
+	}
+
+	return true;
+}
+
+
+unsigned int log_get_num_logs(void) {
 	char file_name[32] = {'\0'};
 
-	unsigned i = 0;
+	unsigned int i = 0;
 	while (1) {
 		sprintf_P(file_name, FMT_LOG_NAME, i++);
 

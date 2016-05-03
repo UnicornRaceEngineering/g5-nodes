@@ -4,8 +4,9 @@ set(SRC_FILES
 	main.c
 	ecu.c
 	xbee.c
-	bson.c
 	log.c
+	state_machine.c
+	flags.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})

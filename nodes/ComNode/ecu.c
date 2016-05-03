@@ -37,40 +37,96 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdbool.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 #include <usart.h>
-#include <timer.h>
-#include <m41t81s_rtc.h>
 #include <string.h>
 #include <utils.h>
-#include <system_messages.h>
-#include <util/delay.h>
-#include <can.h>
 
-#include "log.h"
-#include "xbee.h"
-#include "bson.h"
 #include "ecu.h"
 
-#define FAULTY_BATTERY_V_SENSOR 0
+#define ECU_BAUD    	(19200)
+#define ECU_PACKET_LEN	(114)
 
-#define ECU_BAUD    (19200)
+static const int8_t ecu_packet[][2] = {
+	{FUEL_PRESSURE 			,2},
+	{STATUS_LAP_COUNT 		,2},
+	{STATUS_INJ_SUM 		,2},
+	{LAST_GEAR_SHIFT 		,2},
+	{MOTOR_OILTEMP 			,2},
+	{OIL_PRESSURE 			,2},
+	{STATUS_TIME 			,4},
+	{STATUS_LAP_TIME 		,4},
+	{GEAR_OIL_TEMP 			,2},
+	{STATUS_TRACTION 		,2},
+	{STATUS_GAS 			,2},
+	{STATUS_LAMBDA_V2 		,2},
+	{STATUS_CAM_TRIG_P1 	,2},
+	{STATUS_CAM_TRIG_P2 	,2},
+	{STATUS_CHOKER_ADD 		,2},
+	{STATUS_LAMBDA_PWM 		,2},
+	{EMPTY 					,10},
+	{WATER_TEMP 			,2},
+	{MANIFOLD_AIR_TEMP 		,2},
+	{SPEEDER_POTMETER 		,2},
+	{EMPTY 					,2},
+	{RPM 					,2},
+	{TRIGGER_ERR 			,2},
+	{CAM_ANGLE1 			,2},
+	{CAM_ANGLE2 			,2},
+	{ROAD_SPEED 			,2},
+	{MAP_SENSOR 			,2},
+	{BATTERY_V 				,2},
+	{LAMBDA_V 				,2},
+	{EMPTY 					,4},
+	{LOAD 					,2},
+	{EMPTY 					,2},
+	{INJECTOR_TIME 			,2},
+	{EMPTY 					,2},
+	{IGNITION_TIME 			,2},
+	{DWELL_TIME 			,2},
+	{EMPTY 					,10},
+	{GX 					,2},
+	{GY 					,2},
+	{GZ 					,2},
+	{EMPTY 					,8},
+	{MOTOR_FLAGS 			,1},
+	{EMPTY 					,1},
+	{OUT_BITS 				,1},
+	{TIME 					,1},
 
-#define ECU_HEARTBEAT_ISR_VECT  TIMER0_COMP_vect
-#define HEARTBEAT_DELAY_LENGTH  8 // How many times we delay the heartbeat timer
+	/* End state, not an actual part of the data recieved */
+	{EMPTY 					,0},
+};
+
+
+static float clamp(float value);
 
 static FILE *ecu = &usart0_io;
 
-static uint8_t buf_in[64];
-static uint8_t buf_out[64];
+static uint8_t buf_in[128];
+static uint8_t buf_out[16];
 
-static void send_request(void) {
+
+void ecu_init(void) {
+	usart0_init(ECU_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));  // ECU
+}
+
+
+void ecu_send_request(void) {
 	const uint8_t heart_beat[] = {0x12, 0x34, 0x56, 0x78, 0x17, 0x08, 0, 0, 0, 0};
 	for (size_t i = 0; i < ARR_LEN(heart_beat); ++i) {
 		fputc(heart_beat[i], ecu);
 	}
 }
 
-static inline float clamp(float value) {
+
+bool ecu_has_packet(void) {
+	// Every full data responce we get following a request is 114 bytes long.
+	return usart0_input_buffer_bytes() == ECU_PACKET_LEN;
+}
+
+
+static float clamp(float value) {
 	uint32_t u32;
 	memcpy(&u32, &value, sizeof(value));
 	u32 = (u32 > (1 << 15)) ? -(0xFFFF - u32) : u32;
@@ -78,109 +134,72 @@ static inline float clamp(float value) {
 	return value;
 }
 
-void ecu_parse_package(void) {
-	send_request();
 
-	struct ecu_package {
-		struct sensor sensor;
-		float raw_value; // The raw data received from the ECU
-		size_t length;      // length of the data in bytes
-	} pkt[] = {
-#       include "ecu_package_layout.inc"
-	};
+bool ecu_read_data(struct sensor *data) {
+	static uint8_t data_count = 0;
+	float raw_value = 0;
 
-	// We loop over the package and extract the number of bytes element contains
-	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
-		while (pkt[i].length--) {
-			const uint8_t ecu_byte = fgetc(ecu);
-			if (pkt[i].sensor.id == EMPTY) {
-#if 0
-				// We know these pkts are just zero, if they are not reset
-				if ((i == ARR_LEN(pkt) - 4 || i == 0 || i == 16) && ecu_byte != 0) {
-					// Reset ECU and clear the current corrupt package
-					TIMSK0 &= ~(1 << OCIE0A); // Disable heartbeat isr
-					_delay_ms(50); // About double the heartbeat time.
-					ecu_init();
-					return;
-				}
-#endif
-				continue;
-			}
+	data->id = ecu_packet[data_count][0];
+	uint8_t len = ecu_packet[data_count][1];
 
-			pkt[i].raw_value += (ecu_byte << (8 * pkt[i].length));
-		}
+	if (!len) {
+		data_count = 0;
+		return false;
 	}
 
-	// Convert the raw data to usable data
-	// We have to do this after collecting an entire ECU package to avoid
-	// broadcasting corrupt data
-	for (size_t i = 0; i < ARR_LEN(pkt); ++i) {
-		switch (pkt[i].sensor.id) {
-		case STATUS_LAMBDA_V2:
-			pkt[i].sensor.value = (70 - clamp(pkt[i].raw_value) / 64.0);
-			break;
-		case WATER_TEMP:
-		case MANIFOLD_AIR_TEMP:
-			pkt[i].sensor.value = (pkt[i].raw_value * (-150.0 / 3840) + 120);
-			break;
-		case SPEEDER_POTMETER:
-			pkt[i].sensor.value = ((pkt[i].raw_value - 336) / 26.9);
-			break;
-		case RPM:
-			pkt[i].sensor.value = (pkt[i].raw_value * 0.9408);
-			break;
-		case MAP_SENSOR:
-			pkt[i].sensor.value = (pkt[i].raw_value * 0.75);
-			break;
-		case BATTERY_V:
-			pkt[i].sensor.value = (pkt[i].raw_value * (1.0 / 210) + 0);
-			break;
-		case LAMBDA_V:
-			pkt[i].sensor.value = ((70 - clamp(pkt[i].raw_value) / 64.0) / 100);
-			break;
-		case INJECTOR_TIME:
-		case IGNITION_TIME:
-			pkt[i].sensor.value = (-0.75 * pkt[i].raw_value + 120);
-			break;
-		case GX:
-		case GY:
-		case GZ:
-			pkt[i].sensor.value = (clamp(pkt[i].raw_value) * (1.0 / 16384));
-			break;
-
-		default:
-			// No conversion
-			pkt[i].sensor.value = pkt[i].raw_value;
-			break;
+	if (data->id == EMPTY) {
+		for (uint8_t i = 0; i < len; ++i) {
+			fgetc(ecu);
 		}
-
-		if (pkt[i].sensor.id != EMPTY) {
-			const uint16_t tx_id = ECU_PKT + pkt[i].sensor.id;
-			enum medium transport = can_msg_transport(tx_id);
-
-			uint8_t buf[sizeof(tx_id)+sizeof(pkt[i].sensor.value)];
-			memcpy(buf, &tx_id, sizeof(tx_id));
-			memcpy(buf+sizeof(tx_id), &pkt[i].sensor.value, sizeof(pkt[i].sensor.value));
-
-			if (transport & CAN) {
-				// CAN sends the id as message id, so it is not needed in the
-				// payload.
-#if FAULTY_BATTERY_V_SENSOR
-				// Hot fix faulty sensor data
-				if (pkt[i].sensor.id == BATTERY_V) {
-					pkt[i].sensor.value = 13.0;
-				}
-#endif
-
-				can_broadcast(tx_id, &pkt[i].sensor.value);
-			}
-
-			if (transport & XBEE) xbee_send(buf, ARR_LEN(buf));
-			if (transport & SD) log_append(buf, ARR_LEN(buf));
-		}
+		++data_count;
+		data->id = ecu_packet[data_count][0];
+		len = ecu_packet[data_count][1];
 	}
-}
 
-void ecu_init(void) {
-	usart0_init(ECU_BAUD, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));  // ECU
+	while (len--) {
+		raw_value += fgetc(ecu) << (8 * len);
+	}
+
+	switch (data->id ) {
+	case STATUS_LAMBDA_V2:
+		raw_value = (70 - clamp(raw_value) / 64.0);
+		break;
+	case WATER_TEMP:
+	case MANIFOLD_AIR_TEMP:
+		raw_value = (raw_value * (-150.0 / 3840) + 120);
+		break;
+	case SPEEDER_POTMETER:
+		raw_value = ((raw_value - 336) / 26.9);
+		break;
+	case RPM:
+		raw_value = (raw_value * 0.9408);
+		break;
+	case MAP_SENSOR:
+		raw_value = (raw_value * 0.75);
+		break;
+	case BATTERY_V:
+		raw_value = (raw_value * (1.0 / 210) + 0);
+		break;
+	case LAMBDA_V:
+		raw_value = ((70 - clamp(raw_value) / 64.0) / 100);
+		break;
+	case INJECTOR_TIME:
+	case IGNITION_TIME:
+		raw_value = (-0.75 * raw_value + 120);
+		break;
+	case GX:
+	case GY:
+	case GZ:
+		raw_value = (clamp(raw_value) * (1.0 / 16384));
+		break;
+
+	default:
+		// No conversion
+		break;
+	}
+
+	data->value = raw_value;
+
+	++data_count;
+	return true;
 }

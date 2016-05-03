@@ -25,21 +25,44 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define XBEE_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 
-enum data_request {
-	REQUEST_NONE,
-	REQUEST_LOG,
-	REQUEST_NUM_LOGS,
-	REQUEST_INSERT_LABEL,
+#define XBEE_PAYLOAD_LEN	(63)
 
-	N_REQUEST,
+enum xbee_packet_type {
+	HANDSHAKE = 0,
+	ACK = 1,
+	NACK = 1,
+	RESEND = 1,
+	REQUEST = 2,
+	RESPONCE = 2,
+	LIVE_STREAM = 3,
 };
 
+enum xbee_flags {
+	WRONG_START_SEQ,
+	WRONG_CHECKSUM,
+	INVALID_LENGTH,
+	INVALID_TYPE,
+
+	N_XBEE_FLAGS,
+};
+
+struct xbee_packet {
+	uint8_t buf[63];
+	uint8_t len : 6;
+	enum xbee_packet_type type : 2;
+};
 
 void xbee_init(void);
-void xbee_send(const uint8_t *arr, uint8_t len);
-void xbee_flush(void);
-int xbee_check_request(void);
+void xbee_send_ACK(void);
+void xbee_send_NACK(void);
+void xbee_send_RESEND(void);
+void xbee_send_packet(struct xbee_packet *p);
+bool xbee_read_packet(struct xbee_packet *p);
+void xbee_set_flag_callback(void(*func)(enum xbee_flags));
+
 
 #endif /* XBEE_H */

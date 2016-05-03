@@ -25,11 +25,31 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LOG_H
 
 #include <stddef.h>
+#include <stdint.h>
+#include <fatfs/ff.h>
+
+
+enum log_flags {
+	MOUNT_ERR,
+	CREATE_FILE_ERR,
+	WRITE_FILE_ERR,
+	OPEN_FILE_ERR,
+	BUFFER_TOO_LARGE,
+	READ_FILE_ERR,
+	ERR_SEEKING,
+
+	N_LOG_FLAGS,
+};
+
 
 void log_init(void);
-int log_append(void *buf, size_t n);
-void log_sync(void);
-int log_read(uint16_t lognr, unsigned (*forward) (const uint8_t*, unsigned));
+uint32_t size_of_file(FIL *file);
+void create_file(FIL *file);
+bool open_file(FIL *f, uint16_t lognr, uint8_t mode);
+bool read_file(FIL *f, uint8_t *buf, size_t len);
+bool file_seek(FIL *f, size_t offset);
+bool file_write(FIL *f, uint8_t *buf, size_t len);
+void log_set_flag_callback(void(*func)(enum log_flags));
 unsigned log_get_num_logs(void);
 
 #endif /* LOG_H */
