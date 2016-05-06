@@ -47,7 +47,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ECU_BAUD    	(19200)
 #define ECU_PACKET_LEN	(114)
 
-static const int8_t ecu_packet[][2] = {
+static const int8_t ecu_packet[][2] PROGMEM = {
 	{FUEL_PRESSURE 			,2},
 	{STATUS_LAP_COUNT 		,2},
 	{STATUS_INJ_SUM 		,2},
@@ -139,8 +139,8 @@ bool ecu_read_data(struct sensor *data) {
 	static uint8_t data_count = 0;
 	float raw_value = 0;
 
-	data->id = ecu_packet[data_count][0];
-	uint8_t len = ecu_packet[data_count][1];
+	data->id = pgm_read_byte(&(ecu_packet[data_count][0]));
+	uint8_t len = pgm_read_byte(&(ecu_packet[data_count][1]));
 
 	if (!len) {
 		data_count = 0;
@@ -152,8 +152,8 @@ bool ecu_read_data(struct sensor *data) {
 			fgetc(ecu);
 		}
 		++data_count;
-		data->id = ecu_packet[data_count][0];
-		len = ecu_packet[data_count][1];
+		data->id = pgm_read_byte(&(ecu_packet[data_count][0]));
+		len = pgm_read_byte(&(ecu_packet[data_count][1]));
 	}
 
 	while (len--) {
