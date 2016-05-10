@@ -125,9 +125,9 @@ static void init(void) {
 	dip_init();
 
 	can_subscribe(CURRENT_GEAR);
-	can_subscribe(ECU_PKT + RPM);
-	can_subscribe(ECU_PKT + BATTERY_V);
-	can_subscribe(ECU_PKT + WATER_TEMP);
+	can_subscribe(ECU_RPM);
+	can_subscribe(ECU_BATTERY_V);
+	can_subscribe(ECU_WATER_TEMP);
 
 	sei();
 	puts_P(PSTR("Init complete\n\n"));
@@ -155,15 +155,15 @@ int main(void) {
 					fstate.gear = *(uint8_t*)msg.data;
 					display_gear(fstate.gear);
 					break;
-				case ECU_PKT + RPM:
+				case ECU_RPM:
 					fstate.rpm = (int16_t)*(float*)data;
 					set_rpm(fstate.rpm);
 					break;
-				case ECU_PKT + BATTERY_V:
+				case ECU_BATTERY_V:
 					fstate.battery_volt = *(float*)data;
 					update_warning_light(WARN_BATTERY_VOLT_LED, fstate.battery_volt);
 					break;
-				case ECU_PKT + WATER_TEMP:
+				case ECU_WATER_TEMP:
 					fstate.water_temp = *(float*)data;
 					update_warning_light(WARN_WATER_TEMP_LED, fstate.water_temp);
 					break;

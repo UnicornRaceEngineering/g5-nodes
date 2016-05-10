@@ -204,7 +204,7 @@ static bool livestream(void) {
 				break;
 			}
 
-			const uint16_t tx_id = ECU_PKT + data.id;
+			const uint16_t tx_id = data.id;
 			enum medium transport = can_msg_transport(tx_id);
 
 			/* TODO: This should not be part of a final solution. */

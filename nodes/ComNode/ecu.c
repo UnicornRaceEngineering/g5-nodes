@@ -47,59 +47,60 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ECU_BAUD    	(19200)
 #define ECU_PACKET_LEN	(114)
 
-static const int8_t ecu_packet[][2] PROGMEM = {
-	{FUEL_PRESSURE 			,2},
-	{STATUS_LAP_COUNT 		,2},
-	{STATUS_INJ_SUM 		,2},
-	{LAST_GEAR_SHIFT 		,2},
-	{MOTOR_OILTEMP 			,2},
-	{OIL_PRESSURE 			,2},
-	{STATUS_TIME 			,4},
-	{STATUS_LAP_TIME 		,4},
-	{GEAR_OIL_TEMP 			,2},
-	{STATUS_TRACTION 		,2},
-	{STATUS_GAS 			,2},
-	{STATUS_LAMBDA_V2 		,2},
-	{STATUS_CAM_TRIG_P1 	,2},
-	{STATUS_CAM_TRIG_P2 	,2},
-	{STATUS_CHOKER_ADD 		,2},
-	{STATUS_LAMBDA_PWM 		,2},
-	{EMPTY 					,10},
-	{WATER_TEMP 			,2},
-	{MANIFOLD_AIR_TEMP 		,2},
-	{SPEEDER_POTMETER 		,2},
-	{EMPTY 					,2},
-	{RPM 					,2},
-	{TRIGGER_ERR 			,2},
-	{CAM_ANGLE1 			,2},
-	{CAM_ANGLE2 			,2},
-	{ROAD_SPEED 			,2},
-	{MAP_SENSOR 			,2},
-	{BATTERY_V 				,2},
-	{LAMBDA_V 				,2},
-	{EMPTY 					,4},
-	{LOAD 					,2},
-	{EMPTY 					,2},
-	{INJECTOR_TIME 			,2},
-	{EMPTY 					,2},
-	{IGNITION_TIME 			,2},
-	{DWELL_TIME 			,2},
-	{EMPTY 					,10},
-	{GX 					,2},
-	{GY 					,2},
-	{GZ 					,2},
-	{EMPTY 					,8},
-	{MOTOR_FLAGS 			,1},
-	{EMPTY 					,1},
-	{OUT_BITS 				,1},
-	{TIME 					,1},
-
-	/* End state, not an actual part of the data recieved */
-	{EMPTY 					,0},
-};
-
 
 static float clamp(float value);
+
+static const int8_t ecu_packet[][2] PROGMEM = {
+	{ECU_FUEL_PRESSURE 			,2},
+	{ECU_STATUS_LAP_COUNT 		,2},
+	{ECU_STATUS_INJ_SUM 		,2},
+	{ECU_LAST_GEAR_SHIFT 		,2},
+	{ECU_MOTOR_OILTEMP 			,2},
+	{ECU_OIL_PRESSURE 			,2},
+	{ECU_STATUS_TIME 			,4},
+	{ECU_STATUS_LAP_TIME 		,4},
+	{ECU_GEAR_OIL_TEMP 			,2},
+	{ECU_STATUS_TRACTION 		,2},
+	{ECU_STATUS_GAS 			,2},
+	{ECU_STATUS_LAMBDA_V2 		,2},
+	{ECU_STATUS_CAM_TRIG_P1 	,2},
+	{ECU_STATUS_CAM_TRIG_P2 	,2},
+	{ECU_STATUS_CHOKER_ADD 		,2},
+	{ECU_STATUS_LAMBDA_PWM 		,2},
+	{ECU_EMPTY 					,10},
+	{ECU_WATER_TEMP 			,2},
+	{ECU_MANIFOLD_AIR_TEMP 		,2},
+	{ECU_SPEEDER_POTMETER 		,2},
+	{ECU_EMPTY 					,2},
+	{ECU_RPM 					,2},
+	{ECU_TRIGGER_ERR 			,2},
+	{ECU_CAM_ANGLE1 			,2},
+	{ECU_CAM_ANGLE2 			,2},
+	{ECU_ROAD_SPEED 			,2},
+	{ECU_MAP_SENSOR 			,2},
+	{ECU_BATTERY_V 				,2},
+	{ECU_LAMBDA_V 				,2},
+	{ECU_EMPTY 					,4},
+	{ECU_LOAD 					,2},
+	{ECU_EMPTY 					,2},
+	{ECU_INJECTOR_TIME 			,2},
+	{ECU_EMPTY 					,2},
+	{ECU_IGNITION_TIME 			,2},
+	{ECU_DWELL_TIME 			,2},
+	{ECU_EMPTY 					,10},
+	{ECU_GX 					,2},
+	{ECU_GY 					,2},
+	{ECU_GZ 					,2},
+	{ECU_EMPTY 					,8},
+	{ECU_MOTOR_FLAGS 			,1},
+	{ECU_EMPTY 					,1},
+	{ECU_OUT_BITS 				,1},
+	{ECU_TIME 					,1},
+
+	/* End state, not an actual part of the data recieved */
+	{ECU_EMPTY 					,0},
+};
+
 
 static FILE *ecu = &usart0_io;
 
@@ -147,7 +148,7 @@ bool ecu_read_data(struct sensor *data) {
 		return false;
 	}
 
-	if (data->id == EMPTY) {
+	if (data->id == ECU_EMPTY) {
 		for (uint8_t i = 0; i < len; ++i) {
 			fgetc(ecu);
 		}
@@ -161,35 +162,35 @@ bool ecu_read_data(struct sensor *data) {
 	}
 
 	switch (data->id ) {
-	case STATUS_LAMBDA_V2:
+	case ECU_STATUS_LAMBDA_V2:
 		raw_value = (70 - clamp(raw_value) / 64.0);
 		break;
-	case WATER_TEMP:
-	case MANIFOLD_AIR_TEMP:
+	case ECU_WATER_TEMP:
+	case ECU_MANIFOLD_AIR_TEMP:
 		raw_value = (raw_value * (-150.0 / 3840) + 120);
 		break;
-	case SPEEDER_POTMETER:
+	case ECU_SPEEDER_POTMETER:
 		raw_value = ((raw_value - 336) / 26.9);
 		break;
-	case RPM:
+	case ECU_RPM:
 		raw_value = (raw_value * 0.9408);
 		break;
-	case MAP_SENSOR:
+	case ECU_MAP_SENSOR:
 		raw_value = (raw_value * 0.75);
 		break;
-	case BATTERY_V:
+	case ECU_BATTERY_V:
 		raw_value = (raw_value * (1.0 / 210) + 0);
 		break;
-	case LAMBDA_V:
+	case ECU_LAMBDA_V:
 		raw_value = ((70 - clamp(raw_value) / 64.0) / 100);
 		break;
-	case INJECTOR_TIME:
-	case IGNITION_TIME:
+	case ECU_INJECTOR_TIME:
+	case ECU_IGNITION_TIME:
 		raw_value = (-0.75 * raw_value + 120);
 		break;
-	case GX:
-	case GY:
-	case GZ:
+	case ECU_GX:
+	case ECU_GY:
+	case ECU_GZ:
 		raw_value = (clamp(raw_value) * (1.0 / 16384));
 		break;
 

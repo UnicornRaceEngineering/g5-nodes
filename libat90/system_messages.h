@@ -30,35 +30,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SYSTEM_MESSAGES_H
 
 #include <stdbool.h>
-
-#include "../nodes/ComNode/ecu.h"
-#include "../nodes/ComNode/xbee.h"
+#include <stdint.h>
 
 
 enum message_id {
-	// Com node
-	ECU_PKT,
-	LAST_ECU_PKT = N_ECU_IDS - 1,
+	// ECU
+	#include "lists/ecu_keys.inc"
 
-	HEARTBEAT,
-	GPS_DATA,
-	NODE_STATUS,
+	// All sensors
+	#include "lists/sensor_keys.inc"
 
-	// Gear node
-	PADDLE_STATUS,
-
-	// Steerinng node
-	CURRENT_GEAR,
-	NEUTRAL_ENABLED,
-
-	// WHEEL Sensors
-	FRONT_RIGHT_WHEEL_SPEED,
-	FRONT_LEFT_WHEEL_SPEED,
-
-	// Public
-	TIME_SYNC,
-
-	SYSTIME,
+	// System messages
+	#include "lists/system_keys.inc"
 
 	// end
 	END_OF_LIST,

@@ -40,96 +40,54 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <system_messages.h>
 
-
-
-enum ecu_id {
-	EMPTY,
-	FUEL_PRESSURE,
-	STATUS_LAP_COUNT,
-	STATUS_INJ_SUM,
-	LAST_GEAR_SHIFT,
-	MOTOR_OILTEMP,
-	OIL_PRESSURE,
-	STATUS_TIME,
-	STATUS_LAP_TIME,
-	GEAR_OIL_TEMP,
-	STATUS_TRACTION,
-	STATUS_GAS,
-	STATUS_LAMBDA_V2,
-	STATUS_CAM_TRIG_P1,
-	STATUS_CAM_TRIG_P2,
-	STATUS_CHOKER_ADD,
-	STATUS_LAMBDA_PWM,
-	WATER_TEMP,
-	MANIFOLD_AIR_TEMP,
-	SPEEDER_POTMETER, /* Speeder position */
-	RPM,
-	TRIGGER_ERR,
-	CAM_ANGLE1, /* Camshaft */
-	CAM_ANGLE2,
-	ROAD_SPEED,
-	MAP_SENSOR, /* manifold air pressure */
-	BATTERY_V,
-	LAMBDA_V,
-	LOAD,
-	INJECTOR_TIME,
-	IGNITION_TIME,
-	DWELL_TIME,
-	GX,
-	GY,
-	GZ,
-	MOTOR_FLAGS,
-	OUT_BITS,
-	TIME,
-
-	N_ECU_IDS
-};
 
 #define ECU_ID_NAME(ecu_id) ((char const* const[]) { \
-	[EMPTY] = "", \
-	[FUEL_PRESSURE] = "Fuel Press(bar).", \
-	[STATUS_LAP_COUNT] = "Status Lap Counter", \
-	[STATUS_INJ_SUM] = "Status Injection Sum", \
-	[LAST_GEAR_SHIFT] = "Last Gear Shift", \
-	[MOTOR_OILTEMP] = "Motor Oil Temp(cel)", \
-	[OIL_PRESSURE] = "Oil Pressure(on/off)", \
-	[STATUS_TIME] = "Status Time", \
-	[STATUS_LAP_TIME] = "Status Lap Time", \
-	[GEAR_OIL_TEMP] = "Gear Oil Temp", \
-	[STATUS_TRACTION] = "Status Traction", \
-	[STATUS_GAS]  = "Status Gas", \
-	[STATUS_LAMBDA_V2] = "Status LambdaV2", \
-	[STATUS_CAM_TRIG_P1] = "Status Cam shaft Trig P1", \
-	[STATUS_CAM_TRIG_P2] = "Status Cam shaft Trig P2", \
-	[STATUS_CHOKER_ADD] = "Status Choker Add (open/closed air intake)", \
-	[STATUS_LAMBDA_PWM] = "Status Lambda PWM", \
-	[WATER_TEMP] = "WaterMotor temp", \
-	[MANIFOLD_AIR_TEMP] = "ManifoldAir temp", \
-	[SPEEDER_POTMETER] = "Speeder Potmeter (0-100%)", \
-	[RPM] = "RPM", \
-	[TRIGGER_ERR] = "Trigger Err", \
-	[CAM_ANGLE1] = "Cam Angle1", \
-	[CAM_ANGLE2] = "Cam Angle2", \
-	[ROAD_SPEED] = "RoadSpeed (km/h)", \
-	[MAP_SENSOR] = "Manifold press. (mBar)", \
-	[BATTERY_V] = "Batt. volt", \
-	[LAMBDA_V] = "Lambda (fuel mix) (<1 => Rich)", \
-	[LOAD] = "Load (motor resistance procentage)", \
-	[INJECTOR_TIME] = "Injector Time", \
-	[IGNITION_TIME] = "Ignition Time", \
-	[DWELL_TIME] = "Dwell Time", \
-	[GX] = "GX", \
-	[GY] = "GY", \
-	[GZ] = "GZ", \
-	[MOTOR_FLAGS] = "Motor Flags", \
-	[OUT_BITS] = "Out Bits", \
-	[TIME] = "Time", \
+	[ECU_EMPTY] = "", \
+	[ECU_FUEL_PRESSURE] = "Fuel Press(bar).", \
+	[ECU_STATUS_LAP_COUNT] = "Status Lap Counter", \
+	[ECU_STATUS_INJ_SUM] = "Status Injection Sum", \
+	[ECU_LAST_GEAR_SHIFT] = "Last Gear Shift", \
+	[ECU_MOTOR_OILTEMP] = "Motor Oil Temp(cel)", \
+	[ECU_OIL_PRESSURE] = "Oil Pressure(on/off)", \
+	[ECU_STATUS_TIME] = "Status Time", \
+	[ECU_STATUS_LAP_TIME] = "Status Lap Time", \
+	[ECU_GEAR_OIL_TEMP] = "Gear Oil Temp", \
+	[ECU_STATUS_TRACTION] = "Status Traction", \
+	[ECU_STATUS_GAS]  = "Status Gas", \
+	[ECU_STATUS_LAMBDA_V2] = "Status LambdaV2", \
+	[ECU_STATUS_CAM_TRIG_P1] = "Status Cam shaft Trig P1", \
+	[ECU_STATUS_CAM_TRIG_P2] = "Status Cam shaft Trig P2", \
+	[ECU_STATUS_CHOKER_ADD] = "Status Choker Add (open/closed air intake)", \
+	[ECU_STATUS_LAMBDA_PWM] = "Status Lambda PWM", \
+	[ECU_WATER_TEMP] = "WaterMotor temp", \
+	[ECU_MANIFOLD_AIR_TEMP] = "ManifoldAir temp", \
+	[ECU_SPEEDER_POTMETER] = "Speeder Potmeter (0-100%)", \
+	[ECU_RPM] = "RPM", \
+	[ECU_TRIGGER_ERR] = "Trigger Err", \
+	[ECU_CAM_ANGLE1] = "Cam Angle1", \
+	[ECU_CAM_ANGLE2] = "Cam Angle2", \
+	[ECU_ROAD_SPEED] = "RoadSpeed (km/h)", \
+	[ECU_MAP_SENSOR] = "Manifold press. (mBar)", \
+	[ECU_BATTERY_V] = "Batt. volt", \
+	[ECU_LAMBDA_V] = "Lambda (fuel mix) (<1 => Rich)", \
+	[ECU_LOAD] = "Load (motor resistance procentage)", \
+	[ECU_INJECTOR_TIME] = "Injector Time", \
+	[ECU_IGNITION_TIME] = "Ignition Time", \
+	[ECU_DWELL_TIME] = "Dwell Time", \
+	[ECU_GX] = "GX", \
+	[ECU_GY] = "GY", \
+	[ECU_GZ] = "GZ", \
+	[ECU_MOTOR_FLAGS] = "Motor Flags", \
+	[ECU_OUT_BITS] = "Out Bits", \
+	[ECU_TIME] = "Time", \
 }[ecu_id])
 
 
 struct sensor {
-	enum ecu_id id;
+	enum message_id id;
 	float value;
 };
 
