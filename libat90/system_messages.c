@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "system_messages.h"
 
@@ -86,12 +87,12 @@ struct message_detail message_info[END_OF_LIST] = {
 
 
 void can_subscribe(enum message_id id) {
-	message_info[(uint16_t)id].subscribed = true;
+	message_info[(size_t)id].subscribed = true;
 }
 
 
 void can_unsubscribe(enum message_id id) {
-	message_info[(uint16_t)id].subscribed = false;
+	message_info[(size_t)id].subscribed = false;
 }
 
 
@@ -99,7 +100,7 @@ void can_unsubscribe(enum message_id id) {
  * Subscribe to to all messages.
  */
 void can_subscribe_all(void) {
-	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
+	for (size_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = true;
 	}
 }
@@ -109,32 +110,32 @@ void can_subscribe_all(void) {
  * Unsubscribe to to all messages.
  */
 void can_unsubscribe_all(void) {
-	for (uint16_t i = 0; i < END_OF_LIST; ++i) {
+	for (size_t i = 0; i < END_OF_LIST; ++i) {
 		message_info[i].subscribed = false;
 	}
 }
 
 
 bool can_is_subscribed(enum message_id id) {
-	return message_info[(uint16_t)id].subscribed;
+	return message_info[(size_t)id].subscribed;
 }
 
 
-uint8_t can_msg_length(enum message_id id) {
-	return message_info[(uint16_t)id].len;
+size_t get_msg_length(enum message_id id) {
+	return message_info[(size_t)id].len;
 }
 
 
-uint8_t can_msg_transport(enum message_id id) {
-	return message_info[(uint16_t)id].transport;
+uint8_t get_msg_transport(enum message_id id) {
+	return message_info[(size_t)id].transport;
 }
 
 
 void set_msg_transport(enum message_id id, enum medium t) {
-	message_info[(uint16_t)id].transport |= t;
+	message_info[(size_t)id].transport |= t;
 }
 
 
 void clear_msg_transport(enum message_id id, enum medium t) {
-	message_info[(uint16_t)id].transport &= ~t;
+	message_info[(size_t)id].transport &= ~t;
 }

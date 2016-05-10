@@ -296,7 +296,7 @@ uint8_t can_broadcast(const enum message_id id, const void* msg) {
 		return NO_MOB_ERR;
 	}
 
-	uint8_t len = can_msg_length(id);
+	uint8_t len = get_msg_length(id);
 
 	BIT_SET(mob_on_job, mob);
 	CAN_SET_MOB(mob);

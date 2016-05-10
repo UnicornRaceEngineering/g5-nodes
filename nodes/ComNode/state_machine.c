@@ -205,7 +205,7 @@ static bool livestream(void) {
 			}
 
 			const uint16_t tx_id = data.id;
-			enum medium transport = can_msg_transport(tx_id);
+			const uint8_t transport = get_msg_transport(tx_id);
 
 			/* TODO: This should not be part of a final solution. */
 			if (p.len + sizeof(tx_id) + sizeof(data.value)) {

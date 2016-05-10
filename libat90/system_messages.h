@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 
 enum message_id {
@@ -67,8 +68,8 @@ void can_unsubscribe(enum message_id id);
 void can_subscribe_all(void);
 void can_unsubscribe_all(void);
 bool can_is_subscribed(enum message_id id);
-uint8_t can_msg_length(enum message_id id);
-uint8_t can_msg_transport(enum message_id id);
+size_t get_msg_length(enum message_id id);
+uint8_t get_msg_transport(enum message_id id);
 void set_msg_transport(enum message_id id, enum medium t);
 void clear_msg_transport(enum message_id id, enum medium t);
 
