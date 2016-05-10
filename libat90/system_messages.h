@@ -57,7 +57,7 @@ enum medium {
 
 struct message_detail {
 	const unsigned len : 4;
-	const unsigned transport : 3;
+	unsigned transport : 3;
 	unsigned subscribed : 1;
 };
 
@@ -69,5 +69,7 @@ void can_unsubscribe_all(void);
 bool can_is_subscribed(enum message_id id);
 uint8_t can_msg_length(enum message_id id);
 uint8_t can_msg_transport(enum message_id id);
+void set_msg_transport(enum message_id id, enum medium t);
+void clear_msg_transport(enum message_id id, enum medium t);
 
 #endif /* SYSTEM_MESSAGES_H */

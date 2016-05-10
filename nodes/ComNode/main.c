@@ -36,6 +36,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "flags.h"
 
 
+static void set_msg_transport_rules(void);
+
+
 static void init(void) {
 	rtc_init();
 	flags_init();
@@ -43,6 +46,7 @@ static void init(void) {
 	ecu_init();
 	xbee_init();
 	log_init();
+	set_msg_transport_rules();
 
 	sei();
 }
@@ -52,4 +56,27 @@ int main(void) {
 	state_machine();
 
 	return 0;
+}
+
+
+static void set_msg_transport_rules(void) {
+	set_msg_transport(ECU_MOTOR_OILTEMP    , XBEE + SD);
+	set_msg_transport(ECU_OIL_PRESSURE     , XBEE + SD);
+	set_msg_transport(ECU_STATUS_CHOKER_ADD, XBEE + SD);
+	set_msg_transport(ECU_WATER_TEMP       , XBEE + SD);
+	set_msg_transport(ECU_MANIFOLD_AIR_TEMP,        SD);
+	set_msg_transport(ECU_SPEEDER_POTMETER , XBEE + SD);
+	set_msg_transport(ECU_RPM              , XBEE + SD);
+	set_msg_transport(ECU_TRIGGER_ERR      ,        SD);
+	set_msg_transport(ECU_CAM_ANGLE1       ,        SD);
+	set_msg_transport(ECU_CAM_ANGLE2       ,        SD);
+	set_msg_transport(ECU_MAP_SENSOR       ,        SD);
+	set_msg_transport(ECU_BATTERY_V        , XBEE + SD);
+	set_msg_transport(ECU_LAMBDA_V         , XBEE + SD);
+	set_msg_transport(ECU_LOAD             ,        SD);
+	set_msg_transport(ECU_INJECTOR_TIME    ,        SD);
+	set_msg_transport(ECU_IGNITION_TIME    ,        SD);
+	set_msg_transport(ECU_GX               , XBEE + SD);
+	set_msg_transport(ECU_GY               , XBEE + SD);
+	set_msg_transport(ECU_GZ               , XBEE + SD);
 }
