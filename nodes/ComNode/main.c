@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "ecu.h"  // for ecu_init, ecu_parse_package
 #include "xbee.h"                  // for xbee_init, xbee_send
 #include "log.h"
-#include "state_machine.h"
+#include "protocol.h"
 #include "flags.h"
 
 
@@ -53,7 +53,7 @@ static void init(void) {
 
 int main(void) {
 	init();
-	state_machine();
+	event_loop();
 
 	return 0;
 }

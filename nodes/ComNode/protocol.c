@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <system_messages.h>
 #include <sysclock.h>
 
-#include "state_machine.h"
+#include "protocol.h"
 #include "xbee.h"
 #include "ecu.h"
 #include "log.h"
@@ -71,7 +71,7 @@ static FIL logfile;
 static uint32_t tick;
 
 
-void state_machine(void) {
+void event_loop(void) {
 	streaming = false;
 	ongoing_request = NONE;
 

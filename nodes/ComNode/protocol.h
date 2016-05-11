@@ -22,8 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
- #ifndef STATE_MACHINE_H
- #define STATE_MACHINE_H
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
 
 
 enum state_flags {
@@ -33,8 +33,8 @@ enum state_flags {
 };
 
 
-void state_machine(void);
+void event_loop(void);
 void state_set_flag_callback(void(*func)(enum state_flags));
 
 
- #endif /* STATE_MACHINE_H */
+#endif /* PROTOCOL_H */

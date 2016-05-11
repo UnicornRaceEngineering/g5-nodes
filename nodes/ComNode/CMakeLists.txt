@@ -5,7 +5,7 @@ set(SRC_FILES
 	ecu.c
 	xbee.c
 	log.c
-	state_machine.c
+	protocol.c
 	flags.c
 	send_file.c
 )

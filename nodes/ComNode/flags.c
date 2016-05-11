@@ -27,7 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "flags.h"
 #include "xbee.h"
 #include "log.h"
-#include "state_machine.h"
+#include "protocol.h"
 
 
 static uint32_t all_the_flags;
