@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "ecu.h"
 #include "log.h"
 #include "flags.h"
+#include "send_file.h"
 
 
 /*
@@ -55,7 +56,6 @@ static bool handle_packet(void);
 static void respond_to_handshake(void);
 static void respond_to_request(struct xbee_packet *p);
 static void handle_ack(struct xbee_packet *p);
-static void send_file(struct xbee_packet *p);
 static void flag_do_nothing(enum state_flags flag);
 
 static void (*flag)(enum state_flags) = flag_do_nothing;
@@ -119,8 +119,26 @@ static void respond_to_handshake(void) {
 
 
 static void handle_ack(struct xbee_packet *p) {
-	//const bool ack = p->buf[0];
-	if (ongoing_request == REQUEST_FILE) {send_file(p);}
+	const bool ack = p->buf[0];
+	if (ack == true) {
+		switch (ongoing_request) {
+		case REQUEST_FILE:
+			eval_send_file_status();
+			break;
+		case NONE:
+			/* Do nothing. */
+			break;
+		}
+	} else {
+		switch (ongoing_request) {
+		case REQUEST_FILE:
+			resend_send_file();
+			break;
+		case NONE:
+			/* Do nothing. */
+			break;
+		}
+	}
 }
 
 
@@ -129,78 +147,20 @@ static void respond_to_request(struct xbee_packet *p) {
 		xbee_send_NACK();
 	}
 
+	int ret = -1;
 	enum request_type type = p->buf[0];
 	switch (type) {
 	case REQUEST_FILE:
-		send_file(p);
+		ret = initiate_send_file(p);
 		break;
 	default:
 		flag(INVALID_REQ_TYPE);
 		xbee_send_NACK();
-		break;
-	}
-}
-
-
-//static struct t_request_file {
-//	uint32_t bytes_left = 0;
-//	uint32_t bytes_sent = 0;
-//	FIL file;
-//}
-
-
-static void send_file(struct xbee_packet *p) {
-	static uint32_t bytes_left = 0;
-	static FIL file;
-
-	if (ongoing_request == NONE) {
-		if (p->len < 3) {
-			flag(MISSING_LOGNR);
-			xbee_send_NACK();
-			return;
-		}
-		uint16_t log_nr;
-		memcpy(&log_nr, &p->buf[1], sizeof(log_nr));
-		if (open_file(&file, log_nr, FA_READ|FA_OPEN_EXISTING)) {
-			if (!file_seek(&file, 0)) {
-				f_close(&file);
-				xbee_send_NACK();
-				return;
-			}
-
-			ongoing_request = REQUEST_FILE;
-			/* Acknolegde request */
-			xbee_send_ACK();
-
-			/* Get file size and send it in the first packet */
-			bytes_left = size_of_file(&file);
-			struct xbee_packet p = { .len = sizeof(bytes_left), .type = RESPONCE, };
-			memcpy(p.buf, &bytes_left, sizeof(bytes_left));
-			xbee_send_packet(&p);
-			return;
-		} else {
-			ongoing_request = NONE;
-			xbee_send_NACK();
-			return;
-		}
+		return;
 	}
 
-	if (ongoing_request == REQUEST_FILE) {
-		const uint8_t len = bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : bytes_left;
-		if(!len) {
-			ongoing_request = NONE;
-			struct xbee_packet p = { .len = 0, .type = RESPONCE, };
-			xbee_send_packet(&p);
-			f_close(&file);
-			return;
-		}
-
-		struct xbee_packet p = { .len = len, .type = RESPONCE, };
-		read_file(&file, p.buf, len);
-		xbee_send_packet(&p);
-
-		/* TODO: bytes_left should not be counted down before we get an ACK. */
-		bytes_left -= len;
+	if (!ret) {
+		ongoing_request = type;
 	}
 }
 

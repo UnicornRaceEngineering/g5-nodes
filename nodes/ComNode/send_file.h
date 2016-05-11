@@ -22,19 +22,28 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 
- #ifndef STATE_MACHINE_H
- #define STATE_MACHINE_H
+#ifndef SEND_FILE_H
+#define SEND_FILE_H
 
 
-enum state_flags {
-	INVALID_REQ_TYPE,
+#include "xbee.h"
 
-	N_STATE_FLAGS,
+
+enum req_file_flags {
+	REQUEST_ACTIVE,
+	FINISHED_REQUEST,
+	MISSING_LOGNR,
+	EMPTY_LOG_FILE,
+	FILE_ACCES_ERR,
+
+	N_REQ_FILE_FLAGS,
 };
 
 
-void state_machine(void);
-void state_set_flag_callback(void(*func)(enum state_flags));
+enum req_file_flags initiate_send_file(struct xbee_packet *p);
+enum req_file_flags continue_send_file(void);
+void eval_send_file_status(void);
+void resend_send_file(void);
 
 
- #endif /* STATE_MACHINE_H */
+#endif /* SEND_FILE_H */

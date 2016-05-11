@@ -7,6 +7,7 @@ set(SRC_FILES
 	log.c
 	state_machine.c
 	flags.c
+	send_file.c
 )
 
 add_executable(${NODE_NAME} ${SRC_FILES})
