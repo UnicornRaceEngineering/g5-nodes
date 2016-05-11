@@ -46,7 +46,13 @@ react to both timeout and NACK.
 */
 
 enum request_type {
+	/* Requests a file from the SD card. */
 	REQUEST_FILE,
+
+	/* Number of logs assuming all numbers from 0 to that exists. */
+	NUM_LOG,
+
+	/*  */
 	NONE,
 };
 
@@ -125,6 +131,8 @@ static void handle_ack(struct xbee_packet *p) {
 		case REQUEST_FILE:
 			eval_send_file_status();
 			break;
+		case NUM_LOG:
+			/* TODO */
 		case NONE:
 			/* Do nothing. */
 			break;
@@ -134,6 +142,8 @@ static void handle_ack(struct xbee_packet *p) {
 		case REQUEST_FILE:
 			resend_send_file();
 			break;
+		case NUM_LOG:
+			/* TODO */
 		case NONE:
 			/* Do nothing. */
 			break;
@@ -152,6 +162,9 @@ static void respond_to_request(struct xbee_packet *p) {
 	switch (type) {
 	case REQUEST_FILE:
 		ret = initiate_send_file(p);
+		break;
+	case NUM_LOG:
+		/* TODO */
 		break;
 	default:
 		flag(INVALID_REQ_TYPE);
