@@ -134,12 +134,6 @@ bool xbee_read_packet(struct xbee_packet *p) {
 	/* We use the type and length to check packets for their validity. */
 	switch (p->type) {
 	case HANDSHAKE:
-		if (!p->len) {
-			/* Handshakes are expected to be empty. */
-			flag(INVALID_LENGTH);
-			xbee_send_NACK();
-			return false;
-		}
 		break;
 	case ACK|NACK|RESEND:
 		if (p->len != 1) {
