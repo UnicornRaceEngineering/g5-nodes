@@ -37,6 +37,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "flags.h"
 
 
+/*
+TODO: Timeout niveauer.
+Timeout niveau start at 0 cuts at 5.
+Every niv prolong with 100ms. start at 100ms.
+react to both timeout and NACK.
+*/
+
 enum request_type {
 	REQUEST_FILE,
 	NONE,
@@ -70,8 +77,11 @@ void state_machine(void) {
 		tick = get_tick();
 		(void)tick;
 		handle_packet();
-		xbee_send_ACK();
-		//livestream();
+		livestream();
+
+		/* Delay so xbee can keep up */
+		/* TODO: It seems resonable from tests that this break should equal to
+		adding about 200us delay after sending every byte. */
 		_delay_ms(15);
 	}
 }
