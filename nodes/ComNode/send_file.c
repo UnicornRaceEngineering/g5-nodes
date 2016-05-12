@@ -65,8 +65,8 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 		/* Acknolegde request */
 		xbee_send_ACK();
 
-		struct xbee_packet p = { .len = sizeof(r.bytes_left), .type = RESPONCE, };
-		memcpy(p.buf, &r.bytes_left, sizeof(r.bytes_left));
+		struct xbee_packet p = xbee_create_packet(RESPONCE);
+		xbee_packet_append(&p, (uint8_t*)&r.bytes_left, sizeof(r.bytes_left));
 		xbee_send_packet(&p);
 		return REQUEST_ACTIVE;
 	} else {
@@ -79,7 +79,7 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 enum req_file_flags continue_send_file(void) {
 	const uint8_t len = r.bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : r.bytes_left;
 	if(!len) {
-		struct xbee_packet p = { .len = 0, .type = RESPONCE, };
+		struct xbee_packet p = xbee_create_packet(RESPONCE);
 		xbee_send_packet(&p);
 		f_close(&r.file);
 		return FINISHED_REQUEST;

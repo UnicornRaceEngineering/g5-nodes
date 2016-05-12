@@ -180,7 +180,7 @@ static void respond_to_request(struct xbee_packet *p) {
 
 static bool livestream(void) {
 	if (ecu_has_packet()) {
-		struct xbee_packet p = { .len = 0, .type = LIVE_STREAM, };
+		struct xbee_packet p = xbee_create_packet(LIVE_STREAM);
 		while (1) {
 			struct sensor data;
 			if (!ecu_read_data(&data)) {
@@ -190,16 +190,11 @@ static bool livestream(void) {
 			const uint16_t tx_id = data.id;
 			const uint8_t transport = get_msg_transport(tx_id);
 
-			/* TODO: This should not be part of a final solution. */
-			if (p.len + sizeof(tx_id) + sizeof(data.value)) {
-				xbee_send_packet(&p);
-				p.len = 0;
-			}
-
 			if (transport & XBEE) {
-				memcpy(p.len + p.buf, &tx_id, sizeof(tx_id));
-				memcpy(p.len + p.buf + sizeof(tx_id), &data.value, sizeof(data.value));
-				p.len = sizeof(tx_id) + sizeof(data.value);
+				/* WARNING: If lacking space in the packet, there is a chance
+				that the tx_id will be appended, but not it's associated data point */
+				xbee_packet_append(&p, (uint8_t*)&tx_id, sizeof(tx_id));
+				xbee_packet_append(&p, (uint8_t*)&data.value, sizeof(data.value));
 			}
 
 			if (transport & SD) {
