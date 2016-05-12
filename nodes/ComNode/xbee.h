@@ -63,6 +63,7 @@ void xbee_send_RESEND(void);
 void xbee_send_packet(struct xbee_packet *p);
 bool xbee_read_packet(struct xbee_packet *p);
 void xbee_set_flag_callback(void(*func)(enum xbee_flags));
+bool xbee_packet_append(struct xbee_packet *p, uint8_t *buf, size_t len);
 
 
 #endif /* XBEE_H */

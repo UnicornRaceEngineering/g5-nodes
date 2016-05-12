@@ -77,6 +77,17 @@ void xbee_send_RESEND(void) {
 }
 
 
+bool xbee_packet_append(struct xbee_packet *p, uint8_t *buf, size_t len) {
+	if (p->len + len > XBEE_PAYLOAD_LEN) {
+		return false;
+	}
+
+	memcpy(p->buf + p->len, buf, len);
+	p->len += len;
+	return true;
+}
+
+
 void xbee_send_packet(struct xbee_packet *p) {
 	/* Send start sequence */
 	fputc(0xA1, xbee_out);
