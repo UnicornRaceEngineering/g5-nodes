@@ -51,7 +51,7 @@ enum xbee_flags {
 };
 
 struct xbee_packet {
-	uint8_t buf[63];
+	uint8_t buf[XBEE_PAYLOAD_LEN];
 	uint8_t len : 6;
 	enum xbee_packet_type type : 2;
 };
