@@ -32,11 +32,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "flags.h"
 
 
-struct t_request_file {
-	uint32_t bytes_left;
-	uint32_t bytes_sent;
-	FIL file;
-} r;
+static uint32_t bytes_left;
+static uint32_t bytes_sent;
+static FIL file;
 
 
 enum req_file_flags initiate_send_file(struct xbee_packet *p) {
@@ -47,26 +45,26 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 	uint16_t log_nr;
 	memcpy(&log_nr, &p->buf[1], sizeof(log_nr));
 
-	if (open_file(&r.file, log_nr, FA_READ|FA_OPEN_EXISTING)) {
-		if (!file_seek(&r.file, 0)) {
-			f_close(&r.file);
+	if (open_file(&file, log_nr, FA_READ|FA_OPEN_EXISTING)) {
+		if (!file_seek(&file, 0)) {
+			f_close(&file);
 			xbee_send_NACK();
 			return FILE_ACCES_ERR;
 		}
 
 		/* Get file size and send it in the first packet */
-		r.bytes_left = size_of_file(&r.file);
-		if (!r.bytes_left) {
+		bytes_left = size_of_file(&file);
+		if (!bytes_left) {
 			xbee_send_NACK();
 			return EMPTY_LOG_FILE;
 		}
 
-		r.bytes_sent = 0;
+		bytes_sent = 0;
 		/* Acknolegde request */
 		xbee_send_ACK();
 
 		struct xbee_packet p = xbee_create_packet(RESPONCE);
-		xbee_packet_append(&p, (uint8_t*)&r.bytes_left, sizeof(r.bytes_left));
+		xbee_packet_append(&p, (uint8_t*)&bytes_left, sizeof(bytes_left));
 		xbee_send_packet(&p);
 		return REQUEST_ACTIVE;
 	} else {
@@ -77,27 +75,27 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 
 
 enum req_file_flags continue_send_file(void) {
-	const uint8_t len = r.bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : r.bytes_left;
+	const uint8_t len = bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : bytes_left;
 	if(!len) {
 		struct xbee_packet p = xbee_create_packet(RESPONCE);
 		xbee_send_packet(&p);
-		f_close(&r.file);
+		f_close(&file);
 		return FINISHED_REQUEST;
 	}
 
 	struct xbee_packet p = { .len = len, .type = RESPONCE, };
-	read_file(&r.file, p.buf, len);
+	read_file(&file, p.buf, len);
 	xbee_send_packet(&p);
 
-	r.bytes_sent += len;
+	bytes_sent += len;
 	return REQUEST_ACTIVE;
 }
 
 
 void eval_send_file_status(void) {
-	if (r.bytes_sent) {
-		const uint8_t len = r.bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : r.bytes_left;
-		r.bytes_left -= len;
+	if (bytes_sent) {
+		const uint8_t len = bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : bytes_left;
+		bytes_left -= len;
 	}
 
 	continue_send_file();
@@ -105,11 +103,11 @@ void eval_send_file_status(void) {
 
 
 void resend_send_file(void) {
-	if (r.bytes_sent) {
+	if (bytes_sent) {
 		continue_send_file();
 	} else {
-		struct xbee_packet p = { .len = sizeof(r.bytes_left), .type = RESPONCE, };
-		memcpy(p.buf, &r.bytes_left, sizeof(r.bytes_left));
+		struct xbee_packet p = { .len = sizeof(bytes_left), .type = RESPONCE, };
+		memcpy(p.buf, &bytes_left, sizeof(bytes_left));
 		xbee_send_packet(&p);
 	}
 }
