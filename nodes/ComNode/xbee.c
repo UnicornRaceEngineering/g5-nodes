@@ -77,6 +77,12 @@ void xbee_send_RESEND(void) {
 }
 
 
+struct xbee_packet xbee_create_packet(enum xbee_packet_type type) {
+	struct xbee_packet p = { .len = 0, .type = type, };
+	return p;
+}
+
+
 bool xbee_packet_append(struct xbee_packet *p, uint8_t *buf, size_t len) {
 	if (p->len + len > XBEE_PAYLOAD_LEN) {
 		return false;
