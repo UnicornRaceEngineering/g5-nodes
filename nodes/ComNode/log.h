@@ -43,6 +43,7 @@ enum log_flags {
 
 
 void log_init(void);
+void log_append(void *data, size_t n);
 uint32_t size_of_file(FIL *file);
 void create_file(FIL *file);
 bool open_file(FIL *f, uint16_t lognr, uint8_t mode);

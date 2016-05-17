@@ -67,7 +67,6 @@ static void flag_do_nothing(enum state_flags flag);
 static void (*flag)(enum state_flags) = flag_do_nothing;
 static enum request_type ongoing_request;
 static bool streaming;
-static FIL logfile;
 static uint32_t tick;
 
 
@@ -75,7 +74,6 @@ void event_loop(void) {
 	streaming = false;
 	ongoing_request = NONE;
 
-	create_file(&logfile);
 	ecu_send_request();
 
 	/* Main work loop */
@@ -88,7 +86,7 @@ void event_loop(void) {
 		/* Delay so xbee can keep up */
 		/* TODO: It seems resonable from tests that this break should equal to
 		adding about 200us delay after sending every byte. */
-		_delay_ms(15);
+		//_delay_ms(10);
 	}
 }
 
@@ -202,11 +200,10 @@ static bool livestream(void) {
 				uint8_t buf[buflen];
 				memcpy(buf, &tx_id, sizeof(tx_id));
 				memcpy(buf + sizeof(tx_id), &data.value, sizeof(data.value));
-				file_write(&logfile, buf, buflen);
+				log_append(buf, buflen);
 			}
 		}
 		ecu_send_request();
-		f_sync(&logfile);
 		if (streaming) {
 			xbee_send_packet(&p);
 		}

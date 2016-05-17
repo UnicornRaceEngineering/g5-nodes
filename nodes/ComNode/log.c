@@ -35,9 +35,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define FMT_LOG_NAME PSTR("LOG%u.DAT")
 
+#define BUF_SIZE	512
+
+
+static struct payload {
+	uint8_t buf[BUF_SIZE];
+	size_t i;
+} p;
+
 
 static void flag_do_nothing(enum log_flags flag);
+static void log_sync(void);
+static bool flush_to_sd(void);
 
+
+static FIL logfile;
 static FATFS fs;
 static void (*flag)(enum log_flags) = flag_do_nothing;
 
@@ -57,6 +69,9 @@ void log_init(void) {
 	if (f_mount(&fs, "", 1) != FR_OK) {
 		flag(MOUNT_ERR);
 	}
+
+	_delay_ms(100);
+	create_file(&logfile);
 }
 
 
@@ -110,6 +125,40 @@ bool file_seek(FIL *f, size_t offset) {
 	}
 
 	return true;
+}
+
+
+static bool flush_to_sd(void) {
+	unsigned bw;
+	const FRESULT rc = f_write(&logfile, p.buf, p.i, &bw);
+	if((rc != FR_OK) || (bw != p.i)) {
+		flag(WRITE_FILE_ERR);
+		return false;
+	}
+	p.i = 0;
+
+	return true;
+}
+
+
+void log_append(void *data, size_t n) {
+	if (p.i + n > BUF_SIZE) {
+		const size_t reminder = n - ((p.i + n) - BUF_SIZE);
+		memcpy(&p.buf[p.i], data, reminder);
+		p.i += reminder;
+		n -= reminder;
+		data += reminder;
+		log_sync();
+	}
+
+	memcpy(&p.buf[p.i], data, n);
+	p.i += n;
+}
+
+
+static void log_sync(void) {
+	f_sync(&logfile);
+	flush_to_sd();
 }
 
 
