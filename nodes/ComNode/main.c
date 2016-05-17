@@ -76,7 +76,7 @@ static void set_msg_transport_rules(void) {
 	set_msg_transport(ECU_LOAD             ,        SD);
 	set_msg_transport(ECU_INJECTOR_TIME    ,        SD);
 	set_msg_transport(ECU_IGNITION_TIME    ,        SD);
-	set_msg_transport(ECU_GX               , XBEE + SD);
-	set_msg_transport(ECU_GY               , XBEE + SD);
-	set_msg_transport(ECU_GZ               , XBEE + SD);
+	set_msg_transport(ECU_GX               ,        SD);
+	set_msg_transport(ECU_GY               ,        SD);
+	set_msg_transport(ECU_GZ               ,        SD);
 }
