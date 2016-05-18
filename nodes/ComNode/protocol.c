@@ -189,7 +189,7 @@ static bool livestream(void) {
 				break;
 			}
 
-			const uint16_t tx_id = data.id;
+			uint16_t tx_id = data.id;
 			const uint8_t transport = get_msg_transport(tx_id);
 
 			if (transport & XBEE) {
@@ -200,11 +200,8 @@ static bool livestream(void) {
 			}
 
 			if (transport & SD) {
-				const size_t buflen = sizeof(tx_id) + sizeof(data.value);
-				uint8_t buf[buflen];
-				memcpy(buf, &tx_id, sizeof(tx_id));
-				memcpy(buf + sizeof(tx_id), &data.value, sizeof(data.value));
-				log_append(buf, buflen);
+				log_append(&tx_id, sizeof(tx_id));
+				log_append(&data.value, sizeof(data.value));
 			}
 		}
 		ecu_send_request();
