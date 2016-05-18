@@ -79,9 +79,8 @@ void event_loop(void) {
 	/* Main work loop */
 	while(1){
 		tick = get_tick();
-		(void)tick;
-		handle_packet();
 		livestream();
+		handle_packet();
 
 		/* Delay so xbee can keep up */
 		/* TODO: It seems resonable from tests that this break should equal to
@@ -178,6 +177,11 @@ static void respond_to_request(struct xbee_packet *p) {
 
 static bool livestream(void) {
 	if (ecu_has_packet()) {
+
+		uint16_t id = 52; // Old systime ID
+		log_append(&id, sizeof(id));
+		log_append(&tick, sizeof(tick));
+
 		struct xbee_packet p = xbee_create_packet(LIVE_STREAM);
 		while (1) {
 			struct sensor data;
