@@ -451,7 +451,8 @@ static int send_block(const uint8_t buf[SD_BLOCKSIZE], uint8_t token) {
 	tx(token);
 
 	if (buf != NULL) {
-		for (size_t i = 0; i < SD_BLOCKSIZE; ++i) tx(*buf++);
+		//for (size_t i = 0; i < SD_BLOCKSIZE; ++i) tx(*buf++);
+		spi_transmit_buf((uint8_t*)buf, SD_BLOCKSIZE);
 
 		// tx Dummy CRC value
 		const uint16_t crc16 = 0;

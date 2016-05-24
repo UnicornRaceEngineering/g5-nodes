@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <avr/io.h>
+#include <stdlib.h>
 #include "io.h"
 #include "spi.h"
 
@@ -68,4 +69,14 @@ uint8_t spi_tranceive(const uint8_t data) {
 
 	// As SPI is full duplex we also receive data
 	return(SPDR);
+}
+
+void spi_transmit_buf(uint8_t *buf, size_t len) {
+	for (size_t i = 0; i < len; ++i) {
+		// Load data into the buffer
+		SPDR = buf[i];
+
+		// Wait for transmission to complete
+		while (!((SPSR) & (1<<SPIF)));
+	}
 }
