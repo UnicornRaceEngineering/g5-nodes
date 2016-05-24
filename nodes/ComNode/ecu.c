@@ -104,7 +104,7 @@ static const int8_t ecu_packet[][2] PROGMEM = {
 
 static FILE *ecu = &usart0_io;
 
-static uint8_t buf_in[128];
+static uint8_t buf_in[256];
 static uint8_t buf_out[16];
 
 

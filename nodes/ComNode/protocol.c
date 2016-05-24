@@ -177,6 +177,7 @@ static void respond_to_request(struct xbee_packet *p) {
 
 static bool livestream(void) {
 	if (ecu_has_packet()) {
+		ecu_send_request();
 
 		uint16_t id = 52; // Old systime ID
 		log_append(&id, sizeof(id));
@@ -204,7 +205,6 @@ static bool livestream(void) {
 				log_append(&data.value, sizeof(data.value));
 			}
 		}
-		ecu_send_request();
 		if (streaming) {
 			xbee_send_packet(&p);
 		}
