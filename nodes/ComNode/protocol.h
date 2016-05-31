@@ -33,8 +33,21 @@ enum state_flags {
 };
 
 
+enum request_type {
+	/* Requests a file from the SD card. */
+	REQUEST_FILE,
+
+	/* Number of logs assuming all numbers from 0 to that exists. */
+	NUM_LOG,
+
+	/*  */
+	NONE,
+};
+
+
 void event_loop(void);
 void state_set_flag_callback(void(*func)(enum state_flags));
+void set_ongoing_request(enum request_type type);
 
 
 #endif /* PROTOCOL_H */

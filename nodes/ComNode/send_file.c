@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "log.h"
 #include "xbee.h"
 #include "flags.h"
+#include "protocol.h"
 
 
 static uint32_t bytes_left;
@@ -62,6 +63,7 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 		bytes_sent = 0;
 		/* Acknolegde request */
 		xbee_send_ACK();
+		set_ongoing_request(REQUEST_FILE);
 
 		struct xbee_packet p = xbee_create_packet(RESPONCE);
 		xbee_packet_append(&p, (uint8_t*)&bytes_left, sizeof(bytes_left));
@@ -80,6 +82,7 @@ enum req_file_flags continue_send_file(void) {
 		struct xbee_packet p = xbee_create_packet(RESPONCE);
 		xbee_send_packet(&p);
 		f_close(&file);
+		set_ongoing_request(NONE);
 		return FINISHED_REQUEST;
 	}
 

@@ -45,17 +45,6 @@ Every niv prolong with 100ms. start at 100ms.
 react to both timeout and NACK.
 */
 
-enum request_type {
-	/* Requests a file from the SD card. */
-	REQUEST_FILE,
-
-	/* Number of logs assuming all numbers from 0 to that exists. */
-	NUM_LOG,
-
-	/*  */
-	NONE,
-};
-
 
 static bool livestream(void);
 static bool handle_packet(void);
@@ -72,7 +61,7 @@ static uint32_t tick;
 
 void event_loop(void) {
 	streaming = false;
-	ongoing_request = NONE;
+	set_ongoing_request(NONE);
 
 	ecu_send_request();
 
@@ -87,6 +76,11 @@ void event_loop(void) {
 		adding about 200us delay after sending every byte. */
 		//_delay_ms(10);
 	}
+}
+
+
+void set_ongoing_request(enum request_type type) {
+	ongoing_request = type;
 }
 
 
@@ -154,11 +148,10 @@ static void respond_to_request(struct xbee_packet *p) {
 		xbee_send_NACK();
 	}
 
-	int ret = -1;
 	enum request_type type = p->buf[0];
 	switch (type) {
 	case REQUEST_FILE:
-		ret = initiate_send_file(p);
+		initiate_send_file(p);
 		break;
 	case NUM_LOG:
 		/* TODO */
@@ -167,10 +160,6 @@ static void respond_to_request(struct xbee_packet *p) {
 		flag(INVALID_REQ_TYPE);
 		xbee_send_NACK();
 		return;
-	}
-
-	if (!ret) {
-		ongoing_request = type;
 	}
 }
 
