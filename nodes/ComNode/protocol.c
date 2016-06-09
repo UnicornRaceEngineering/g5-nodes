@@ -57,6 +57,7 @@ static void (*flag)(enum state_flags) = flag_do_nothing;
 static enum request_type ongoing_request;
 static bool streaming;
 static uint32_t tick;
+static uint32_t ecu_timeout;
 
 
 void event_loop(void) {
@@ -64,6 +65,8 @@ void event_loop(void) {
 	set_ongoing_request(NONE);
 
 	ecu_send_request();
+
+	ecu_timeout = get_tick() + 300;
 
 	/* Main work loop */
 	while(1){
@@ -197,8 +200,14 @@ static bool livestream(void) {
 		if (streaming) {
 			xbee_send_packet(&p);
 		}
+		timeout = tick + 300;
 		return true;
+	} else {
+		if (tick > ecu_timeout) {
+			ecu_init();
+			ecu_send_request();
+			timeout = tick + 300;
+		}
+		return false;
 	}
-
-	return false;
 }
