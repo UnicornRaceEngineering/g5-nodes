@@ -30,38 +30,73 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <usart.h>            // for usart1_init
 #include <util/delay.h>
 #include <utils.h>            // for ARR_LEN, BIT_SET
-#include <stdbool.h>
 #include <can.h>
 #include "system_messages.h"  // for message_id, etc
 
 
-#define WHEEL_TICK_PORT		PORTE
-#define WHEEL_TICK_PIN		PIN5
+#define R_WHEEL_TICK_PORT		PORTE
+#define R_WHEEL_TICK_PIN		PIN6
 
-#define WHEEL_TICK_ISC1		ISC51
-#define WHEEL_TICK_ISC0		ISC50
+#define R_WHEEL_TICK_ISC1		ISC61
+#define R_WHEEL_TICK_ISC0		ISC60
 
-#define WHEEL_TICK_INT		INT5
-#define WHEEL_TICK_ISR_vect	INT5_vect
+#define R_WHEEL_TICK_INT		INT6
+#define R_WHEEL_TICK_ISR_vect	INT6_vect
+
+
+#define L_WHEEL_TICK_PORT		PORTE
+#define L_WHEEL_TICK_PIN		PIN5
+
+#define L_WHEEL_TICK_ISC1		ISC51
+#define L_WHEEL_TICK_ISC0		ISC50
+
+#define L_WHEEL_TICK_INT		INT5
+#define L_WHEEL_TICK_ISR_vect	INT5_vect
+
 
 #define HOLES_PR_WHEEL	56
-#define WHEEL_CIRC		1.62 // Circumference in meters
+
+#define SAMPLE_INTERVAL	100 // Sample interval in ms
+
+#define WHEEL_RADIUS	0.264
+#define PI 				3.1415926535
+#define WHEEL_CIRC		WHEEL_RADIUS * 2 * PI // Circumference in meters
+
+
+void wheel_speed(enum message_id wheel_id, const uint32_t current_time, const uint16_t wheel_tick);
+
 
 static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
-static volatile uint16_t wheel_tick = 0;
+static volatile uint16_t right_wheel_tick = 0;
+static volatile uint16_t left_wheel_tick = 0;
+
 
 void wheel_tick_init(void) {
-	SET_PIN_MODE(WHEEL_TICK_PORT, WHEEL_TICK_PIN, INPUT);
+	// Set up for right wheel
+	SET_PIN_MODE(R_WHEEL_TICK_PORT, R_WHEEL_TICK_PIN, INPUT);
 	// Generate synchronous interrupt on rising edge
-	EICRB = ((1 << WHEEL_TICK_ISC1) | (1 << WHEEL_TICK_ISC0));
-	BIT_SET(EIMSK, WHEEL_TICK_INT); // Interrupt enable
+	EICRB |= ((1 << R_WHEEL_TICK_ISC1) | (1 << R_WHEEL_TICK_ISC0));
+	BIT_SET(EIMSK, R_WHEEL_TICK_INT); // Interrupt enable
+
+	// Set up for left wheel
+	SET_PIN_MODE(L_WHEEL_TICK_PORT, L_WHEEL_TICK_PIN, INPUT);
+	// Generate synchronous interrupt on rising edge
+	EICRB |= ((1 << L_WHEEL_TICK_ISC1) | (1 << L_WHEEL_TICK_ISC0));
+	BIT_SET(EIMSK, L_WHEEL_TICK_INT); // Interrupt enable
 }
 
-ISR(WHEEL_TICK_ISR_vect) {
-	++wheel_tick;
+
+ISR(R_WHEEL_TICK_ISR_vect) {
+	++right_wheel_tick;
 }
+
+
+ISR(L_WHEEL_TICK_ISR_vect) {
+	++left_wheel_tick;
+}
+
 
 static void init(void) {
 	usart1_init(115200, buf_in, ARR_LEN(buf_in), buf_out, ARR_LEN(buf_out));
@@ -73,37 +108,40 @@ static void init(void) {
 	puts_P(PSTR("Init complete\n\n"));
 }
 
-void wheel_speed(enum message_id wheel_id, const uint32_t current_time) {
-	static uint32_t last_time = 0;
 
-	const uint32_t duration = (current_time - last_time);
+int main(void) {
+	init();
+
+	uint32_t last_time = get_tick();
+	uint32_t timeout = get_tick() + SAMPLE_INTERVAL;
+	while (1) {
+		const uint32_t tick = get_tick();
+		if (tick > timeout) {
+			const uint32_t duration = tick - last_time;
+			last_time = tick;
+			const uint16_t rwt = right_wheel_tick;
+			const uint16_t lwt = left_wheel_tick;
+			right_wheel_tick = 0;
+			left_wheel_tick = 0;
+			wheel_speed(FRONT_RIGHT_WHEEL_SPEED, duration, rwt);
+			wheel_speed(FRONT_LEFT_WHEEL_SPEED, duration, lwt);
+			timeout += SAMPLE_INTERVAL;
+		}
+		_delay_ms(1);
+	}
+
+	return 0;
+}
+
+
+void wheel_speed(enum message_id wheel_id, const uint32_t duration, const uint16_t wheel_tick) {
 	const float holes_pr_ms = (float)wheel_tick / duration;
 	const float rpm = (1000.0 * 60.0) / (HOLES_PR_WHEEL / holes_pr_ms); // Convert ms to min
 
 	const float v_mps = WHEEL_CIRC * rpm / 60.0; // m/s
 	const float v_kmph  = v_mps * ((60.0*60.0)/1000.0); // km/h
 
-	printf("ticks: %4u, holes/ms: %4.3f, rpm: %4.3f, v (km/h): %4.3f, v (m/s) %4.3f\n", wheel_tick, (double)holes_pr_ms, (double)rpm, (double)v_kmph, (double)v_mps);
+	printf("ticks: %4u, holes/s: %4.3f, rpm: %4.3f, v (km/h): %4.3f, v (m/s) %4.3f\n", wheel_tick, (double)holes_pr_ms*1000, (double)rpm, (double)v_kmph, (double)v_mps);
 
-	can_broadcast(wheel_id, (void*)&v_kmph);
-
-	// Reset
-	last_time  = current_time;
-	wheel_tick = 0;
-}
-
-int main(void) {
-	init();
-
-	while (1) {
-		static uint32_t timers[1] = {0};
-		uint32_t tick = get_tick();
-
-		if (tick > timers[0]) {
-			wheel_speed(FRONT_RIGHT_WHEEL_SPEED, tick);
-			timers[0] += 50;
-		}
-	}
-
-	return 0;
+	//can_broadcast(wheel_id, (void*)&v_kmph);
 }
