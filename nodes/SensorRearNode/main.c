@@ -40,8 +40,8 @@ static uint8_t buf_in[64];
 static uint8_t buf_out[64];
 
 
-void setup_wheelsensor(const uint8_t ch1, const uint8_t ch2);
-double Thermistor(int RawADC);
+void setup_thermistor(const uint8_t channel);
+float thermistor(const uint16_t rawADC);
 
 
 static void init(void) {
@@ -58,11 +58,12 @@ int main(void) {
 	init();
 
 	const uint8_t ch1 = 5, ch2 = 6;
-	setup_wheelsensor(ch1, ch2);
+	setup_thermistor(ch1);
+	setup_thermistor(ch2);
 
 	while(1) {
-		const float ch1_v = Thermistor(adc_readChannel(ch1));
-		const float ch2_v = Thermistor(adc_readChannel(ch2));
+		const float ch1_v = thermistor(adc_readChannel(ch1));
+		const float ch2_v = thermistor(adc_readChannel(ch2));
 		printf("ADC5: %5.3f | ADC6: %5.3f\n", ch1_v, ch2_v);
 		_delay_ms(100);
 	}
@@ -71,25 +72,18 @@ int main(void) {
 }
 
 
-void setup_wheelsensor(const uint8_t ch1, const uint8_t ch2) {
-	DDRF &= ~(1<<ch1); // configure PB as an input
-	PORTF |= (1<<ch1); // enable the pull-up on PB
-	//channel ch1, internal vref, ADC_PRESCALAR_16
-	adc_init(ch1, INTERNAL, ADC_PRESCALAR_16);
-
-	DDRF &= ~(1<<ch2); // configure PB as an input
-	PORTF |= (1<<ch2); // enable the pull-up on PB
-	//channel ch2, internal vref, ADC_PRESCALAR_16
-	adc_init(ch2, INTERNAL, ADC_PRESCALAR_16);
+void setup_thermistor(const uint8_t channel) {
+	DDRF &= ~(1 << channel); // configure PB as an input
+	PORTF |= (1 << channel); // enable the pull-up on PB
+	adc_init(channel, INTERNAL, ADC_PRESCALAR_16);
 }
 
 
-double Thermistor(int RawADC) {
-	double Temp;
-	Temp = log(10000.0*((1024.0/RawADC-1)));
-	//         =log(10000.0/(1024.0/RawADC-1)) // for pull-up configuration
-	Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp ))* Temp );
-	Temp = Temp - 273.15;            // Convert Kelvin to Celcius
-	Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert Celcius to Fahrenheit
-	return Temp;
+float thermistor(const uint16_t rawADC) {
+	float temp;
+	temp = log(10000.0 * ((1024.0 / rawADC - 1)));
+	temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * temp * temp)) * temp);
+	temp = temp - 273.15;            // Convert Kelvin to Celcius
+	//temp = (temp * 9.0) / 5.0 + 32.0; // Convert Celcius to Fahrenheit
+	return temp;
 }
