@@ -12,6 +12,7 @@ set(SRC_FILES
 	cpu_load.c
 	bson.c
 	watchdog.c
+	eeprom.c
 )
 
 add_library(libat90 ${SRC_FILES})
