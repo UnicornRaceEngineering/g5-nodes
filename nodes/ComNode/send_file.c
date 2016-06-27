@@ -33,6 +33,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "protocol.h"
 
 
+static void send_size_responce(uint32_t size);
+
+
 static uint32_t bytes_left;
 static uint32_t bytes_sent;
 static FIL file;
@@ -49,30 +52,33 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 	if (open_file(&file, log_nr, FA_READ|FA_OPEN_EXISTING)) {
 		if (!file_seek(&file, 0)) {
 			f_close(&file);
-			xbee_send_NACK();
+			send_size_responce(0);
 			return FILE_ACCES_ERR;
 		}
 
 		/* Get file size and send it in the first packet */
 		bytes_left = size_of_file(&file);
 		if (!bytes_left) {
-			xbee_send_NACK();
+			send_size_responce(0);
 			return EMPTY_LOG_FILE;
 		}
 
 		bytes_sent = 0;
-		/* Acknolegde request */
-		xbee_send_ACK();
 		set_ongoing_request(REQUEST_FILE);
 
-		struct xbee_packet p = xbee_create_packet(RESPONCE);
-		xbee_packet_append(&p, (uint8_t*)&bytes_left, sizeof(bytes_left));
-		xbee_send_packet(&p);
+		send_size_responce(bytes_left);
 		return REQUEST_ACTIVE;
 	} else {
-		xbee_send_NACK();
+		send_size_responce(0);
 		return FILE_ACCES_ERR;
 	}
+}
+
+
+static void send_size_responce(uint32_t size) {
+	struct xbee_packet p = xbee_create_packet(RESPONCE);
+	xbee_packet_append(&p, (uint8_t*)&size, sizeof(size));
+	xbee_send_packet(&p);
 }
 
 

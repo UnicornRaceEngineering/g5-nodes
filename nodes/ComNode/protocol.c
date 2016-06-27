@@ -100,6 +100,8 @@ static void flag_do_nothing(enum state_flags flag) {
 static bool handle_packet(void) {
 	struct xbee_packet p;
 	if(xbee_read_packet(&p)) {
+		/* Acknolegde request */
+		xbee_send_ACK();
 		switch (p.type) {
 			case HANDSHAKE:		respond_to_handshake();	break;
 			case ACK:			handle_ack(&p);			break;
