@@ -101,7 +101,6 @@ static bool handle_packet(void) {
 	struct xbee_packet p;
 	if(xbee_read_packet(&p)) {
 		/* Acknolegde request */
-		xbee_send_ACK();
 		switch (p.type) {
 			case HANDSHAKE:		respond_to_handshake();	break;
 			case ACK:			handle_ack(&p);			break;
@@ -151,6 +150,8 @@ static void handle_ack(struct xbee_packet *p) {
 static void respond_to_request(struct xbee_packet *p) {
 	if (ongoing_request != NONE) {
 		xbee_send_NACK();
+	} else {
+		xbee_send_ACK();
 	}
 
 	enum request_type type = p->buf[0];
