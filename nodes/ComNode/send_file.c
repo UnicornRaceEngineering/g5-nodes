@@ -41,10 +41,10 @@ static uint32_t bytes_sent;
 static FIL file;
 
 
-enum req_file_flags initiate_send_file(struct xbee_packet *p) {
+bool initiate_send_file(struct xbee_packet *p) {
 	if (p->len < 3) {
-		xbee_send_NACK();
-		return MISSING_LOGNR;
+		send_size_responce(0);
+		return false;
 	}
 	uint16_t log_nr;
 	memcpy(&log_nr, &p->buf[1], sizeof(log_nr));
@@ -53,24 +53,24 @@ enum req_file_flags initiate_send_file(struct xbee_packet *p) {
 		if (!file_seek(&file, 0)) {
 			f_close(&file);
 			send_size_responce(0);
-			return FILE_ACCES_ERR;
+			return false;
 		}
 
 		/* Get file size and send it in the first packet */
 		bytes_left = size_of_file(&file);
 		if (!bytes_left) {
 			send_size_responce(0);
-			return EMPTY_LOG_FILE;
+			return false;
 		}
 
 		bytes_sent = 0;
 		set_ongoing_request(REQUEST_FILE);
 
 		send_size_responce(bytes_left);
-		return REQUEST_ACTIVE;
+		return true;
 	} else {
 		send_size_responce(0);
-		return FILE_ACCES_ERR;
+		return false;
 	}
 }
 
@@ -82,22 +82,21 @@ static void send_size_responce(uint32_t size) {
 }
 
 
-enum req_file_flags continue_send_file(void) {
+void continue_send_file(void) {
 	const uint8_t len = bytes_left > XBEE_PAYLOAD_LEN ? XBEE_PAYLOAD_LEN : bytes_left;
 	if(!len) {
 		struct xbee_packet p = xbee_create_packet(RESPONCE);
 		xbee_send_packet(&p);
 		f_close(&file);
 		set_ongoing_request(NONE);
-		return FINISHED_REQUEST;
+		return;
+	} else {
+		struct xbee_packet p = { .len = len, .type = RESPONCE, };
+		read_file(&file, p.buf, len);
+		xbee_send_packet(&p);
+
+		bytes_sent += len;
 	}
-
-	struct xbee_packet p = { .len = len, .type = RESPONCE, };
-	read_file(&file, p.buf, len);
-	xbee_send_packet(&p);
-
-	bytes_sent += len;
-	return REQUEST_ACTIVE;
 }
 
 

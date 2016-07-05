@@ -49,8 +49,8 @@ react to both timeout and NACK.
 static bool livestream(void);
 static bool handle_packet(void);
 static void respond_to_handshake(void);
-static void respond_to_request(struct xbee_packet *p);
-static void handle_ack(struct xbee_packet *p);
+static bool respond_to_request(struct xbee_packet *p);
+static void handle_ack(const bool ack);
 static void flag_do_nothing(enum state_flags flag);
 
 static void (*flag)(enum state_flags) = flag_do_nothing;
@@ -102,9 +102,16 @@ static bool handle_packet(void) {
 	if(xbee_read_packet(&p)) {
 		/* Acknolegde request */
 		switch (p.type) {
-			case HANDSHAKE:		respond_to_handshake();	break;
-			case ACK:			handle_ack(&p);			break;
-			case REQUEST:		respond_to_request(&p);	break;
+		case HANDSHAKE:
+			respond_to_handshake();
+			break;
+		case ACK:
+			handle_ack(p.buf[0]);
+			break;
+		case REQUEST:
+			if (respond_to_request(&p)) {
+			}
+			break;
 		}
 		return true;
 	}
@@ -119,8 +126,7 @@ static void respond_to_handshake(void) {
 }
 
 
-static void handle_ack(struct xbee_packet *p) {
-	const bool ack = p->buf[0];
+static void handle_ack(const bool ack) {
 	if (ack == true) {
 		switch (ongoing_request) {
 		case REQUEST_FILE:
@@ -147,7 +153,7 @@ static void handle_ack(struct xbee_packet *p) {
 }
 
 
-static void respond_to_request(struct xbee_packet *p) {
+static bool respond_to_request(struct xbee_packet *p) {
 	if (ongoing_request != NONE) {
 		xbee_send_NACK();
 	} else {
@@ -157,15 +163,14 @@ static void respond_to_request(struct xbee_packet *p) {
 	enum request_type type = p->buf[0];
 	switch (type) {
 	case REQUEST_FILE:
-		initiate_send_file(p);
-		break;
+		return initiate_send_file(p);
 	case NUM_LOG:
 		/* TODO */
-		break;
+		return false;
 	default:
 		flag(INVALID_REQ_TYPE);
 		xbee_send_NACK();
-		return;
+		return false;
 	}
 }
 

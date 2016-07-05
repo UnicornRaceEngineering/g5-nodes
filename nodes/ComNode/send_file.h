@@ -40,8 +40,8 @@ enum req_file_flags {
 };
 
 
-enum req_file_flags initiate_send_file(struct xbee_packet *p);
-enum req_file_flags continue_send_file(void);
+bool initiate_send_file(struct xbee_packet *p);
+void continue_send_file(void);
 void eval_send_file_status(void);
 void resend_send_file(void);
 
