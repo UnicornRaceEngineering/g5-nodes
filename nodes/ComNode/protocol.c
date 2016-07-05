@@ -38,26 +38,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "send_file.h"
 
 
-/*
-TODO: Timeout niveauer.
-Timeout niveau start at 0 cuts at 5.
-Every niv prolong with 100ms. start at 100ms.
-react to both timeout and NACK.
-*/
-
-
 static bool livestream(void);
 static bool handle_packet(void);
 static void respond_to_handshake(void);
 static bool respond_to_request(struct xbee_packet *p);
 static void handle_ack(const bool ack);
 static void flag_do_nothing(enum state_flags flag);
+static void reset_xbee_timeout(void);
+static void inc_xbee_timeout(void);
 
 static void (*flag)(enum state_flags) = flag_do_nothing;
 static enum request_type ongoing_request;
 static bool streaming;
 static uint32_t tick;
 static uint32_t ecu_timeout;
+static uint32_t xbee_timeout;
+static uint32_t timeout_inc = 100;
 
 
 void event_loop(void) {
@@ -74,11 +70,36 @@ void event_loop(void) {
 		livestream();
 		handle_packet();
 
+		if (ongoing_request != NONE) {
+			if (tick > xbee_timeout) {
+				if (timeout_inc == 600) {
+					/*	5 retries have now been executed without a responce.
+						So we drop the ongoing request. */
+					ongoing_request = NONE;
+				} else {
+					handle_ack(false);
+					inc_xbee_timeout();
+				}
+			}
+		}
+
 		/* Delay so xbee can keep up */
 		/* TODO: It seems resonable from tests that this break should equal to
 		adding about 200us delay after sending every byte. */
 		//_delay_ms(10);
 	}
+}
+
+
+void inc_xbee_timeout(void) {
+	timeout_inc += 100;
+	xbee_timeout = tick + timeout_inc;
+}
+
+
+void reset_xbee_timeout(void) {
+	timeout_inc = 100;
+	xbee_timeout = tick + timeout_inc;
 }
 
 
@@ -107,9 +128,11 @@ static bool handle_packet(void) {
 			break;
 		case ACK:
 			handle_ack(p.buf[0]);
+			reset_xbee_timeout();
 			break;
 		case REQUEST:
 			if (respond_to_request(&p)) {
+				reset_xbee_timeout();
 			}
 			break;
 		}
