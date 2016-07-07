@@ -1,5 +1,6 @@
 add_subdirectory(ComNode)
 add_subdirectory(GearNode)
+add_subdirectory(GearSensorNode)
 add_subdirectory(GPSNode)
 add_subdirectory(SteeringNode)
 add_subdirectory(SensorFrontNode)
