@@ -2,7 +2,6 @@ set(NODE_NAME GearNode)
 
 set(SRC_FILES
 	main.c
-	dewalt.c
 	vnh2sp30.c)
 
 add_executable(${NODE_NAME} ${SRC_FILES})

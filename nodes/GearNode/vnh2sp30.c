@@ -50,9 +50,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	ADC_ENABLE(); \
 } while (0)
 
-#define vnh2sp30_init_pwm() pwm_PB5_init()
-/** @} */
-
 
 void vnh2sp30_init(void) {
 	vnh2sp30_init_INA();
@@ -63,7 +60,6 @@ void vnh2sp30_init(void) {
 
 	vnh2sp30_init_CS();
 
-	// vnh2sp30_init_pwm();
 	pwm_PB5_init();
 }
 
