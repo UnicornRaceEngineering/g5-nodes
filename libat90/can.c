@@ -238,8 +238,8 @@ uint16_t get_counter(enum can_counters counter) {
 		case BIT_ERR: 	return bit_err;
 		case NO_MOB_ERR:return no_mob_err;
 		case ALLOC_ERR: return alloc_err;
-		case TOTAL_ERR: return dlcw_err + ack_err + form_err + crc_err +
-								stuff_err + bit_err + no_mob_err + alloc_err;
+		case TOTAL_ERR: return ack_err + form_err + crc_err +
+								stuff_err + bit_err + no_mob_err;
 		default: 		return 0;
 	}
 }
