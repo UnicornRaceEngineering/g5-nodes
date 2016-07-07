@@ -45,20 +45,20 @@ void sysclock_init(void) {
 	tick = 0;
 
 	// control regiters set to Mode 12 (CTC) and no prescaling.
-	TCCR1A = 0;
-	TCCR1B = (1 << WGM12) + (1 << CS10);
-	TCCR1C = 0;
+	TCCR3A = 0;
+	TCCR3B = (1 << WGM32) + (1 << CS30);
+	TCCR3C = 0;
 
 	// Output Compare Register A to 11059
 	// equal to 1ms
-	OCR1A = 11059;
+	OCR3A = 11059;
 
 	// Set counter value to 0
-	TCNT1L = 0;
-	TCNT1H = 0;
+	TCNT3L = 0;
+	TCNT3H = 0;
 
 	// Set to interrupt on output compare match A.
-	TIMSK1 = 1 << OCIE1A;
+	TIMSK3 = 1 << OCIE3A;
 }
 
 
@@ -74,6 +74,6 @@ uint32_t get_tick(void) {
 	return read_tick;
 }
 
-ISR(TIMER1_COMPA_vect) {
+ISR(TIMER3_COMPA_vect) {
 	++tick;
 }
