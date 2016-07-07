@@ -11,7 +11,6 @@ set(SRC_FILES
 	sysclock.c
 	cpu_load.c
 	bson.c
-	watchdog.c
 	eeprom.c
 )
 
