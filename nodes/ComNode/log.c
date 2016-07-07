@@ -44,30 +44,17 @@ static struct payload {
 } p;
 
 
-static void flag_do_nothing(enum log_flags flag);
 static void log_sync(void);
 static bool flush_to_sd(void);
 
 
 static FIL logfile;
 static FATFS fs;
-static void (*flag)(enum log_flags) = flag_do_nothing;
-
-
-static void flag_do_nothing(enum log_flags flag) {
-	(void)flag;
-}
-
-
-void log_set_flag_callback(void(*func)(enum log_flags)) {
-	flag = func;
-}
 
 
 void log_init(void) {
 	_delay_ms(1000); /* Wait for SD card to be ready */
 	if (f_mount(&fs, "", 1) != FR_OK) {
-		flag(MOUNT_ERR);
 	}
 
 	_delay_ms(100);
@@ -82,7 +69,6 @@ void create_file(FIL *f) {
 	do {
 		sprintf_P(file_name, FMT_LOG_NAME, i++);
 		if (i > 1000) {
-			flag(CREATE_FILE_ERR);
 			return;
 		}
 	} while (f_open(f, file_name, FA_CREATE_NEW|FA_WRITE) != FR_OK); //== FR_EXIST);
@@ -98,7 +84,6 @@ bool open_file(FIL *f, uint16_t lognr, uint8_t mode) {
 	char file_name[16] = {'\0'};
 	sprintf_P(file_name, FMT_LOG_NAME, lognr);
 	if (f_open(f, file_name, mode) != FR_OK) {
-		flag(OPEN_FILE_ERR);
 		return false;
 	}
 
@@ -110,7 +95,6 @@ bool read_file(FIL *f, uint8_t *buf, size_t len) {
 	unsigned int bw;
 	const FRESULT rc = f_read(f, buf, len, &bw);
 	if ((len != bw) || (rc != FR_OK)) {
-		flag(READ_FILE_ERR);
 		return false;
 	}
 
@@ -120,7 +104,6 @@ bool read_file(FIL *f, uint8_t *buf, size_t len) {
 
 bool file_seek(FIL *f, size_t offset) {
 	if (f_lseek(f, offset) != FR_OK) {
-		flag(ERR_SEEKING);
 		return false;
 	}
 
@@ -132,7 +115,6 @@ static bool flush_to_sd(void) {
 	unsigned bw;
 	const FRESULT rc = f_write(&logfile, p.buf, p.i, &bw);
 	if((rc != FR_OK) || (bw != p.i)) {
-		flag(WRITE_FILE_ERR);
 		return false;
 	}
 	p.i = 0;
@@ -166,7 +148,6 @@ bool file_write(FIL *f, uint8_t *buf, size_t len) {
 	unsigned int bw;
 	const FRESULT rc = f_write(f, buf, len, &bw);
 	if((rc != FR_OK) || (bw != len)) {
-		flag(WRITE_FILE_ERR);
 		return false;
 	}
 

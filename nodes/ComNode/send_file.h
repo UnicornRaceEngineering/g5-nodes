@@ -29,17 +29,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"
 
 
-enum req_file_flags {
-	REQUEST_ACTIVE,
-	FINISHED_REQUEST,
-	MISSING_LOGNR,
-	EMPTY_LOG_FILE,
-	FILE_ACCES_ERR,
-
-	N_REQ_FILE_FLAGS,
-};
-
-
 bool initiate_send_file(struct xbee_packet *p);
 void continue_send_file(void);
 void eval_send_file_status(void);

@@ -33,7 +33,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"                  // for xbee_init, xbee_send
 #include "log.h"
 #include "protocol.h"
-#include "flags.h"
 
 
 static void set_msg_transport_rules(void);
@@ -41,7 +40,6 @@ static void set_msg_transport_rules(void);
 
 static void init(void) {
 	rtc_init();
-	flags_init();
 	sysclock_init();
 	ecu_init();
 	xbee_init();

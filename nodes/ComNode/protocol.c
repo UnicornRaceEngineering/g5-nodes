@@ -34,7 +34,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xbee.h"
 #include "ecu.h"
 #include "log.h"
-#include "flags.h"
 #include "send_file.h"
 
 
@@ -43,11 +42,9 @@ static bool handle_packet(void);
 static void respond_to_handshake(void);
 static bool respond_to_request(struct xbee_packet *p);
 static void handle_ack(const bool ack);
-static void flag_do_nothing(enum state_flags flag);
 static void reset_xbee_timeout(void);
 static void inc_xbee_timeout(void);
 
-static void (*flag)(enum state_flags) = flag_do_nothing;
 static enum request_type ongoing_request;
 static bool streaming;
 static uint32_t tick;
@@ -100,16 +97,6 @@ void reset_xbee_timeout(void) {
 
 void set_ongoing_request(enum request_type type) {
 	ongoing_request = type;
-}
-
-
-void state_set_flag_callback(void(*func)(enum state_flags)) {
-	flag = func;
-}
-
-
-static void flag_do_nothing(enum state_flags flag) {
-	(void)flag;
 }
 
 
@@ -186,7 +173,6 @@ static bool respond_to_request(struct xbee_packet *p) {
 		/* TODO */
 		return false;
 	default:
-		flag(INVALID_REQ_TYPE);
 		xbee_send_NACK();
 		return false;
 	}

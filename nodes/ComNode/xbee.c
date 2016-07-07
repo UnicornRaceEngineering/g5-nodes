@@ -33,25 +33,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define XBEE_BAUD 	(115200)
 
 
-static void flag_do_nothing(enum xbee_flags flag);
-
 static FILE *xbee_out = &usart1_byte_output;
 static FILE *xbee_in = &usart1_io;
 
 static uint8_t buf_in[128];
 static uint8_t buf_out[128];
-
-static void (*flag)(enum xbee_flags) = flag_do_nothing;
-
-
-static void flag_do_nothing(enum xbee_flags flag) {
-	(void)flag;
-}
-
-
-void xbee_set_flag_callback(void(*func)(enum xbee_flags)) {
-	flag = func;
-}
 
 
 void xbee_init(void) {
@@ -124,7 +110,6 @@ bool xbee_read_packet(struct xbee_packet *p) {
 	/* Check if start sequence (single byte) is correct */
 	const uint8_t start_seq = (uint8_t)fgetc(xbee_in);
 	if (start_seq != 0xA1) {
-		flag(WRONG_START_SEQ);
 		return false;
 	}
 
@@ -143,7 +128,6 @@ bool xbee_read_packet(struct xbee_packet *p) {
 	/* Check if the calculated checksum is a match with the real one. */
 	const uint8_t checksum = (uint8_t)fgetc(xbee_in);
 	if (checksum != payload_checksum){
-		flag(WRONG_CHECKSUM);
 		xbee_send_RESEND();
 		return false;
 	}
@@ -155,7 +139,6 @@ bool xbee_read_packet(struct xbee_packet *p) {
 	case ACK|NACK|RESEND:
 		if (p->len != 1) {
 			/* Packets of these type can only have length 1. */
-			flag(INVALID_LENGTH);
 			xbee_send_NACK();
 			return false;
 		}
@@ -163,14 +146,12 @@ bool xbee_read_packet(struct xbee_packet *p) {
 	case REQUEST|RESPONCE:
 		if (!p->len) {
 			/* An empty request is invalid. */
-			flag(INVALID_LENGTH);
 			xbee_send_NACK();
 			return false;
 		}
 		break;
 	case LIVE_STREAM:
 		/* We do not expect to encounter this type at all. */
-		flag(INVALID_TYPE);
 		xbee_send_NACK();
 		return false;
 	}

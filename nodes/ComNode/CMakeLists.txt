@@ -6,7 +6,6 @@ set(SRC_FILES
 	xbee.c
 	log.c
 	protocol.c
-	flags.c
 	send_file.c
 )
 

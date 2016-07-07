@@ -29,7 +29,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "send_file.h"
 #include "log.h"
 #include "xbee.h"
-#include "flags.h"
 #include "protocol.h"
 
 

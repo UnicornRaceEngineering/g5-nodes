@@ -26,13 +26,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PROTOCOL_H
 
 
-enum state_flags {
-	INVALID_REQ_TYPE,
-
-	N_STATE_FLAGS,
-};
-
-
 enum request_type {
 	/* Requests a file from the SD card. */
 	REQUEST_FILE,
@@ -46,7 +39,6 @@ enum request_type {
 
 
 void event_loop(void);
-void state_set_flag_callback(void(*func)(enum state_flags));
 void set_ongoing_request(enum request_type type);
 
 
