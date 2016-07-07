@@ -434,25 +434,25 @@ ISR (CANIT_vect) {
 				BIT_CLEAR(mob_on_job, mob);
 				break;
 
-		 	case MOB_ACK_ERROR:
-		 		++ack_err;
-		 		break;
+			case MOB_ACK_ERROR:
+				++ack_err;
+				break;
 
-		 	case MOB_FORM_ERROR:
-		 		++form_err;
-		 		break;
+			case MOB_FORM_ERROR:
+				++form_err;
+				break;
 
-		 	case MOB_CRC_ERROR:
-		 		++crc_err;
-		 		break;
+			case MOB_CRC_ERROR:
+				++crc_err;
+				break;
 
-		 	case MOB_STUFF_ERROR:
-		 		++stuff_err;
-		 		break;
+			case MOB_STUFF_ERROR:
+				++stuff_err;
+				break;
 
-		 	case MOB_BIT_ERROR:
-		 		++bit_err;
-		 		break;
+			case MOB_BIT_ERROR:
+				++bit_err;
+				break;
 		}
 		cli();
 	}
