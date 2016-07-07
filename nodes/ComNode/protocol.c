@@ -82,11 +82,6 @@ void event_loop(void) {
 				}
 			}
 		}
-
-		/* Delay so xbee can keep up */
-		/* TODO: It seems resonable from tests that this break should equal to
-		adding about 200us delay after sending every byte. */
-		//_delay_ms(10);
 	}
 }
 
